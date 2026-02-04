@@ -20,6 +20,8 @@ function App() {
           Learn React
         </a>
         <h1>It works!</h1>
+        <Button>BootstrapButton</Button>
+        <></>
       </header>
     </div>
   );
