@@ -2,8 +2,14 @@ import logo from './logo.svg';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button'
 import './App.css';
+import Login from './Login';
 
 function App() {
+  // tests login page
+  return (
+    <Login />
+  )
+
   return (
     <div className="App">
       <header className="App-header">
