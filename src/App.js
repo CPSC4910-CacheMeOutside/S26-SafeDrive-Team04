@@ -19,7 +19,7 @@ function App() {
         >
           Learn React
         </a>
-        <h1>Hello? Can you hear me?</h1>
+        <h1>It works!</h1>
       </header>
     </div>
   );
