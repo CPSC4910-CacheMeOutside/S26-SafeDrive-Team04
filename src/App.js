@@ -1,39 +1,17 @@
-import logo from './logo.svg';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Button from 'react-bootstrap/Button'
 import './App.css';
-import Login from './Login';
 
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import NavDropdown from 'react-bootstrap/NavDropdown';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
-
-function LoginPage() {
-    return (
-      <div>
-        <Login />
-      </div>
-    )
-}
-
-function AboutPage () {
-  return (
-    <div>
-      <h1>About our App</h1>
-    </div>
-  );
-}
-
-function HomePage () {
-  return (
-    <div>
-      <h1>Welcome Home</h1>
-    </div>
-  );
-}
+import HomePage from './Home'
+import AboutPage from './About'
+import ProfilePage from './ProfilePage'
+import AdminPage from './AdminPage'
+import CreatePassword from './create_password';
+import LoginPage from './LoginPage';
 
 function App() {
   return (
@@ -52,7 +30,18 @@ function App() {
                 <Nav.Link href="#link">
                   <Link to="/about">About</Link>
                 </Nav.Link>
-                <Nav.Link as={Link} to="/login">Login</Nav.Link>
+                <Nav.Link href="#link">
+                  <Link to="/profile">Profile</Link>
+                </Nav.Link>
+                <Nav.Link href="#link">
+                  <Link to="/admin">Admin</Link>
+                </Nav.Link>
+                <Nav.Link href="#link">
+                  <Link to="/login">Login</Link>
+                </Nav.Link>
+                <Nav.Link href="#link">
+                  <Link to="/create_password">Create Account</Link>
+                </Nav.Link>
             </Nav>
             </Navbar.Collapse>
         </Container>
@@ -61,6 +50,9 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
+          <Route path="/profile" element={<ProfilePage />}/>
+          <Route path="/admin" element={<AdminPage />}/>
+          <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
         </Routes>
       </BrowserRouter>

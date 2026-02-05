@@ -2,7 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import { useAuth } from 'react-oidc-context';
 
-function Login() {
+function LoginPage() {
     const auth = useAuth();
 
     const signOutRedirect = () => {
@@ -41,4 +41,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default LoginPage;
