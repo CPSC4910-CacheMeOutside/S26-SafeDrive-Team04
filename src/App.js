@@ -7,7 +7,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
 import HomePage from './Home'
 import AboutPage from './About'
-
+import ProfilePage from './Profile'
+import AdminPage from './Admin'
 /* Login component to be implemented 
 function LoginPage() {
 
@@ -32,6 +33,14 @@ function App() {
                   <Link to="/about">About</Link>
                 </Nav.Link>
                 <Nav.Link href="#link">
+                
+                <Link to="/profile">Profile</Link>
+                </Nav.Link>
+                <Nav.Link href="#link">
+
+                <Link to="/about">Admin</Link>
+                </Nav.Link>
+                <Nav.Link href="#link">
                   {/* Login path to be implemented*/}
                   <Link to="/">Login</Link>
                 </Nav.Link>
@@ -43,6 +52,8 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
+          <Route path="/profile" element={<ProfilePage />}/>
+          <Route path="/about" element={<AdminPage />}/>
           {/* login path to be implemented */}
         </Routes>
       </BrowserRouter>
