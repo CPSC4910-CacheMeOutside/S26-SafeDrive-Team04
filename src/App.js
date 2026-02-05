@@ -10,9 +10,6 @@ import NavDropdown from 'react-bootstrap/NavDropdown';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
 /* Login component to be implemented 
-function LoginPage() {
-
-}
 */
 
 
@@ -30,6 +27,27 @@ function HomePage () {
     <div>
       <h1>Welcome Home</h1>
     </div>
+  );
+}
+
+function ProfilePage(){
+  const alias = "Breaker_1-9";
+  const points = 144;
+  return(
+    <Container className="py-4" style={{ maxWidth: 700 }}>
+      <h2 classname="mb-3">Driver Profile</h2>
+
+      <div style={{
+        padding: 20,
+        borderRadius: 10,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+      }}>
+        <h4>{alias}</h4>
+        <div style={{ fontsize: 14, opacity: 0.7}}>Current Points</div>
+        <div style={{ fontsize: 40, fontweight: 700}}>{points}</div>
+      </div>
+
+    </Container>
   );
 }
 
@@ -51,6 +69,9 @@ function App() {
                   <Link to="/about">About</Link>
                 </Nav.Link>
                 <Nav.Link href="#link">
+                  <Link to="/profile">Profile</Link>
+                </Nav.Link>
+                <Nav.Link href="#link">
                   {/* Login path to be implemented*/}
                   <Link to="/">Login</Link>
                 </Nav.Link>
@@ -62,6 +83,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
+          <Route path="/profile" element={<ProfilePage />}/>
           {/* login path to be implemented */}
         </Routes>
       </BrowserRouter>
