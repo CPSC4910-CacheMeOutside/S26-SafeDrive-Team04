@@ -7,8 +7,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
 import HomePage from './Home'
 import AboutPage from './About'
-import ProfilePage from './Profile'
-import AdminPage from './Admin'
+import ProfilePage from './ProfilePage'
+import AdminPage from './AdminPage'
 /* Login component to be implemented 
 function LoginPage() {
 
