@@ -9,6 +9,7 @@ import HomePage from './Home'
 import AboutPage from './About'
 import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
+import CreatePassword from './create_password';
 /* Login component to be implemented 
 function LoginPage() {
 
@@ -44,6 +45,9 @@ function App() {
                   {/* Login path to be implemented*/}
                   <Link to="/">Login</Link>
                 </Nav.Link>
+                <Nav.Link href="#link">
+                  <Link to="/create_password">Create Account</Link>
+                </Nav.Link>
             </Nav>
             </Navbar.Collapse>
         </Container>
@@ -54,6 +58,7 @@ function App() {
           <Route path="/about" element={<AboutPage />}/>
           <Route path="/profile" element={<ProfilePage />}/>
           <Route path="/admin" element={<AdminPage />}/>
+          <Route path="/create_password" element={<CreatePassword />}/>
           {/* login path to be implemented */}
         </Routes>
       </BrowserRouter>
