@@ -1,36 +1,16 @@
-import logo from './logo.svg';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Button from 'react-bootstrap/Button'
 import './App.css';
-
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import NavDropdown from 'react-bootstrap/NavDropdown';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
+import HomePage from './Home'
+import AboutPage from './About'
+import ProfilePage from './ProfilePage';
+import AdminPage from './AdminPage';
 /* Login component to be implemented 
 */
-
-
-
-function AboutPage () {
-  return (
-    <div>
-      <h1>About our App</h1>
-    </div>
-  );
-}
-
-function HomePage () {
-  return (
-    <div>
-      <h1>Welcome Home</h1>
-    </div>
-  );
-}
-
-
 
 
 
