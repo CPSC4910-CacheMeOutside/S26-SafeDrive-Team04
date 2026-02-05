@@ -10,13 +10,14 @@ import Navbar from 'react-bootstrap/Navbar';
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
-/* Login component to be implemented 
+
 function LoginPage() {
-
+    return (
+      <div>
+        <Login />
+      </div>
+    )
 }
-*/
-
-
 
 function AboutPage () {
   return (
@@ -35,11 +36,6 @@ function HomePage () {
 }
 
 function App() {
-  // tests login page
-  return (
-    <Login />
-  )
-
   return (
     <div className="App">
       <BrowserRouter>
@@ -56,10 +52,7 @@ function App() {
                 <Nav.Link href="#link">
                   <Link to="/about">About</Link>
                 </Nav.Link>
-                <Nav.Link href="#link">
-                  {/* Login path to be implemented*/}
-                  <Link to="/">Login</Link>
-                </Nav.Link>
+                <Nav.Link as={Link} to="/login">Login</Nav.Link>
             </Nav>
             </Navbar.Collapse>
         </Container>
@@ -68,7 +61,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
-          {/* login path to be implemented */}
+          <Route path="/login" element={<LoginPage />}/>
         </Routes>
       </BrowserRouter>
     </div>
