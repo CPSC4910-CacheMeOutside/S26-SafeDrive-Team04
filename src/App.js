@@ -38,7 +38,7 @@ function App() {
                 </Nav.Link>
                 <Nav.Link href="#link">
 
-                <Link to="/about">Admin</Link>
+                <Link to="/admin">Admin</Link>
                 </Nav.Link>
                 <Nav.Link href="#link">
                   {/* Login path to be implemented*/}
@@ -53,7 +53,7 @@ function App() {
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
           <Route path="/profile" element={<ProfilePage />}/>
-          <Route path="/about" element={<AdminPage />}/>
+          <Route path="/admin" element={<AdminPage />}/>
           {/* login path to be implemented */}
         </Routes>
       </BrowserRouter>
