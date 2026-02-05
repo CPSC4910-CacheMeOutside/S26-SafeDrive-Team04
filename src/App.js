@@ -2,8 +2,12 @@ import logo from './logo.svg';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button'
 import './App.css';
+import CreatePassword from './create_password';
 
 function App() {
+
+  return <CreatePassword />;
+  
   return (
     <div className="App">
       <header className="App-header">
