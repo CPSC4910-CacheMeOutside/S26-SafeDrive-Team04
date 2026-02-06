@@ -78,7 +78,6 @@ function NavBar({ view, profilePic, onShowTransactionHistory, onShowSpendPoints 
     );
 }
 
-/* Navigations */
 const hideNavs = {
   home: false,
   about: false,
