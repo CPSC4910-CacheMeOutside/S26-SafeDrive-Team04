@@ -13,7 +13,25 @@ import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 
-function PublicNav() {
+/* Navigations */
+const classNavs = new Map([
+  ["Home", "/"],
+  ["About", "/about"],
+  ["Profile", "/profile"],
+  ["Admin", "/admin"],
+  ["Login", "/login"],
+  ["Create Account", "/create_password"],
+]);
+
+/* Class Specific Navigations */
+const publicNavs = ["Home", "About", "Profile", "Admin", "Login", "Create Account"];
+const driverNavs = ["Home", "About", "Profile"];
+
+function makeLink(route) {
+  return (<Nav.Link key={route} as={Link} to={classNavs.get(route)}>{route}</Nav.Link>);
+}
+
+function createNav(navs) {
   return (
   <Navbar expand="lg" className="bg-body-tertiary">
     <Container>
@@ -21,51 +39,20 @@ function PublicNav() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
         <Nav className="me-auto">
-          <Nav.Link as={Link} to="/">Home</Nav.Link>
-          <Nav.Link as={Link} to="/about">About</Nav.Link>
-          <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
-          <Nav.Link as={Link} to="/admin">Admin</Nav.Link>
-          <Nav.Link as={Link} to="/login">Login</Nav.Link>
-          <Nav.Link as={Link} to="/creat_password">Create Account</Nav.Link>
+          {navs.map(nav => makeLink(nav))}
         </Nav>
         </Navbar.Collapse>
     </Container>
   </Navbar>);
 }
 
-function DriverNav() {
-  return (
-  <Navbar expand="lg" className="bg-body-tertiary">
-    <Container>
-        <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-        <Nav className="me-auto">
-          <Nav.Link as={Link} to="/">Home</Nav.Link>
-          <Nav.Link as={Link} to="/about">About</Nav.Link>
-          <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
-        </Nav>
-        </Navbar.Collapse>
-    </Container>
-  </Navbar>);
-}
-
-function chooseNav(mode) {
-  if (mode === 1) {
-    return (<DriverNav/>);
-  }
-  else 
-  {
-    return (<PublicNav/>);
-  }
-}
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
 
-        { chooseNav(1) }
+        { createNav(publicNavs) }
 
         <Routes>
           <Route path="/" element={<HomePage />}/>
