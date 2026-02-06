@@ -21,24 +21,12 @@ function PublicNav() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
         <Nav className="me-auto">
-            <Nav.Link href="#home">
-              <Link to="/">Home</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/about">About</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/profile">Profile</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/admin">Admin</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/login">Login</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/create_password">Create Account</Link>
-            </Nav.Link>
+          <Nav.Link as={Link} to="/">Home</Nav.Link>
+          <Nav.Link as={Link} to="/about">About</Nav.Link>
+          <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
+          <Nav.Link as={Link} to="/admin">Admin</Nav.Link>
+          <Nav.Link as={Link} to="/login">Login</Nav.Link>
+          <Nav.Link as={Link} to="/creat_password">Create Account</Nav.Link>
         </Nav>
         </Navbar.Collapse>
     </Container>
@@ -53,18 +41,9 @@ function DriverNav() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
         <Nav className="me-auto">
-            <Nav.Link href="#home">
-              <Link to="/">Home</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/about">About</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/profile">Profile</Link>
-            </Nav.Link>
-            <Nav.Link href="#link">
-              <Link to="/create_password">Create Account</Link>
-            </Nav.Link>
+          <Nav.Link as={Link} to="/">Home</Nav.Link>
+          <Nav.Link as={Link} to="/about">About</Nav.Link>
+          <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
         </Nav>
         </Navbar.Collapse>
     </Container>
@@ -86,7 +65,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
 
-        { chooseNav(0) }
+        { chooseNav(1) }
 
         <Routes>
           <Route path="/" element={<HomePage />}/>
