@@ -78,6 +78,74 @@ function NavBar({ view, profilePic, onShowTransactionHistory, onShowSpendPoints 
     );
 }
 
+function PublicNav() {
+  return (
+  <Navbar expand="lg" className="bg-body-tertiary">
+    <Container>
+        <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+        <Nav className="me-auto">
+            <Nav.Link href="#home">
+              <Link to="/">Home</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/about">About</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/profile">Profile</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/admin">Admin</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/login">Login</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/create_password">Create Account</Link>
+            </Nav.Link>
+        </Nav>
+        </Navbar.Collapse>
+    </Container>
+  </Navbar>);
+}
+
+function DriverNav() {
+  return (
+  <Navbar expand="lg" className="bg-body-tertiary">
+    <Container>
+        <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+        <Nav className="me-auto">
+            <Nav.Link href="#home">
+              <Link to="/">Home</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/about">About</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/profile">Profile</Link>
+            </Nav.Link>
+            <Nav.Link href="#link">
+              <Link to="/create_password">Create Account</Link>
+            </Nav.Link>
+        </Nav>
+        </Navbar.Collapse>
+    </Container>
+  </Navbar>);
+}
+
+function chooseNav(mode) {
+  if (mode === 1) {
+    return (<DriverNav/>);
+  }
+  else 
+  {
+    return (<PublicNav/>);
+  }
+}
+
 function App() {
     const auth = useAuth(); 
     const navigate = useNavigate();
