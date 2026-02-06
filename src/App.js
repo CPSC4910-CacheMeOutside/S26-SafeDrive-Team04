@@ -40,14 +40,7 @@ function App() {
     
     const [userClass, setUserClass] = useState(0);
 
-    function setClass (cls) {
-        if (cls <= 3)
-        {
-            setUserClass(cls);
-            return;
-        }
-        console.log(`'${cls}' is not a valid user class`);
-    }
+        { chooseNav(1) }
 
     return (
         <div className="App">
