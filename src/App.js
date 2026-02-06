@@ -79,7 +79,7 @@ function NavBar({ view, profilePic, onShowTransactionHistory, onShowSpendPoints 
 }
 
 /* Navigations */
-const classNavs = new Map([
+const navs = new Map([
   ["Home", "/"],
   ["About", "/about"],
   ["Profile", "/profile"],
@@ -89,11 +89,13 @@ const classNavs = new Map([
 ]);
 
 /* Class Specific Navigations */
-const publicNavs = ["Home", "About", "Profile", "Admin", "Login", "Create Account"];
-const driverNavs = ["Home", "About", "Profile"];
+const siteNavs = {
+  publicNavs : ["Home", "About", "Profile", "Admin", "Login", "Create Account"],
+  driverNavs : ["Home", "About", "Profile"]
+};
 
 function makeLink(route) {
-  return (<Nav.Link key={route} as={Link} to={classNavs.get(route)}>{route}</Nav.Link>);
+  return (<Nav.Link key={route} as={Link} to={navs.get(route)}>{route}</Nav.Link>);
 }
 
 function createNav(navs) {
