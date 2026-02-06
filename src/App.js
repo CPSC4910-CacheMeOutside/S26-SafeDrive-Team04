@@ -40,7 +40,7 @@ function App() {
     
     const [userClass, setUserClass] = useState(0);
 
-        { chooseNav(1) }
+        { createNav(publicNavs) }
 
     return (
         <div className="App">
