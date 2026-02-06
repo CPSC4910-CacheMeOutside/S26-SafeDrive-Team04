@@ -26,33 +26,14 @@ import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import { NavDropdown } from 'react-bootstrap';
 
-const hideNavs = {
-home: false,
-about: false,
-profile: true,
-admin: true,
-login: false,
-createPass: true
-}
-
 /* Navigations */
-const navs = new Map([
-  ["Home", "/"],
-  ["About", "/about"],
-  ["Profile", "/profile"],
-  ["Admin", "/admin"],
-  ["Login", "/login"],
-  ["Create Account", "/create_password"],
-]);
-
-/* Class Specific Navigations */
-const siteNavs = {
-  publicNavs : ["Home", "About", "Profile", "Admin", "Login", "Create Account"],
-  driverNavs : ["Home", "About", "Profile"]
-};
-
-function makeLink(route) {
-  return (<Nav.Link key={route} as={Link} to={navs.get(route)}>{route}</Nav.Link>);
+const hideNavs = {
+  home: false,
+  about: false,
+  profile: true,
+  admin: true,
+  login: false,
+  creatPass: true
 }
 
 function createNav(navs) {
