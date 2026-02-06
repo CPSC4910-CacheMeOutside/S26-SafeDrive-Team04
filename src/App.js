@@ -79,40 +79,14 @@ function NavBar({ view, profilePic, onShowTransactionHistory, onShowSpendPoints 
 }
 
 /* Navigations */
-const navs = new Map([
-  ["Home", "/"],
-  ["About", "/about"],
-  ["Profile", "/profile"],
-  ["Admin", "/admin"],
-  ["Login", "/login"],
-  ["Create Account", "/create_password"],
-]);
-
-/* Class Specific Navigations */
-const siteNavs = {
-  publicNavs : ["Home", "About", "Profile", "Admin", "Login", "Create Account"],
-  driverNavs : ["Home", "About", "Profile"]
-};
-
-function makeLink(route) {
-  return (<Nav.Link key={route} as={Link} to={navs.get(route)}>{route}</Nav.Link>);
+const hideNavs = {
+  home: false,
+  about: false,
+  profile: true,
+  admin: true,
+  login: false,
+  creatPass: true
 }
-
-function createNav(navs) {
-  return (
-  <Navbar expand="lg" className="bg-body-tertiary">
-    <Container>
-        <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-        <Nav className="me-auto">
-          {navs.map(nav => makeLink(nav))}
-        </Nav>
-        </Navbar.Collapse>
-    </Container>
-  </Navbar>);
-}
-
 
 function App() {
     const auth = useAuth(); 
