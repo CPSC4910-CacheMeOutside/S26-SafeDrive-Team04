@@ -14,47 +14,35 @@ import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 
 /* Navigations */
-const navs = new Map([
-  ["Home", "/"],
-  ["About", "/about"],
-  ["Profile", "/profile"],
-  ["Admin", "/admin"],
-  ["Login", "/login"],
-  ["Create Account", "/create_password"],
-]);
-
-/* Class Specific Navigations */
-const siteNavs = {
-  publicNavs : ["Home", "About", "Profile", "Admin", "Login", "Create Account"],
-  driverNavs : ["Home", "About", "Profile"]
-};
-
-function makeLink(route) {
-  return (<Nav.Link key={route} as={Link} to={navs.get(route)}>{route}</Nav.Link>);
+const hideNavs = {
+  home: false,
+  about: false,
+  profile: true,
+  admin: true,
+  login: false,
+  creatPass: true
 }
-
-function createNav(navs) {
-  return (
-  <Navbar expand="lg" className="bg-body-tertiary">
-    <Container>
-        <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-        <Nav className="me-auto">
-          {navs.map(nav => makeLink(nav))}
-        </Nav>
-        </Navbar.Collapse>
-    </Container>
-  </Navbar>);
-}
-
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-
-        { createNav(siteNavs.publicNavs) }
+          <Navbar expand="lg" className="bg-body-tertiary">
+          <Container>
+              <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
+              <Navbar.Toggle aria-controls="basic-navbar-nav" />
+              <Navbar.Collapse id="basic-navbar-nav">
+              <Nav className="me-auto">
+                <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>
+                <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>
+                <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
+                <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
+                <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
+                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/creat_password">Create Account</Nav.Link>
+              </Nav>
+              </Navbar.Collapse>
+          </Container>
+        </Navbar>
 
         <Routes>
           <Route path="/" element={<HomePage />}/>
