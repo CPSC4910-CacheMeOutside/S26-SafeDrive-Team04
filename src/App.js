@@ -13,7 +13,6 @@ import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 
-/* Navigations */
 const hideNavs = {
   home: false,
   about: false,
