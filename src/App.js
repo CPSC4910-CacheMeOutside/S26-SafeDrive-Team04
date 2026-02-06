@@ -35,7 +35,25 @@ login: false,
 createPass: true
 }
 
-function PublicNav() {
+/* Navigations */
+const classNavs = new Map([
+  ["Home", "/"],
+  ["About", "/about"],
+  ["Profile", "/profile"],
+  ["Admin", "/admin"],
+  ["Login", "/login"],
+  ["Create Account", "/create_password"],
+]);
+
+/* Class Specific Navigations */
+const publicNavs = ["Home", "About", "Profile", "Admin", "Login", "Create Account"];
+const driverNavs = ["Home", "About", "Profile"];
+
+function makeLink(route) {
+  return (<Nav.Link key={route} as={Link} to={classNavs.get(route)}>{route}</Nav.Link>);
+}
+
+function createNav(navs) {
   return (
   <Navbar expand="lg" className="bg-body-tertiary">
     <Container>
