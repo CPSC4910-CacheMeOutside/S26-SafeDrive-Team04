@@ -23,7 +23,6 @@ import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import { NavDropdown } from 'react-bootstrap';
 
-/* Navigations */
 const hideNavs = {
   home: false,
   about: false,
