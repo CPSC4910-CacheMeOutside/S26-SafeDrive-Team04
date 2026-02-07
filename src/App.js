@@ -37,7 +37,7 @@ function App() {
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/creat_password">Create Account</Nav.Link>
+                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
               </Nav>
               </Navbar.Collapse>
           </Container>
