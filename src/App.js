@@ -27,12 +27,12 @@ import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import { NavDropdown } from 'react-bootstrap';
 
 const hideNavs = {
-  home: false,
-  about: false,
-  profile: true,
-  admin: true,
-  login: false,
-  creatPass: true
+home: false,
+about: false,
+profile: true,
+admin: true,
+login: false,
+createPass: true
 }
 
 function createNav(navs) {
