@@ -17,6 +17,7 @@ import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import LogoutPage from './LogoutPage';
+import React, { useState } from 'react';
 import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
@@ -78,6 +79,8 @@ function NavBar({ view, profilePic, onShowTransactionHistory, onShowSpendPoints 
         </Navbar>
     );
 }
+import { NavDropdown } from 'react-bootstrap';
+import React from 'react';
 
 const hideNavs = {
 home: false,
@@ -144,6 +147,17 @@ function App() {
                 <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />} />
                 <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />} />
                 <Route path="/sponsor-settings" element={<SponsorSettingsPage />} />
+                <Route path="/" element={<HomePage />}/>
+                <Route path="/about" element={<AboutPage />}/>
+                <Route path="/profile" element={<ProfilePage />}/>
+                <Route path="/admin" element={<AdminPage />}/>
+                <Route path="/create_password" element={<CreatePassword />}/>
+                <Route path="/login" element={<LoginPage />}/>
+                <Route path="/logout" element={<LogoutPage />}/>
+                <Route path="/SponsorPage" element={<SponsorPage />}/>
+                <Route path="/catalog" element={<Catalog />}/>
+                <Route path="/edit_profile" element={<EditProfilePage />}/>
+                <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
             </Routes>
 
             <TransactionHistoryModal
