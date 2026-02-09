@@ -79,12 +79,12 @@ function NavBar({ view, profilePic, onShowTransactionHistory, onShowSpendPoints 
 }
 
 const hideNavs = {
-  home: false,
-  about: false,
-  profile: true,
-  admin: true,
-  login: false,
-  creatPass: true
+home: false,
+about: false,
+profile: true,
+admin: true,
+login: false,
+createPass: true
 }
 
 function App() {
