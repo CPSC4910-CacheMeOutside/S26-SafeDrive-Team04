@@ -12,48 +12,57 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
+import React from 'react';
 
 const hideNavs = {
-  home: false,
-  about: false,
-  profile: true,
-  admin: true,
-  login: false,
-  creatPass: true
+home: false,
+about: false,
+profile: true,
+admin: true,
+login: false,
+createPass: true
 }
 
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-          <Navbar expand="lg" className="bg-body-tertiary">
-          <Container>
-              <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
-              <Navbar.Toggle aria-controls="basic-navbar-nav" />
-              <Navbar.Collapse id="basic-navbar-nav">
-              <Nav className="me-auto">
+function NavBar () {
+
+    return (
+        <Navbar expand="lg" className="bg-body-tertiary">
+        <Container>
+            <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
+            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="me-auto">
                 <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>
                 <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
-              </Nav>
-              </Navbar.Collapse>
-          </Container>
-        </Navbar>
+                <Nav.Link hidden={hideNavs.createPass} as={Link} to="/creat_password">Create Account</Nav.Link>
+            </Nav>
+            </Navbar.Collapse>
+        </Container>
+    </Navbar>
+    );
+}
 
-        <Routes>
-          <Route path="/" element={<HomePage />}/>
-          <Route path="/about" element={<AboutPage />}/>
-          <Route path="/profile" element={<ProfilePage />}/>
-          <Route path="/admin" element={<AdminPage />}/>
-          <Route path="/create_password" element={<CreatePassword />}/>
-          <Route path="/login" element={<LoginPage />}/>
-        </Routes>
-      </BrowserRouter>
-    </div>
-  );
+function App() {
+    return (
+        <div className="App">
+            <BrowserRouter>
+            
+            <NavBar/>
+
+            <Routes>
+                <Route path="/" element={<HomePage />}/>
+                <Route path="/about" element={<AboutPage />}/>
+                <Route path="/profile" element={<ProfilePage />}/>
+                <Route path="/admin" element={<AdminPage />}/>
+                <Route path="/create_password" element={<CreatePassword />}/>
+                <Route path="/login" element={<LoginPage />}/>
+            </Routes>
+            </BrowserRouter>
+        </div>
+    );
 }
 
 export default App;
