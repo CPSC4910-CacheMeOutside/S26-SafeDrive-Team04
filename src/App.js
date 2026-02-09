@@ -14,30 +14,21 @@ import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import React from 'react';
 
-const hideNavs = {
-home: false,
-about: false,
-profile: true,
-admin: true,
-login: false,
-createPass: true
-}
-
 function NavBar () {
-
     return (
         <Navbar expand="lg" className="bg-body-tertiary">
         <Container>
             <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
-                <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>
-                <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>
-                <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
-                <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
-                <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link hidden={hideNavs.createPass} as={Link} to="/creat_password">Create Account</Nav.Link>
+            <Nav id="navbar" className="me-auto">
+                <Nav.Link as={Link} to="/">Home</Nav.Link>
+                <Nav.Link as={Link} to="/about">About</Nav.Link>
+                <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
+                <Nav.Link as={Link} to="/admin">Admin</Nav.Link>
+                <Nav.Link>Catalog</Nav.Link> {/* for testing*/}
+                <Nav.Link as={Link} to="/login">Login</Nav.Link>
+                <Nav.Link as={Link} to="/create_password">Create Account</Nav.Link>
             </Nav>
             </Navbar.Collapse>
         </Container>
