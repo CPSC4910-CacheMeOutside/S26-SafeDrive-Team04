@@ -15,7 +15,6 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
-<<<<<<< HEAD
 import React, { useState } from 'react';
 import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
@@ -23,9 +22,6 @@ import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import { NavDropdown } from 'react-bootstrap';
-=======
-import React from 'react';
->>>>>>> bcaed83 (Nested Nav into seperate componenent)
 
 const hideNavs = {
 home: false,
@@ -116,7 +112,6 @@ function App() {
                 <Route path="/admin" element={<AdminPage />}/>
                 <Route path="/create_password" element={<CreatePassword />}/>
                 <Route path="/login" element={<LoginPage />}/>
-<<<<<<< HEAD
                 <Route path="/logout" element={<LogoutPage />}/>
                 <Route path="/SponsorPage" element={<SponsorPage />}/>
                 <Route path="/catalog" element={<Catalog />}/>
@@ -126,12 +121,6 @@ function App() {
         </BrowserRouter>
     </div>
   );
-=======
-            </Routes>
-            </BrowserRouter>
-        </div>
-    );
->>>>>>> bcaed83 (Nested Nav into seperate componenent)
 }
 
 export default App;
