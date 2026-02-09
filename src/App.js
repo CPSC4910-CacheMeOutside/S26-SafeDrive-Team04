@@ -12,9 +12,9 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
-import React from 'react';
+import React, { useState } from 'react';
 
-function NavBar () {
+function NavBar ({view}) {
     return (
         <Navbar expand="lg" className="bg-body-tertiary">
         <Container>
@@ -24,11 +24,11 @@ function NavBar () {
             <Nav id="navbar" className="me-auto">
                 <Nav.Link as={Link} to="/">Home</Nav.Link>
                 <Nav.Link as={Link} to="/about">About</Nav.Link>
-                <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
-                <Nav.Link as={Link} to="/admin">Admin</Nav.Link>
-                <Nav.Link>Catalog</Nav.Link> {/* for testing*/}
-                <Nav.Link as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link as={Link} to="/create_password">Create Account</Nav.Link>
+                <Nav.Link hidden={view === 0} as={Link} to="/profile">Profile</Nav.Link>
+                <Nav.Link hidden={view !== 3} as={Link} to="/admin">Admin</Nav.Link>
+                <Nav.Link hidden={view !== 2}>Catalog</Nav.Link> {/* for testing*/}
+                <Nav.Link hidden={view !== 0} as={Link} to="/login">Login</Nav.Link>
+                <Nav.Link hidden={view !== 3} as={Link} to="/create_password">Create Account</Nav.Link>
             </Nav>
             </Navbar.Collapse>
         </Container>
@@ -37,11 +37,23 @@ function NavBar () {
 }
 
 function App() {
+    
+    const [userClass, setUserClass] = useState(0);
+
+    function setClass (cls) {
+        if (cls <= 3)
+        {
+            setUserClass(cls);
+            return;
+        }
+        console.log(`'${cls}' is not a valid user class`);
+    }
+
     return (
         <div className="App">
             <BrowserRouter>
             
-            <NavBar/>
+            <NavBar view={userClass}/>
 
             <Routes>
                 <Route path="/" element={<HomePage />}/>
