@@ -14,7 +14,9 @@ export default function SponsorPage(){
     const [drivers, setDrivers] = useState([
         {id: 1, name: "Bo Darvilel", points: 200},
         {id: 2, name: "Cledus Snow", points: 156},
-        {id: 3, name: "Hot-Pants Hillard", points: 186}
+        {id: 3, name: "Hot-Pants Hillard", points: 186},
+        {id: 4, name: "Burt Reynolds", points: 330},
+        {id: 5, name: "Jerry Reed", points: 300}
     ]);
 
     const [selectedId, setSelectedId] = useState(1);
@@ -91,6 +93,14 @@ export default function SponsorPage(){
                             </Col>
                         </Row>
                     </Tab>
+                    <Tab eventKey="audit" title="Logs/Reports">
+                        <Card><Card.Body>Reports and Audit Logs Coming Sonn</Card.Body></Card> 
+                    </Tab>
+
+                    <Tab eventKey="settings" title="Settings">
+                        <Card><Card.Body>Settings and Preferences Coming Soon</Card.Body></Card>
+                    </Tab>
+                  
                 </Tabs>
             </Container>
         )
