@@ -8,7 +8,7 @@ import reportWebVitals from './reportWebVitals';
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_7kWyOumWk",
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
-  redirect_uri: "https://main.d34ak230g49yud.amplifyapp.com/",
+  redirect_uri: "http://localhost:3000/SponsorPage",
   response_type: "code",
   scope: "phone openid email",
 };

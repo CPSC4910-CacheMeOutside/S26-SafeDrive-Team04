@@ -14,6 +14,7 @@ import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import React, { useState } from 'react';
 import Catalog from './Catalog';
+import SponsorPage from './SponsorPage';
 
 function NavBar ({view}) {
     return (
@@ -41,33 +42,22 @@ function App() {
     
     const [userClass, setUserClass] = useState(0);
 
-    function setClass (cls) {
-        if (cls <= 3)
-        {
-            setUserClass(cls);
-            return;
-        }
-        console.log(`'${cls}' is not a valid user class`);
-    }
-
     return (
-        <div className="App">
+        <div>
             <BrowserRouter>
-            
-            <NavBar view={userClass}/>
-
-            <Routes>
-                <Route path="/" element={<HomePage />}/>
-                <Route path="/about" element={<AboutPage />}/>
-                <Route path="/profile" element={<ProfilePage />}/>
-                <Route path="/admin" element={<AdminPage />}/>
-                <Route path="/create_password" element={<CreatePassword />}/>
-                <Route path="/login" element={<LoginPage />}/>
-                <Route path="/catalog" element={<Catalog />}/>
-            </Routes>
+                <Routes>
+                    <Route path="/" element={<HomePage />}/>
+                    <Route path="/about" element={<AboutPage />}/>
+                    <Route path="/profile" element={<ProfilePage />}/>
+                    <Route path="/admin" element={<AdminPage />}/>
+                    <Route path="/create_password" element={<CreatePassword />}/>
+                    <Route path="/login" element={<LoginPage />}/>
+                    <Route path="/SponsorPage" element={<SponsorPage />}/>
+                    <Route path="/catalog" element={<Catalog />}/>
+                </Routes>
             </BrowserRouter>
         </div>
-    );
+  );
 }
 
 export default App;
