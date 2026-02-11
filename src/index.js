@@ -9,7 +9,7 @@ const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_7kWyOumWk",
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
   redirect_uri: "http://localhost:3000/SponsorPage",
-  post_logout_redirect_uri: "http://localhost:3000/HomePage",
+  post_logout_redirect_uri: "http://localhost:3000/",
   response_type: "code",
   scope: "phone openid email",
 };
