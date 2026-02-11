@@ -27,7 +27,7 @@ function SponsorPage() {
               <p>Welcome Back, {userEmail}!</p>
             
             <button 
-              onClick={() => navigate("/sponsor_ViewDrivers")}
+              onClick={() => navigate("/sponsor_viewDrivers")}
               style={{ marginTop: "60px", fontSize: "25px"}}
             >View Sponsored Drivers
             </button>

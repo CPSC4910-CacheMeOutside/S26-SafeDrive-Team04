@@ -4,12 +4,19 @@ import './index.css';
 import App from './App';
 import { AuthProvider } from 'react-oidc-context';
 import reportWebVitals from './reportWebVitals';
+import { BrowserRouter } from "react-router-dom";
+
+const isLocalHost = window.location.origin.includes("localhost");
 
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_7kWyOumWk",
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
-  redirect_uri: "http://localhost:3000/SponsorPage",
-  post_logout_redirect_uri: "http://localhost:3000/",
+  redirect_uri: isLocalHost
+    ? "http://localhost:3000/"
+    : "https://main.d2jawpaet8g6c9.amplifyapp.com",
+  post_logout_redirect_uri: isLocalHost
+    ? "http://localhost:3000/"
+    : "https://main.d2jawpaet8g6c9.amplifyapp.com",
   response_type: "code",
   scope: "phone openid email",
 };
@@ -18,9 +25,11 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
   <React.StrictMode>
-    <AuthProvider {...cognitoAuthConfig}>
+    <BrowserRouter>
+      <AuthProvider {...cognitoAuthConfig}>
         <App />
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
 
