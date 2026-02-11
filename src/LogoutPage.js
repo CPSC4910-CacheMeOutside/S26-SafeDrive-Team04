@@ -14,6 +14,11 @@ function LogoutPage() {
     localStorage.clear();
     sessionStorage.clear();
 
+    //let logoutUri = "http://localhost:3000";
+    if (window.location.hostname.includes("amplifyapp.com")) {
+      logoutUri = window.location.href.split("/")[0] + "//" + window.location.hostname;
+    }
+
     window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
 
   }, []);
