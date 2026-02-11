@@ -43,13 +43,13 @@ export default function SponsorPage(){
                                             {drivers.map(driver => (
                             
                                             <ListGroup.Item
-                                                key={drivers.id}
+                                                key={driver.id}
                                                 action
-                                                active={drivers.id === selectedId}
-                                                onClick={() => setSelectedId(drivers.id)}
+                                                active={driver.id === selectedId}
+                                                onClick={() => setSelectedId(driver.id)}
                                                 >
                                               <div className="d-flex justify-content-between">
-                                                <span>{drivers.name}</span>
+                                                <span>{driver.name}</span>
                                                 <span className="test-muted">{driver.points}</span>
                                                 </div>  
                                             </ListGroup.Item>
@@ -59,6 +59,36 @@ export default function SponsorPage(){
                                 </Card>
                             </Col>
                             
+                            <Col md={8}>
+                              <Card>
+                                <Card.Body>
+                                    <Card.Title>Adjust Points</Card.Title>
+
+                                    <p>
+                                        Driver: <strong>{selectedDriver.name}</strong><br />
+                                        Current Points: <strong>{selectedDriver.points}</strong>
+                                    </p>
+
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Amount</Form.Label>
+                                        <Form.Control
+                                        type="number"
+                                        value={amount}
+                                        min={1}
+                                        onChange={(e) => setAmount(Number(e.target.value))}
+                                      />
+                                    </Form.Group>
+                                    <div className="d-flex gap-2">
+                                        <Button variant="success" onClick={() => pointAdjust(amount)}>
+                                            + Add Points
+                                        </Button>
+                                        <Button variant="danger" onClick={() => pointAdjust(-amount)}>
+                                            - Subtract Points
+                                        </Button>
+                                    </div>
+                                </Card.Body>
+                              </Card>
+                            </Col>
                         </Row>
                     </Tab>
                 </Tabs>
