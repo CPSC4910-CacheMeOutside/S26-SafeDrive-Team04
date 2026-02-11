@@ -19,6 +19,7 @@ import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
+import { NavDropdown } from 'react-bootstrap';
 
 
 function App() {
@@ -63,16 +64,24 @@ function App() {
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
-                {auth.isAuthenticated && <Nav.Link as={Link} to="/edit_profile">Edit Profile</Nav.Link>}
-                {auth.isAuthenticated && <Nav.Link as={Link} to="/logout">Logout</Nav.Link>}
-                {auth.isAuthenticated &&<Nav.Link as={Link} to="/SponsorPage">
-                  <Image
-                    src={auth.user?.profilePicture || "/profileTestPic.jpg" }
-                    roundedCircle
-                    width={50}
-                    height={50}
-                  />
-                </Nav.Link>}
+                {auth.isAuthenticated &&
+                  <NavDropdown
+                    title={
+                        <Image
+                            src={auth.user?.profilePicture || "/profileTestPic.jpg" }
+                            roundedCircle
+                            width={50}
+                            height={50}
+                        />
+                    }
+                    id="profile-dropdown"
+                    align="end"
+                  >
+                    <NavDropdown.Item as={Link} to="/edit_profile">Edit Profile</NavDropdown.Item>
+                    <NavDropdown.Divider />
+                    <NavDropdown.Item as={Link} to="/logout">Logout</NavDropdown.Item>
+                  </NavDropdown>
+                }
               </Nav>
             </Navbar.Collapse>
           </Container>
