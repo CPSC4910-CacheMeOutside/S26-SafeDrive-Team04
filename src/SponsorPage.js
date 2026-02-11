@@ -36,7 +36,29 @@ export default function SponsorPage(){
                     <Tab eventKey="manage" title="Manage Points">
                         <Row>
                             <Col md={4}>
+                                <Card>
+                                    <Card.Body>
+                                        <Card.Title>Drivers</Card.Title>
+                                        <ListGroup>
+                                            {drivers.map(driver => (
+                            
+                                            <ListGroup.Item
+                                                key={drivers.id}
+                                                action
+                                                active={drivers.id === selectedId}
+                                                onClick={() => setSelectedId(drivers.id)}
+                                                >
+                                              <div className="d-flex justify-content-between">
+                                                <span>{drivers.name}</span>
+                                                <span className="test-muted">{driver.points}</span>
+                                                </div>  
+                                            </ListGroup.Item>
+                                            ))}
+                                        </ListGroup>
+                                    </Card.Body>
+                                </Card>
                             </Col>
+                            
                         </Row>
                     </Tab>
                 </Tabs>
