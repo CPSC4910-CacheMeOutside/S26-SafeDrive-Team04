@@ -1,6 +1,10 @@
 import React from "react";
+import { useAuth } from 'react-oidc-context';
 
 function SponsorPage() {
+    const auth = useAuth();
+    const userEmail = auth.user?.profile?.email;
+
     return (
         <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
             <img
@@ -18,6 +22,7 @@ function SponsorPage() {
                 }}
             />
             <h1>Sponsor Dashboard</h1>
+              <p>Welcome Back, {userEmail}!</p>
         </div>
     );
 }
