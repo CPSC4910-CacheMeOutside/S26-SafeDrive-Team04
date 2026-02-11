@@ -9,7 +9,7 @@ function LogoutPage() {
   useEffect(() => {
     const cognitoDomain = "https://us-east-17kWyOumWk.auth.us-east-1.amazoncognito.com";
     const clientId = "5qkcg4h6o51nq40der98l7qsvk";
-    const logoutUri = "https://sponsor-profile-page.d2jawpaet8g6c9.amplifyapp.com/logout";
+    const logoutUri = "https://sponsor-profile-page.d2jawpaet8g6c9.amplifyapp.com/";
 
     localStorage.clear();
     sessionStorage.clear();
