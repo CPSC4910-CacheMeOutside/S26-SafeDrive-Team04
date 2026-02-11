@@ -21,28 +21,65 @@ export default function SponsorPage(){
 
     const [selectedId, setSelectedId] = useState(1);
     const [amount, setAmount] = useState(10);
+    const [sortMode, setSortMode] = useState("id");
+    const [description, setDescription] = useState("");
+    const [logs, setLogs] = useState([]);
 
     const selectedDriver = drivers.find(d => d.id === selectedId);
 
     const pointAdjust = (value) => {
+        const timestamp = new Date().toLocaleString();
             setDrivers(prev =>
                 prev.map(d =>
                     d.id === selectedId ? {...d, points: d.points + value } : d
                 )
             );
+            setLogs(prev => [
+                {
+                    driver: selectedDriver.name,
+                    change: value,
+                    reason: description || "No Reason Provided",
+                    time: timestamp
+                },
+                ...prev
+            ]);
+            setDescription("");
         };
+    
+    const sortedDrivers = [...drivers].sort((a,b) => {
+        if (sortMode === "points") return b.points - a.points;
+        if (sortMode === "id") return a.id - b.id;
+        return 0;
+    });
         return(
             <Container className="mt-4">
                 <h2 className="mb-3">Sponsor Dashboard</h2>
                 <Tabs defaultActiveKey="manage" className="mb-3">
-                    <Tab eventKey="manage" title="Manage Points">
+                    <Tab eventKey="manage" title="Manage Drivers">
                         <Row>
                             <Col md={4}>
                                 <Card>
                                     <Card.Body>
                                         <Card.Title>Drivers</Card.Title>
+                                        <div className="mb-2 d-flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant={sortMode === "points" ? "primary" : "outline-primary"}
+                                                onClick={() => setSortMode("points")}
+                                                >
+                                                    Sort by Points
+                                                </Button>
+                                            
+                                            <Button
+                                                size="sm"
+                                                variant={sortMode === "id" ? "primary" : "outline-primary"}
+                                                onClick={() => setSortMode("id")}
+                                                >
+                                                    Sort by ID
+                                                </Button>
+                                        </div>
                                         <ListGroup>
-                                            {drivers.map(driver => (
+                                            {sortedDrivers.map(driver => (
                             
                                             <ListGroup.Item
                                                 key={driver.id}
@@ -88,13 +125,35 @@ export default function SponsorPage(){
                                             - Subtract Points
                                         </Button>
                                     </div>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label> Reason for Adjustment</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Description for Point Change"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            />
+                                    </Form.Group>
                                 </Card.Body>
                               </Card>
                             </Col>
                         </Row>
                     </Tab>
                     <Tab eventKey="audit" title="Logs/Reports">
-                        <Card><Card.Body>Reports and Audit Logs Coming Sonn</Card.Body></Card> 
+                       <Card>
+                        <Card.Title>Adjustment History</Card.Title>
+                        <ListGroup>
+                            {logs.map((log, i) =>(
+                                <ListGroup.Item key = {i}>
+                                    <strong>{log.driver}</strong> {log.change > 0 ? "gained" : "lost"}{" "}
+                                    <strong>{Math.abs(log.change)}</strong> points <br />
+                                    <small>
+                                        Reason: {log.reason} | {log.time}
+                                    </small>
+                                </ListGroup.Item>
+                            ))}
+                        </ListGroup>
+                       </Card>
                     </Tab>
 
                     <Tab eventKey="settings" title="Settings">
