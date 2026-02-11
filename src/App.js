@@ -5,6 +5,7 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { useAuth } from "react-oidc-context";
 
 import HomePage from './Home'
 import AboutPage from './About'
@@ -16,47 +17,50 @@ import React, { useState } from 'react';
 import Catalog from './Catalog';
 import SponsorPage from './SponsorPage';
 
-function NavBar ({view}) {
-    return (
-        <Navbar expand="lg" className="bg-body-tertiary">
-        <Container>
-            <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse id="basic-navbar-nav">
-            <Nav id="navbar" className="me-auto">
-                <Nav.Link as={Link} to="/">Home</Nav.Link>
-                <Nav.Link as={Link} to="/about">About</Nav.Link>
-                <Nav.Link hidden={view === 0} as={Link} to="/profile">Profile</Nav.Link>
-                <Nav.Link hidden={view !== 3} as={Link} to="/admin">Admin</Nav.Link>
-                <Nav.Link hidden={view !== 2} as={Link} to="/catalog">Catalog</Nav.Link> 
-                <Nav.Link hidden={view !== 0} as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link hidden={view !== 3} as={Link} to="/create_password">Create Account</Nav.Link>
-            </Nav>
-            </Navbar.Collapse>
-        </Container>
-    </Navbar>
-    );
-}
-
 function App() {
-    
-    const [userClass, setUserClass] = useState(0);
+  const auth = useAuth();
 
-    return (
-        <div>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<HomePage />}/>
-                    <Route path="/about" element={<AboutPage />}/>
-                    <Route path="/profile" element={<ProfilePage />}/>
-                    <Route path="/admin" element={<AdminPage />}/>
-                    <Route path="/create_password" element={<CreatePassword />}/>
-                    <Route path="/login" element={<LoginPage />}/>
-                    <Route path="/SponsorPage" element={<SponsorPage />}/>
-                    <Route path="/catalog" element={<Catalog />}/>
-                </Routes>
-            </BrowserRouter>
-        </div>
+  const hideNavs = {
+    home: false,
+    about: false,
+    profile: true,
+    admin: true,
+    login: auth?.isLoading || auth?.isAuthenticated,
+    creatPass: true
+  }
+
+  return (
+    <div className="App">
+          <Navbar expand="lg" className="bg-body-tertiary">
+          <Container>
+              <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
+              <Navbar.Toggle aria-controls="basic-navbar-nav" />
+              <Navbar.Collapse id="basic-navbar-nav">
+              <Nav className="me-auto">
+                <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>
+                <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>
+                <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
+                <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
+                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
+                <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
+              </Nav>
+              </Navbar.Collapse>
+          </Container>
+        </Navbar>
+ 
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<HomePage />}/>
+                <Route path="/about" element={<AboutPage />}/>
+                <Route path="/profile" element={<ProfilePage />}/>
+                <Route path="/admin" element={<AdminPage />}/>
+                <Route path="/create_password" element={<CreatePassword />}/>
+                <Route path="/login" element={<LoginPage />}/>
+                <Route path="/SponsorPage" element={<SponsorPage />}/>
+                <Route path="/catalog" element={<Catalog />}/>
+            </Routes>
+        </BrowserRouter>
+    </div>
   );
 }
 
