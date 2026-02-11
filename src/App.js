@@ -12,6 +12,7 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
+import SponsorPage from './SponsorPage';
 import React, { useState } from 'react';
 
 function NavBar ({view}) {
@@ -28,6 +29,7 @@ function NavBar ({view}) {
                 <Nav.Link hidden={view !== 3} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={view !== 2}>Catalog</Nav.Link> {/* for testing*/}
                 <Nav.Link hidden={view !== 0} as={Link} to="/login">Login</Nav.Link>
+                <Nav.Link hidden={view !== 0} as={Link} to="/sponsor">Sponsor</Nav.Link>
                 <Nav.Link hidden={view !== 3} as={Link} to="/create_password">Create Account</Nav.Link>
             </Nav>
             </Navbar.Collapse>
@@ -62,10 +64,12 @@ function App() {
                 <Route path="/admin" element={<AdminPage />}/>
                 <Route path="/create_password" element={<CreatePassword />}/>
                 <Route path="/login" element={<LoginPage />}/>
+                <Route path="/sponsor" element={<SponsorPage />}/>
             </Routes>
-            </BrowserRouter>
-        </div>
-    );
+
+        </BrowserRouter>
+    </div>
+);
 }
 
 export default App;
