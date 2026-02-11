@@ -12,6 +12,7 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
+import SponsorPage from './SponsorPage';
 
 const hideNavs = {
   home: false,
@@ -50,6 +51,7 @@ function App() {
           <Route path="/admin" element={<AdminPage />}/>
           <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
+          <Route path="/SponsorPage" element={<SponsorPage />}/>
         </Routes>
       </BrowserRouter>
     </div>
