@@ -13,7 +13,7 @@ const cognitoAuthConfig = {
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
   redirect_uri: isLocalHost
     ? "http://localhost:3000/"
-    : "https://d2jawpaet8g6c9.amplifyapp.com",
+    : "https://d2jawpaet8g6c9.amplifyapp.com/SponsorPage",
   post_logout_redirect_uri: isLocalHost
     ? "http://localhost:3000/"
     : "https://d2jawpaet8g6c9.amplifyapp.com",
