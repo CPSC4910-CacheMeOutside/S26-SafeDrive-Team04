@@ -17,6 +17,7 @@ import React, { useState } from 'react';
 import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
+import EditProfilePage from './EditProfilePage';
 
 function App() {
   const auth = useAuth();
@@ -43,9 +44,11 @@ function App() {
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
+                {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
               </Nav>
               <Nav className="ms-auto">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
+                {auth.isAuthenticated && <Nav.Link as={Link} to="/edit_profile">Edit Profile</Nav.Link>}
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/logout">Logout</Nav.Link>}
               </Nav>
               </Navbar.Collapse>
@@ -63,6 +66,7 @@ function App() {
           <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/catalog" element={<Catalog />}/>
+          <Route path="/edit_profile" element={<EditProfilePage />}/>
         </Routes>
       </BrowserRouter>
     </div>
