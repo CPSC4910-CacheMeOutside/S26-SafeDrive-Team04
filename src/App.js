@@ -4,6 +4,7 @@ import './App.css';
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
+import Image from 'react-bootstrap/Image';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useEffect } from 'react';
@@ -60,14 +61,22 @@ function App() {
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
-                </Nav>
-                <Nav className="ms-auto">
+              </Nav>
+              <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/edit_profile">Edit Profile</Nav.Link>}
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/logout">Logout</Nav.Link>}
-                </Nav>
-                </Navbar.Collapse>
-            </Container>
+                {auth.isAuthenticated &&<Nav.Link as={Link} to="/SponsorPage">
+                  <Image
+                    src={auth.user?.profilePicture || "/profileTestPic.jpg" }
+                    roundedCircle
+                    width={50}
+                    height={50}
+                  />
+                </Nav.Link>}
+              </Nav>
+            </Navbar.Collapse>
+          </Container>
         </Navbar>
 
         <BrowserRouter>
