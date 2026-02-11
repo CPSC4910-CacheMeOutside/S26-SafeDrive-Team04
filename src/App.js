@@ -5,6 +5,7 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { useAuth } from "react-oidc-context";
 
 import HomePage from './Home'
 import AboutPage from './About'
@@ -14,16 +15,20 @@ import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import SponsorPage from './SponsorPage';
 
-const hideNavs = {
-  home: false,
-  about: false,
-  profile: true,
-  admin: true,
-  login: false,
-  creatPass: true
-}
+
 
 function App() {
+  const auth = useAuth();
+
+  const hideNavs = {
+    home: false,
+    about: false,
+    profile: true,
+    admin: true,
+    login: auth?.isLoading || auth?.isAuthenticated,
+    creatPass: true
+  }
+
   return (
     <div className="App">
       <BrowserRouter>
@@ -37,8 +42,8 @@ function App() {
                 <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
-                <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
+                <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
               </Nav>
               </Navbar.Collapse>
           </Container>
