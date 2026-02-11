@@ -26,6 +26,9 @@ function LoginPage() {
                     <Button variant="secondary" onClick={() => navigate("/profile")}>
                         Login as Driver
                     </Button>
+                    <Button onClick={() => navigate("/admin")}>
+                        Login as Admin
+                    </Button>
                 </div>
             </Card>
         </Container>

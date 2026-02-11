@@ -29,7 +29,7 @@ function NavBar ({view}) {
                 <Nav.Link hidden={view !== 3} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={view !== 2}>Catalog</Nav.Link> {/* for testing*/}
                 <Nav.Link hidden={view !== 0} as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link hidden={view !== 0} as={Link} to="/sponsor">Sponsor</Nav.Link>
+                <Nav.Link hidden={view !== 3} as={Link} to="/sponsor">Sponsor</Nav.Link>
                 <Nav.Link hidden={view !== 3} as={Link} to="/create_password">Create Account</Nav.Link>
             </Nav>
             </Navbar.Collapse>
