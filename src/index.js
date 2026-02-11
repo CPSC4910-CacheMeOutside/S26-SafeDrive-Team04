@@ -16,10 +16,10 @@ const cognitoAuthConfig = {
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
   redirect_uri: isLocalHost
     ? "http://localhost:3000/"
-    : "https://sponsor-profile-page.d2jawpaet8g6c9.amplifyapp.com/",
+    : "https://main.d2jawpaet8g6c9.amplifyapp.com",
   post_logout_redirect_uri: isLocalHost
     ? "http://localhost:3000/"
-    : "https://sponsor-profile-page.d2jawpaet8g6c9.amplifyapp.com/",
+    : "https://main.d2jawpaet8g6c9.amplifyapp.com",
   response_type: "code",
   scope: "openid profile email phone aws.cognito.signin.user.admin",
 };
@@ -39,9 +39,6 @@ root.render(
         </ConversionRatioProvider>
       </AuthProvider>
     </BrowserRouter>
-    <AuthProvider {...cognitoAuthConfig}>
-        <App />
-    </AuthProvider>
   </React.StrictMode>
 );
 
