@@ -22,6 +22,7 @@ import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import { NavDropdown } from 'react-bootstrap';
+import SponsorPage from './SponsorPage';
 
 const hideNavs = {
 home: false,
