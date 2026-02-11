@@ -9,12 +9,12 @@ function SponsorPage() {
                 style={{
                     position: "absolute",
                     top: "30px",
-                    right: "70px",
+                    right: "300px",
                     width: "70px",
                     height: "70px",
                     borderRadius: "50%",
                     objectFit: "cover",
-                    border: "2px solid #ddd"
+                    border: "3px solid #000000"
                 }}
             />
             <h1>Sponsor Dashboard</h1>
