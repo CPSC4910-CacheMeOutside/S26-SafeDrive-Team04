@@ -155,7 +155,7 @@ function App() {
                 onHide={() => setShowSpendPoints(false)}
             /> 
         </div>
-    );
+  );
 }
 
 export default App;
