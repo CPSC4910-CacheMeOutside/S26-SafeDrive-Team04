@@ -18,6 +18,7 @@ import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
+import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 
 function App() {
   const auth = useAuth();
@@ -67,6 +68,7 @@ function App() {
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/catalog" element={<Catalog />}/>
           <Route path="/edit_profile" element={<EditProfilePage />}/>
+          <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
         </Routes>
       </BrowserRouter>
     </div>
