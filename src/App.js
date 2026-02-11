@@ -16,6 +16,7 @@ import LoginPage from './LoginPage';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
+import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 
 
 
@@ -66,6 +67,7 @@ function App() {
           <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/edit_profile" element={<EditProfilePage />}/>
+          <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
         </Routes>
       </BrowserRouter>
     </div>
