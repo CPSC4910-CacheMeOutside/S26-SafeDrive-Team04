@@ -4,8 +4,8 @@ import './App.css';
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { useAuth } from "react-oidc-context";
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { useAuth } from 'react-oidc-context';
 
 import HomePage from './Home'
 import AboutPage from './About'
@@ -13,6 +13,7 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
+import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
 
 
@@ -25,7 +26,7 @@ function App() {
     about: false,
     profile: true,
     admin: true,
-    login: auth?.isLoading || auth?.isAuthenticated,
+    login: false,
     creatPass: true
   }
 
@@ -43,7 +44,10 @@ function App() {
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
-                <Nav.Link hidden={hideNavs.login} as={Link} to="/login">Login</Nav.Link>
+              </Nav>
+              <Nav className="ms-auto">
+                {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
+                {auth.isAuthenticated && <Nav.Link as={Link} to="/logout">Logout</Nav.Link>}
               </Nav>
               </Navbar.Collapse>
           </Container>
@@ -56,6 +60,7 @@ function App() {
           <Route path="/admin" element={<AdminPage />}/>
           <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
+          <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
         </Routes>
       </BrowserRouter>
