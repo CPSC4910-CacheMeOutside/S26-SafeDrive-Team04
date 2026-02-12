@@ -1,4 +1,4 @@
-import { Container, Row, Col, Card, Button, CardBody } from 'react-bootstrap';
+import { Container, Row, Col, Stack, Card, Button, CardBody } from 'react-bootstrap';
 
 /* Here to test the catalog. Future versions will pull items from store API and backend */
 const catalog = [
@@ -19,14 +19,18 @@ const catalog = [
     }
 ]
 
-function CatalogItem({product}) {
+function CatalogItem(product) {
     return (
-        <Card style={{ width: '100rem' }}>
-            <Card.Img variant="top" src={product.img} />
+        <Card >
             <Card.Body>
-                <Card.Title>{product.title}</Card.Title>
-                <Card.Text>{product.desc}</Card.Text>
-                <Button variant="primary">Request</Button>
+                <Col>
+                    <Card.Title>{product.title}</Card.Title>
+                    <Card.Img href={product.img}></Card.Img>
+                </Col>
+                <Col>
+                    <Button onClick={alert(`${product.title} has been requested for purchase`)}>Request</Button>
+                    <Card.Text>{product.desc}</Card.Text>
+                </Col>
             </Card.Body>
         </Card>
     );
@@ -34,16 +38,9 @@ function CatalogItem({product}) {
 
 export default function Catalog({view}) {
     return (
-        <div>
+        <Container>
             <h1>Sponsor Catalog</h1>
-            <Container>
-                {catalog.map(item => 
-                    (
-                        <Row>
-                            <CatalogItem product={item}></CatalogItem>
-                        </Row>
-                    ))}
-            </Container>
-        </div>
+            {catalog.forEach(item => <CatalogItem product={item}></CatalogItem>)}
+        </Container>
     );
 }
