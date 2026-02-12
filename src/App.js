@@ -1,6 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import { useState } from 'react';
 
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
