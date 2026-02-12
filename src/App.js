@@ -13,6 +13,7 @@ import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import React, { useState } from 'react';
+import Catalog from './Catalog';
 
 function NavBar ({view}) {
     return (
@@ -26,7 +27,7 @@ function NavBar ({view}) {
                 <Nav.Link as={Link} to="/about">About</Nav.Link>
                 <Nav.Link hidden={view === 0} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={view !== 3} as={Link} to="/admin">Admin</Nav.Link>
-                <Nav.Link hidden={view !== 2}>Catalog</Nav.Link> {/* for testing*/}
+                <Nav.Link hidden={view !== 2} as={Link} to="/catalog">Catalog</Nav.Link> 
                 <Nav.Link hidden={view !== 0} as={Link} to="/login">Login</Nav.Link>
                 <Nav.Link hidden={view !== 3} as={Link} to="/create_password">Create Account</Nav.Link>
             </Nav>
@@ -62,6 +63,7 @@ function App() {
                 <Route path="/admin" element={<AdminPage />}/>
                 <Route path="/create_password" element={<CreatePassword />}/>
                 <Route path="/login" element={<LoginPage />}/>
+                <Route path="/catalog" element={<Catalog />}/>
             </Routes>
             </BrowserRouter>
         </div>
