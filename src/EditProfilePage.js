@@ -12,6 +12,8 @@ function EditProfilePage({ profilePic, setProfilePic }) {
     authEmail: ""
   });
 
+  const [authRole, setAuthRole] = useState([]);
+
   useEffect(() => {
     if (auth.user) {
         setFormData({
@@ -20,6 +22,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
             authEmail: auth.user.profile.email || "",
             authPreferredName: auth.user.profile.preferred_username || ""
         });
+        setAuthRole(auth.user.profile["cognito:groups"] || []);
     }
 
   }, [auth.user]);
@@ -67,7 +70,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
     );
 
     if (response.ok) {
-      alert("Profile updated!");
+      alert("Successfully saved changes!");
       auth.signinSilent();
     }
     else {
@@ -84,7 +87,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Full Name:</Form.Label>
-          <Col sm={7}>
+          <Col sm={6}>
             <Form.Control
               name="authFullName"
               value={formData.authFullName}
@@ -96,7 +99,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Preferred Name:</Form.Label>
-          <Col sm={7}>
+          <Col sm={6}>
             <Form.Control
               name="authPreferredName"
               value={formData.authPreferredName}
@@ -107,7 +110,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Phone Number:</Form.Label>
-          <Col sm={7}>
+          <Col sm={6}>
             <Form.Control
               name="authPhoneNum"
               value={formData.authPhoneNum}
@@ -118,7 +121,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Email:</Form.Label>
-          <Col sm={7}>
+          <Col sm={6}>
             <Form.Control
               name="authEmail"
               value={formData.authEmail}
@@ -128,26 +131,37 @@ function EditProfilePage({ profilePic, setProfilePic }) {
           </Col>
         </Form.Group>
 
+        <Form.Group as={Row} className="mb-3">
+          <Form.Label column sm={3}>Role:</Form.Label>
+          <Col sm={6} className="d-flex align-items-start">
+            {authRole.length > 0 ? (
+              authRole.join(", ")  // or map to badges if you like
+            ) : (
+              <span>N/A</span>
+            )}
+          </Col>
+        </Form.Group>
+
         <Form.Group as={Row} className="mb-3 align-items-center">
           <Form.Label column sm={3}>Profile Picture:</Form.Label>
-          <Col sm={7} className="d-flex align-items-center">
+          <Col sm={7}>
+            <div className="d-flex align-items-center">
             <Form.Control
               type="file"
               accept="image/*"
               onChange={handleFileChange}
+              className="flex-grow-1 me-3"
             />
-          </Col>
-
-          <Col xs="auto" className="d-flex align-items-center">
             {profilePic && (
               <Image
                 src={profilePic}
                 roundedCircle
-                width={100}
-                height={100}
+                width={94}
+                height={94}
                 alt="Profile Preview"
               />
             )}
+            </div>
           </Col>
         </Form.Group>
 
