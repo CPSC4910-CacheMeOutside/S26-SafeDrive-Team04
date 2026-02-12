@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
-import { Form, Button, Container, Row, Col } from "react-bootstrap";
+import { Form, Button, Container, Row, Col, Image } from "react-bootstrap";
 
-function EditProfilePage() {
+function EditProfilePage({ profilePic, setProfilePic }) {
   const auth = useAuth();
 
   const [formData, setFormData] = useState({
@@ -31,6 +31,17 @@ function EditProfilePage() {
     });
   };
 
+  const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePic(reader.result);
+      };
+      reader.readAsDataURL(file);
+    };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -45,10 +56,10 @@ function EditProfilePage() {
         },
         body: JSON.stringify({
           UserAttributes: [
-            { Name: "name", Value: formData.authFullName},
-            { Name: "preferred_username", Value: formData.authPreferredName},
-            { Name: "phone_number", Value: formData.authPhoneNum},
-            { Name: "email", Value: formData.authEmail}
+            { Name: "name", Value: formData.authFullName },
+            { Name: "preferred_username", Value: formData.authPreferredName },
+            { Name: "phone_number", Value: formData.authPhoneNum },
+            { Name: "email", Value: formData.authEmail }
           ],
           AccessToken: auth.user.access_token,
         })
@@ -62,7 +73,7 @@ function EditProfilePage() {
     else {
       const error = await response.json();
       console.error(error);
-      alert("Error!");
+      alert("Error! Unable to update profile.");
     }
   };
 
@@ -114,6 +125,28 @@ function EditProfilePage() {
               readOnly
               plaintext
             />
+          </Col>
+        </Form.Group>
+
+        <Form.Group as={Row} className="mb-3">
+          <Form.Label column sm={3}>Profile Picture:</Form.Label>
+          <Col sm={9}>
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+            {profilePic && (
+              <div className="mt-3">
+                <Image
+                  src={profilePic}
+                  roundedCircle
+                  width={100}
+                  height={100}
+                  alt="Profile Preview"
+                />
+              </div>
+            )}
           </Col>
         </Form.Group>
 
