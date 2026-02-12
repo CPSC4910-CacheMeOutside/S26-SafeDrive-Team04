@@ -21,9 +21,13 @@ import Catalog from './Catalog';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
+import SponsorSettingsPage from './SponsorSettingsPage';
+import TransactionHistoryModal from './components/TransactionHistoryModal';
+import SpendPointsModal from './components/SpendPointsModal';
 
-function NavBar({ view, profilePic }) {
+function NavBar({ view, profilePic, onShowTransactionHistory, onShowSpendPoints }) {
     const auth = useAuth(); 
+    const groups = auth.user?.profile?.["cognito:groups"];
 
     return (
         <Navbar expand="lg" className="bg-body-tertiary">
@@ -38,7 +42,9 @@ function NavBar({ view, profilePic }) {
                         <Nav.Link hidden={view !== 3} as={Link} to="/admin">Admin</Nav.Link>
                         <Nav.Link hidden={view !== 2} as={Link} to="/catalog">Catalog</Nav.Link>
                         <Nav.Link hidden={view !== 3} as={Link} to="/create_password">Create Account</Nav.Link>
-                        {auth.isAuthenticated && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
+                        {auth.isAuthenticated && groups?.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
+                        {auth.isAuthenticated && groups?.includes("Driver") && (<Nav.Link onClick={onShowTransactionHistory}>My Points History</Nav.Link>)}
+                        {auth.isAuthenticated && groups?.includes("Driver") && (<Nav.Link onClick={onShowSpendPoints}>Spend Driver Points</Nav.Link>)}
                     </Nav>
                     <Nav className="ms-auto align-items-center">
                         {!auth.isAuthenticated && (<Nav.Link as={Link} to="/login">Login</Nav.Link>)}
@@ -83,6 +89,9 @@ function App() {
 
     const [userClass, setUserClass] = useState(0);
 
+    const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+    const [showSpendPoints, setShowSpendPoints] = useState(false);
+
     function setClass(cls) {
         if (cls <= 3) {
             setUserClass(cls);
@@ -96,28 +105,21 @@ function App() {
         if (!auth.isAuthenticated) return;
 
         const groups = auth.user?.profile?.["cognito:groups"];
-
-        if (
-            groups?.includes("Sponsor") &&
-            (location.pathname === "/" || location.pathname === "/login")
-        ) {
+        if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
             navigate("/SponsorPage", { replace: true });
         }
 
-        setProfilePic(
-            auth.user?.profile?.picture || "/profileTestPic.jpg"
-        );
-
+        setProfilePic(auth.user?.profile?.picture || "/profileTestPic.jpg");
     }, [auth.isAuthenticated, location.pathname, auth.user, navigate]);
 
     return (
         <div className="App">
-
             <NavBar
                 view={userClass}
                 profilePic={profilePic}
+                onShowTransactionHistory={() => setShowTransactionHistory(true)}
+                onShowSpendPoints={() => setShowSpendPoints(true)}
             />
-
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/about" element={<AboutPage />} />
@@ -128,17 +130,20 @@ function App() {
                 <Route path="/logout" element={<LogoutPage />} />
                 <Route path="/catalog" element={<Catalog />} />
                 <Route path="/SponsorPage" element={<SponsorPage />} />
-                <Route
-                    path="/edit_profile"
-                    element={
-                        <EditProfilePage
-                            profilePic={profilePic}
-                            setProfilePic={setProfilePic}
-                        />
-                    }
-                />
+                <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />} />
                 <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />} />
+                <Route path="/sponsor-settings" element={<SponsorSettingsPage />} />
             </Routes>
+
+            <TransactionHistoryModal
+                show={showTransactionHistory}
+                onHide={() => setShowTransactionHistory(false)}
+                driverAlias="Breaker_1-9"
+            />
+            <SpendPointsModal
+                show={showSpendPoints}
+                onHide={() => setShowSpendPoints(false)}
+            /> 
         </div>
     );
 }
