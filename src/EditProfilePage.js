@@ -84,7 +84,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Full Name:</Form.Label>
-          <Col sm={9}>
+          <Col sm={7}>
             <Form.Control
               name="authFullName"
               value={formData.authFullName}
@@ -96,7 +96,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Preferred Name:</Form.Label>
-          <Col sm={9}>
+          <Col sm={7}>
             <Form.Control
               name="authPreferredName"
               value={formData.authPreferredName}
@@ -107,7 +107,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Phone Number:</Form.Label>
-          <Col sm={9}>
+          <Col sm={7}>
             <Form.Control
               name="authPhoneNum"
               value={formData.authPhoneNum}
@@ -118,7 +118,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Email:</Form.Label>
-          <Col sm={9}>
+          <Col sm={7}>
             <Form.Control
               name="authEmail"
               value={formData.authEmail}
@@ -128,24 +128,25 @@ function EditProfilePage({ profilePic, setProfilePic }) {
           </Col>
         </Form.Group>
 
-        <Form.Group as={Row} className="mb-3">
+        <Form.Group as={Row} className="mb-3 align-items-center">
           <Form.Label column sm={3}>Profile Picture:</Form.Label>
-          <Col sm={9}>
+          <Col sm={7} className="d-flex align-items-center">
             <Form.Control
               type="file"
               accept="image/*"
               onChange={handleFileChange}
             />
+          </Col>
+
+          <Col xs="auto" className="d-flex align-items-center">
             {profilePic && (
-              <div className="mt-3">
-                <Image
-                  src={profilePic}
-                  roundedCircle
-                  width={100}
-                  height={100}
-                  alt="Profile Preview"
-                />
-              </div>
+              <Image
+                src={profilePic}
+                roundedCircle
+                width={100}
+                height={100}
+                alt="Profile Preview"
+              />
             )}
           </Col>
         </Form.Group>
