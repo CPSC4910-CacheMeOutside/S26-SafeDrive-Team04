@@ -39,9 +39,16 @@ function NavBar ({view}) {
 
 function App() {
     
-    const [userClass, setUserClass] = useState(2);
+    const [userClass, setUserClass] = useState(0);
 
-        { createNav(siteNavs.publicNavs) }
+    function setClass (cls) {
+        if (cls <= 3)
+        {
+            setUserClass(cls);
+            return;
+        }
+        console.log(`'${cls}' is not a valid user class`);
+    }
 
     return (
         <div className="App">
