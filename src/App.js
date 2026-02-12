@@ -100,8 +100,9 @@ function App() {
         console.log(`'${cls}' is not a valid user class`);
     }
 
-    // Redirect sponsor users to dashboard
+    // Redirect users to dashboard
     useEffect(() => {
+        if (auth.isLoading) return;
         if (!auth.isAuthenticated || !auth.user) return;
 
         const groups = auth.user?.profile?.["cognito:groups"];
@@ -110,7 +111,7 @@ function App() {
         }
 
         setProfilePic(auth.user?.profile?.picture || "/profileTestPic.jpg");
-    }, [auth.isAuthenticated, location.pathname, auth.user, navigate]);
+    }, [auth.isAuthenticated, auth.isLoading, auth.user, location.pathname, navigate]);
 
     return (
         <div className="App">

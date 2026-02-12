@@ -8,7 +8,7 @@ function LoginPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (auth.isAuthenticated) {
+        if (auth.isAuthenticated && auth.user) {
             const groups = auth.user?.profile?.["cognito:groups"];
 
             if (groups?.includes("Sponsor")) {
@@ -35,7 +35,7 @@ function LoginPage() {
         if (!auth.isLoading) {
             auth.signinRedirect();
         }
-    }, [auth, navigate]);
+    }, [auth, auth.isAuthenticated, auth.user, navigate]);
 
   return null;
 }
