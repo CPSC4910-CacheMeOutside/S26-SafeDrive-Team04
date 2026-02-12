@@ -102,16 +102,10 @@ function App() {
 
     // Redirect users to dashboard
     useEffect(() => {
-        if (auth.isLoading) return;
         if (!auth.isAuthenticated || !auth.user) return;
 
-        const groups = auth.user?.profile?.["cognito:groups"];
-        if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
-            navigate("/SponsorPage", { replace: true });
-        }
-
         setProfilePic(auth.user?.profile?.picture || "/profileTestPic.jpg");
-    }, [auth.isAuthenticated, auth.isLoading, auth.user, location.pathname, navigate]);
+    }, [auth.isAuthenticated, auth.user]);
 
     return (
         <div className="App">

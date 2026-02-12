@@ -11,7 +11,7 @@ function LoginPage() {
         if (auth.isAuthenticated && auth.user) {
             const groups = auth.user?.profile?.["cognito:groups"];
 
-            if (groups?.includes("Sponsor")) {
+            if (groups.includes("Sponsor")) {
                 navigate("/SponsorPage", { replace: true });
             } else {
                 navigate("/", { replace: true });
@@ -20,8 +20,8 @@ function LoginPage() {
         }
 
         if (window.location.search.includes("code=") || window.location.hash.includes("id_token")) {
-            auth.signinRedirectCallback().then(() => {
-                const groups = auth.user?.profile?.["cognito:groups"];
+            auth.signinRedirectCallback().then((returnedUser) => {
+                const groups = auth.returnedUser?.profile?.["cognito:groups"];
 
                 if (groups?.includes("Sponsor")) {
                     navigate("/SponsorPage", { replace: true });
@@ -35,7 +35,7 @@ function LoginPage() {
         if (!auth.isLoading) {
             auth.signinRedirect();
         }
-    }, [auth, auth.isAuthenticated, auth.user, navigate]);
+    }, [auth, auth.isAuthenticated, auth.user, auth.isLoading, navigate]);
 
   return null;
 }
