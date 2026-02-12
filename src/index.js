@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { AuthProvider } from 'react-oidc-context';
+import { ConversionRatioProvider } from './ConversionRatioContext';
+import { NotificationProvider } from './NotificationContext';
+import { PointsProvider } from './PointsContext';
 import reportWebVitals from './reportWebVitals';
 
 const cognitoAuthConfig = {
@@ -18,7 +21,13 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <AuthProvider {...cognitoAuthConfig}>
-        <App />
+      <ConversionRatioProvider>
+        <NotificationProvider>
+          <PointsProvider>
+            <App />
+          </PointsProvider>
+        </NotificationProvider>
+      </ConversionRatioProvider>
     </AuthProvider>
   </React.StrictMode>
 );
