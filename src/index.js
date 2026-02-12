@@ -18,7 +18,7 @@ const cognitoAuthConfig = {
     ? "http://localhost:3000/"
     : "https://sponsor-profile-page.d2jawpaet8g6c9.amplifyapp.com/",
   response_type: "code",
-  scope: "phone openid email",
+  scope: "openid profile email phone aws.cognito.signin.user.admin",
 };
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
