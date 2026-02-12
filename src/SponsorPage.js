@@ -21,5 +21,4 @@ function SponsorPage() {
         </div>
     );
 }
-
 export default SponsorPage;
