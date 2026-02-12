@@ -15,7 +15,6 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
-import React, { useState } from 'react';
 import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
