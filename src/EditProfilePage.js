@@ -154,9 +154,6 @@ function EditProfilePage({ profilePic, setProfilePic }) {
               onChange={handleFileChange}
               className="flex-grow-1 me-3"
             />
-          </Col>
-
-          <Col xs="auto" className="d-flex align-items-center">
             {profilePic && (
               <Image
                 src={profilePic}
