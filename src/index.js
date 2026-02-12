@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { AuthProvider } from 'react-oidc-context';
+import { ConversionRatioProvider } from './ConversionRatioContext';
+import { NotificationProvider } from './NotificationContext';
+import { PointsProvider } from './PointsContext';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from "react-router-dom";
 import { ConversionRatioProvider } from './ConversionRatioContext';
@@ -39,6 +42,15 @@ root.render(
         </ConversionRatioProvider>
       </AuthProvider>
     </BrowserRouter>
+    <AuthProvider {...cognitoAuthConfig}>
+      <ConversionRatioProvider>
+        <NotificationProvider>
+          <PointsProvider>
+            <App />
+          </PointsProvider>
+        </NotificationProvider>
+      </ConversionRatioProvider>
+    </AuthProvider>
   </React.StrictMode>
 );
 
