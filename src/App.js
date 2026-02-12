@@ -66,22 +66,24 @@ function App() {
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
                 {auth.isAuthenticated &&
-                  <NavDropdown
-                    title={
+                  <div className="d-flex align-items-center">
+                    <span className="me-2">{auth.user?.profile?.email}</span>
+                    <NavDropdown
+                      title={
                         <Image
-                            src={auth.user?.profilePicture || "/profileTestPic.jpg" }
-                            roundedCircle
-                            width={50}
-                            height={50}
-                        />
-                    }
-                    id="profile-dropdown"
-                    align="end"
-                  >
-                    <NavDropdown.Item as={Link} to="/edit_profile">Edit Profile</NavDropdown.Item>
-                    <NavDropdown.Divider />
-                    <NavDropdown.Item as={Link} to="/logout">Logout</NavDropdown.Item>
-                  </NavDropdown>
+                          src={auth.user?.profilePicture || "/profileTestPic.jpg" }
+                          roundedCircle
+                          width={50}
+                          height={50}/>
+                      }
+                      id="profile-dropdown"
+                      align="end"
+                    >
+                      <NavDropdown.Item as={Link} to="/edit_profile">Edit Profile</NavDropdown.Item>
+                      <NavDropdown.Divider />
+                      <NavDropdown.Item as={Link} to="/logout">Logout</NavDropdown.Item>
+                    </NavDropdown>
+                  </div>
                 }
               </Nav>
             </Navbar.Collapse>
