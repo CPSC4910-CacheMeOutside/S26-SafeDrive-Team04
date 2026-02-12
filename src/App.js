@@ -117,6 +117,7 @@ function App() {
                 <Route path="/catalog" element={<Catalog />}/>
                 <Route path="/edit_profile" element={<EditProfilePage />}/>
                 <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
+                <Route path="/catalog" element={<Catalog />}/>
             </Routes>
         </BrowserRouter>
     </div>
