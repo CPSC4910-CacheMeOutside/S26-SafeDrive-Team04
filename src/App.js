@@ -20,6 +20,7 @@ import LogoutPage from './LogoutPage';
 import React, { useState } from 'react';
 import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
+import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import SponsorSettingsPage from './SponsorSettingsPage';
