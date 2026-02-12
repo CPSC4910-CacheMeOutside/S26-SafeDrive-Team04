@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
-import { Form, Button, Container } from "react-bootstrap";
+import { Form, Button, Container, Row, Col } from "react-bootstrap";
 
 function EditProfilePage() {
   const auth = useAuth();
 
   const [formData, setFormData] = useState({
     authFullName: "",
-    authPhoneNum: ""
+    authPreferredName: "",
+    authPhoneNum: "",
+    authEmail: ""
   });
 
   useEffect(() => {
@@ -15,7 +17,8 @@ function EditProfilePage() {
         setFormData({
             authFullName: auth.user.profile.name || "",
             authPhoneNum: auth.user.profile.phone_number || "",
-            authEmail: auth.user.profile.email || ""
+            authEmail: auth.user.profile.email || "",
+            authPreferredName: auth.user.profile.preferred_username || ""
         });
     }
 
@@ -41,12 +44,13 @@ function EditProfilePage() {
           Authorization: auth.user.access_token
         },
         body: JSON.stringify({
-          AccessToken: auth.user.access_token,
           UserAttributes: [
-            { Name: "authFullName", Value: formData.authFullName},
-            { Name: "authPhoneNum", Value: formData.authPhoneNum},
-            { Name: "authEmail", Value: formData.authEmail}
-          ]
+            { Name: "name", Value: formData.authFullName},
+            { Name: "preferred_username", Value: formData.authPreferredName},
+            { Name: "phone_number", Value: formData.authPhoneNum},
+            { Name: "email", Value: formData.authEmail}
+          ],
+          AccessToken: auth.user.access_token,
         })
       }
     );
@@ -63,37 +67,54 @@ function EditProfilePage() {
   };
 
   return (
-    // <div>
-    //   <pre>{JSON.stringify(auth, null, 2)}</pre>
-    // </div>
     <Container className="mt-4">
       <h3>Edit Profile</h3>
       <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>Name</Form.Label>
-          <Form.Control
-            name="authFullName"
-            value={formData.authFullName}
-            onChange={handleChange}
-          />
+
+        <Form.Group as={Row} className="mb-3">
+          <Form.Label column sm={3}>Full Name:</Form.Label>
+          <Col sm={9}>
+            <Form.Control
+              name="authFullName"
+              value={formData.authFullName}
+              readOnly
+              plaintext
+            />
+          </Col>
         </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Phone Number</Form.Label>
-          <Form.Control
-            name="authPhoneNum"
-            value={formData.authPhoneNum}
-            onChange={handleChange}
-          />
+        <Form.Group as={Row} className="mb-3">
+          <Form.Label column sm={3}>Preferred Name:</Form.Label>
+          <Col sm={9}>
+            <Form.Control
+              name="authPreferredName"
+              value={formData.authPreferredName}
+              onChange={handleChange}
+            />
+          </Col>
         </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Email</Form.Label>
-          <Form.Control
-            name="authEmail"
-            value={formData.authEmail}
-            onChange={handleChange}
-          />
+        <Form.Group as={Row} className="mb-3">
+          <Form.Label column sm={3}>Phone Number:</Form.Label>
+          <Col sm={9}>
+            <Form.Control
+              name="authPhoneNum"
+              value={formData.authPhoneNum}
+              onChange={handleChange}
+            />
+          </Col>
+        </Form.Group>
+
+        <Form.Group as={Row} className="mb-3">
+          <Form.Label column sm={3}>Email:</Form.Label>
+          <Col sm={9}>
+            <Form.Control
+              name="authEmail"
+              value={formData.authEmail}
+              readOnly
+              plaintext
+            />
+          </Col>
         </Form.Group>
 
         <Button type="Submit">Save Changes</Button>
