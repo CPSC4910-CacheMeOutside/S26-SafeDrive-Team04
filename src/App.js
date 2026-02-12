@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import { useState } from 'react';
 
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
@@ -15,6 +16,7 @@ import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
+import React, { useState } from 'react';
 import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
 import EditProfilePage from './EditProfilePage';
