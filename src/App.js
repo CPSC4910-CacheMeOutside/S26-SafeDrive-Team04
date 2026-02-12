@@ -102,8 +102,7 @@ function App() {
 
     // Redirect sponsor users to dashboard
     useEffect(() => {
-        if (!auth.isAuthenticated) return;
-        if (!auth.user) return;
+        if (!auth.isAuthenticated || !auth.user) return;
 
         const groups = auth.user?.profile?.["cognito:groups"];
         if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
