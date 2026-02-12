@@ -21,28 +21,29 @@ const catalog = [
 
 function CatalogItem({product}) {
     return (
-        <Card>
-            <Row>
-                <Col>
-                    <h1>{product.title}</h1>
-                    <img href={product.img}/>
-                </Col>
-                <Col>
-                    <Button>Request</Button>
-                    <p>{product.desc}</p>
-                </Col>
-            </Row>
+        <Card style={{ width: '100rem' }}>
+            <Card.Img variant="top" src={product.img} />
+            <Card.Body>
+                <Card.Title>{product.title}</Card.Title>
+                <Card.Text>{product.desc}</Card.Text>
+                <Button variant="primary">Request</Button>
+            </Card.Body>
         </Card>
     );
 }
 
 export default function Catalog({view}) {
     return (
-        <Container>
+        <div>
             <h1>Sponsor Catalog</h1>
-            {catalog.map(item => (
-                <CatalogItem product={item}></CatalogItem>
-            ))}
-        </Container>
+            <Container>
+                {catalog.map(item => 
+                    (
+                        <Row>
+                            <CatalogItem product={item}></CatalogItem>
+                        </Row>
+                    ))}
+            </Container>
+        </div>
     );
 }
