@@ -7,7 +7,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import HomePage from './Home'
 import AboutPage from './About'
@@ -26,6 +26,9 @@ function App() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // temporary until backend gets setup
+  const [profilePic, setProfilePic] = useState(auth.user?.profile?.picture || "/profileTestPic.jpg");
 
   const hideNavs = {
     home: false,
@@ -45,7 +48,9 @@ function App() {
     if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
       navigate("/SponsorPage", { replace: true });
     }
-  }, [auth.isAuthenticated, location.pathname]);
+
+    setProfilePic(auth.user?.profile?.picture || "/profileTestPic.jpg");
+  }, [auth.isAuthenticated, location.pathname, auth.user]);
 
   return (
     <div className="App">
@@ -70,7 +75,7 @@ function App() {
                     <NavDropdown
                       title={
                         <Image
-                          src={auth.user?.profilePicture || "/profileTestPic.jpg" }
+                          src={profilePic || "/profileTestPic.jpg" }
                           roundedCircle
                           width={50}
                           height={50}/>
@@ -98,7 +103,7 @@ function App() {
           <Route path="/login" element={<LoginPage />}/>
           <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
-          <Route path="/edit_profile" element={<EditProfilePage />}/>
+          <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
           <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
         </Routes>
     </div>
