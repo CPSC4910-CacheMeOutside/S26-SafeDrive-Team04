@@ -103,23 +103,6 @@ function App() {
             </Navbar.Collapse>
           </Container>
         </Navbar>
-
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<HomePage />}/>
-                <Route path="/about" element={<AboutPage />}/>
-                <Route path="/profile" element={<ProfilePage />}/>
-                <Route path="/admin" element={<AdminPage />}/>
-                <Route path="/create_password" element={<CreatePassword />}/>
-                <Route path="/login" element={<LoginPage />}/>
-                <Route path="/logout" element={<LogoutPage />}/>
-                <Route path="/SponsorPage" element={<SponsorPage />}/>
-                <Route path="/catalog" element={<Catalog />}/>
-                <Route path="/edit_profile" element={<EditProfilePage />}/>
-                <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
-                <Route path="/catalog" element={<Catalog />}/>
-            </Routes>
-        </BrowserRouter>
     </div>
   );
 }
