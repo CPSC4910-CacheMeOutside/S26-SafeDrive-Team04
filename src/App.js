@@ -39,7 +39,7 @@ function NavBar ({view}) {
 
 function App() {
     
-    const [userClass, setUserClass] = useState(0);
+    const [userClass, setUserClass] = useState(2);
 
     function setClass (cls) {
         if (cls <= 3)
