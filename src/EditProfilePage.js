@@ -82,9 +82,11 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
   return (
     <Container className="mt-4">
-      <h3>Edit Profile</h3>
+      <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>  
+      <h1>Edit Profile</h1>
+      
       <Form onSubmit={handleSubmit}>
-
+      
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Full Name:</Form.Label>
           <Col sm={6}>
@@ -131,11 +133,11 @@ function EditProfilePage({ profilePic, setProfilePic }) {
           </Col>
         </Form.Group>
 
-        <Form.Group as={Row} className="mb-3">
+        <Form.Group as={Row} className="mb-1">
           <Form.Label column sm={3}>Role:</Form.Label>
           <Col sm={6} className="d-flex align-items-start">
             {authRole.length > 0 ? (
-              authRole.join(", ")  // or map to badges if you like
+              authRole.join(", ")
             ) : (
               <span>N/A</span>
             )}
@@ -167,6 +169,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Button type="Submit">Save Changes</Button>
       </Form>
+      </div>
     </Container>
   );
 }
