@@ -102,8 +102,11 @@ function App() {
 
     // Redirect users to dashboard
     useEffect(() => {
+        const groups = auth.user?.profile?.["cognito:groups"] || [];
         if (!auth.isAuthenticated || !auth.user) return;
-
+        if (groups?.includes("Sponsor")) {
+                navigate("/SponsorPage", { replace: true });
+        }
         setProfilePic(auth.user?.profile?.picture || "/profileTestPic.jpg");
     }, [auth.isAuthenticated, auth.user]);
 
