@@ -17,13 +17,10 @@ import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import Catalog from './Catalog';
 import LogoutPage from './LogoutPage';
-import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import { NavDropdown } from 'react-bootstrap';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
-import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
-import { NavDropdown } from 'react-bootstrap';
 
 const hideNavs = {
 home: false,
