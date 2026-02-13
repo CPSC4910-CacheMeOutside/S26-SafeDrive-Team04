@@ -65,8 +65,8 @@ function App() {
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
-                {auth.isAuthenticated && groups?.includes("Sponsor") && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
-                {/* {auth.isAuthenticated && groups?.includes("Admin") && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
+                {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
+                {/* {auth.isAuthenticated && && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
