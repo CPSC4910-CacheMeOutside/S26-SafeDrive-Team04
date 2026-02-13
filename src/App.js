@@ -19,6 +19,9 @@ import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
 import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
+import ConversionRatioProvider from './ConversionRatioContext';
+import NotificationProvider from './NotificationContext';
+import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
 import { NavDropdown } from 'react-bootstrap';
 
@@ -109,6 +112,9 @@ function App() {
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
           <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
           <Route path="/catalog" element={<Catalog />}/>
+          <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
+          <Route path="/NotificationContext" element={<NotificationProvider />}/>
+          <Route path="/PointsContext" element={<PointsProvider />}/>
         </Routes>
     </div>
   );
