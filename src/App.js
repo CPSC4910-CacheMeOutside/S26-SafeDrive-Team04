@@ -47,9 +47,7 @@ function App() {
 
     if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
       navigate("/SponsorPage", { replace: true });
-    } else if (groups?.includes("Admin") && (location.pathname === "/" || location.pathname === "/login")) {
-      return;
-    }
+    } 
 
     setProfilePic(auth.user?.profile?.picture || "/profileTestPic.jpg");
   }, [auth.isAuthenticated, location.pathname, auth.user]);
@@ -68,7 +66,7 @@ function App() {
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {auth.isAuthenticated && groups?.includes("Sponsor") && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
-                {auth.isAuthenticated && groups?.includes("Admin") && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>}
+                {/* {auth.isAuthenticated && groups?.includes("Admin") && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
