@@ -70,7 +70,7 @@ function App() {
                 <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
-                {auth.isAuthenticated && <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>}
+                <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>
                 {/* {auth.isAuthenticated && && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
               </Nav>
               <Nav className="ms-auto align-items-center">
