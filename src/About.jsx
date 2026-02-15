@@ -18,7 +18,7 @@ export default function AboutPage () {
             <Row>
                 <Col>
                     <Card style={{ width: '18rem' }}>
-                        <Card.Img variant="top" src="truckIco.jpg"/>
+                        <Card.Img variant="top" src="./truckIco.jpg"/>
                         <Card.Body>
                             <Card.Title>Introducing Safe Drive</Card.Title>
                             <Card.Text>Safe Drive is a driver incentive program allowing sponsors to reward their drivers for good driving behavior.</Card.Text>
@@ -27,7 +27,7 @@ export default function AboutPage () {
                 </Col>
                 <Col>
                     <Card style={{ width: '18rem' }}>
-                        <Card.Img variant="top" src="sprintIco.png"/>
+                        <Card.Img variant="top" src="./sprintIco.png"/>
                         <Card.Body>
                             <Card.Title>Current Sprint</Card.Title>
                             <Card.Text>01</Card.Text>
@@ -36,7 +36,7 @@ export default function AboutPage () {
                 </Col>
                 <Col>
                     <Card style={{ width: '18rem' }}>
-                        <Card.Img variant="top" src="calendarIco.png"/>
+                        <Card.Img variant="top" src="./calendarIco.png"/>
                         <Card.Body>
                             <Card.Title>Next Release Date</Card.Title>
                             <Card.Text>02-05-2026</Card.Text>

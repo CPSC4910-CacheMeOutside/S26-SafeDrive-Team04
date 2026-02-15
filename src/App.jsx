@@ -32,7 +32,7 @@ function App() {
   const location = useLocation();
   
   // temporary until backend gets setup
-  const [profilePic, setProfilePic] = useState(auth.user?.profile?.picture || "/profileTestPic.jpg");
+  const [profilePic, setProfilePic] = useState(auth.user?.profile?.picture || "./profileTestPic.jpg");
 
   const hideNavs = {
     home: false,
@@ -53,7 +53,7 @@ function App() {
       navigate("/SponsorPage", { replace: true });
     } 
 
-    setProfilePic(auth.user?.profile?.picture || "/profileTestPic.jpg");
+    setProfilePic(auth.user?.profile?.picture || "./profileTestPic.jpg");
   }, [auth.isAuthenticated, location.pathname, auth.user]);
 
   return (
@@ -81,7 +81,7 @@ function App() {
                     <NavDropdown
                       title={
                         <Image
-                          src={profilePic || "/profileTestPic.jpg" }
+                          src={profilePic || "./profileTestPic.jpg" }
                           roundedCircle
                           width={50}
                           height={50}/>
