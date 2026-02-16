@@ -12,11 +12,11 @@ const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_7kWyOumWk",
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
   redirect_uri: isLocalHost
-    ? "http://localhost:3000/"
-    : "https://sponsor-profile-page.d2jawpaet8g6c9.amplifyapp.com/",
+    ? "http://localhost:5173/"
+    : "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/",
   post_logout_redirect_uri: isLocalHost
-    ? "http://localhost:3000/"
-    : "https://sponsor-profile-page.d2jawpaet8g6c9.amplifyapp.com/",
+    ? "http://localhost:5173/"
+    : "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/",
   response_type: "code",
   scope: "openid profile email phone aws.cognito.signin.user.admin",
 };
