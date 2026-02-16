@@ -18,7 +18,6 @@ import LoginPage from './LoginPage';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
-import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
@@ -110,7 +109,6 @@ function App() {
           <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
-          <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
           <Route path="/Catalog" element={<Catalog />}/>
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
