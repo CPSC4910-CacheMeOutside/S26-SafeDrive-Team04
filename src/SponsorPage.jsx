@@ -58,7 +58,8 @@ function SponsorPage() {
     const navigate = useNavigate();
   return(
             <Container className="mt-4">
-                <h2 className="mb-3">Sponsor Dashboard</h2>
+              <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>  
+                <h1 className="mb-3">Sponsor Dashboard</h1>
                 <Tabs defaultActiveKey="manage" className="mb-3">
                     <Tab eventKey="manage" title="Manage Drivers">
                         <Row>
@@ -166,8 +167,8 @@ function SponsorPage() {
                     </Tab>
                   
                 </Tabs>
+              </div>
             </Container>
         )
-
 }
 export default SponsorPage;
