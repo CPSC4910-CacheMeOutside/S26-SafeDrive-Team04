@@ -51,9 +51,7 @@ function App() {
         redirectedSubRef.current = null;
         return;
     }
-
     if (auth.isLoading || !auth.user?.profile) return;
-
     if (location.pathname !== "/callback") return;
 
     const sub = auth.user.profile.sub;
@@ -131,7 +129,7 @@ function App() {
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
-          <Route path="/callback" element={<div>Signing you in...</div>} />
+          <Route path="/callback" element={<div>Logging in...</div>} />
         </Routes>
     </div>
   );

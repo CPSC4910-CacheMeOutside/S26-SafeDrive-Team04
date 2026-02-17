@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useAuth } from "react-oidc-context";
+import { useEffect } from 'react';
+import { useAuth } from 'react-oidc-context';
 
 function LoginPage() {
   const auth = useAuth();
