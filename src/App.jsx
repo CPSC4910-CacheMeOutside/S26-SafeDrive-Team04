@@ -5,9 +5,10 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
+import { NavDropdown } from 'react-bootstrap';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import HomePage from './Home'
 import AboutPage from './About'
@@ -22,13 +23,16 @@ import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
-import { NavDropdown } from 'react-bootstrap';
 
 
 function App() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const redirectedSubRef = useRef(null);
+
+  const groups = auth.user?.profile?.["cognito:groups"] || [];
   
   // temporary until backend gets setup
   const [profilePic, setProfilePic] = useState(auth.user?.profile?.picture || "./profileTestPic.jpg");
@@ -37,23 +41,38 @@ function App() {
     home: false,
     about: false,
     profile: true,
-    admin: true,
     login: false,
     creatPass: true
   }
 
-  // when login is successful and the user is a sponsor, they are redirected to the sponsor dashboard
+  // after a successful login, redirects users to their dashboard based on their group role (admin, driver, or sponsor)
   useEffect(() => {
-    if (!auth.isAuthenticated) return;
+    if (!auth.isAuthenticated) {
+        redirectedSubRef.current = null;
+        return;
+    }
 
-    const groups = auth.user?.profile?.["cognito:groups"];
+    if (auth.isLoading || !auth.user?.profile) return;
 
-    if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
-      navigate("/SponsorPage", { replace: true });
-    } 
+    if (location.pathname !== "/callback") return;
 
-    setProfilePic(auth.user?.profile?.picture || "./profileTestPic.jpg");
-  }, [auth.isAuthenticated, location.pathname, auth.user]);
+    const sub = auth.user.profile.sub;
+    if (redirectedSubRef.current === sub) return;
+
+    const groups = auth.user.profile?.["cognito:groups"] || [];
+
+    let destination = "/";
+    if (groups.includes("Admin")) {
+        destination = "/admin";
+    } else if (groups.includes("Sponsor")) {
+        destination = "/SponsorPage";
+    }
+
+    redirectedSubRef.current = sub;
+    navigate(destination, { replace: true });
+
+    setProfilePic(auth.user.profile?.picture || "./profileTestPic.jpg");
+  }, [auth.isAuthenticated, auth.isLoading, auth.user, location.pathname, navigate]);
 
   return (
     <div className="App">
@@ -66,14 +85,13 @@ function App() {
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>}
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
-                <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
-                {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
                 <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>
-                {/* {auth.isAuthenticated && && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
               </Nav>
               <Nav className="ms-auto align-items-center">
-                {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
                   <div className="d-flex align-items-center">
                     <span className="me-2">{auth.user?.profile?.email}</span>
@@ -113,6 +131,7 @@ function App() {
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
+          <Route path="/callback" element={<div>Signing you in...</div>} />
         </Routes>
     </div>
   );

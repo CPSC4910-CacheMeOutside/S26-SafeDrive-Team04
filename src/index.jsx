@@ -12,8 +12,8 @@ const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_7kWyOumWk",
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
   redirect_uri: isLocalHost
-    ? "http://localhost:5173/"
-    : "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/",
+    ? "http://localhost:5173/callback"
+    : "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/callback",
   post_logout_redirect_uri: isLocalHost
     ? "http://localhost:5173/"
     : "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/",
@@ -24,13 +24,13 @@ const cognitoAuthConfig = {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
-  <React.StrictMode>
+//   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider {...cognitoAuthConfig}>
         <App />
       </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>
+//   </React.StrictMode>
 );
 
 
