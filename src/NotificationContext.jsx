@@ -14,7 +14,8 @@ export default function NotificationProvider({ children }) {
       id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
       description: description.trim(),
       timestamp: Date.now(),
-      closed: false
+      closed: false,
+      starred: false 
     };
 
     const updatedNotifications = [...notifications, newNotification];
@@ -30,6 +31,15 @@ export default function NotificationProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotifications));
   };
 
+  // toggles the 'starred' state of a notification by id, updating both state and localStorage
+  const toggleStar = (id) => {
+    const updatedNotifications = notifications.map(notification =>
+      notification.id === id ? { ...notification, starred: !notification.starred } : notification
+    );
+    setNotifications(updatedNotifications);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotifications));
+  };
+
   const getActiveNotifications = () => {
     return notifications.filter(notification => !notification.closed);
   };
@@ -38,6 +48,7 @@ export default function NotificationProvider({ children }) {
     notifications,
     addNotification,
     closeNotification,
+    toggleStar,
     getActiveNotifications
   };
 
