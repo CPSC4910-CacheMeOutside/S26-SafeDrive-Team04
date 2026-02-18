@@ -154,6 +154,10 @@ function EditProfilePage({ profilePic, setProfilePic }) {
               onChange={handleFileChange}
               className="flex-grow-1 me-3"
             />
+            </div>
+          </Col>
+
+          <Col xs="auto" className="d-flex align-items-center">
             {profilePic && (
               <Image
                 src={profilePic}
@@ -163,7 +167,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
                 alt="Profile Preview"
               />
             )}
-            </div>
+            
           </Col>
         </Form.Group>
 

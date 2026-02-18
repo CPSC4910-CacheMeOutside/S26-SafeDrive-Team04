@@ -1,6 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-
+ 
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
@@ -8,7 +8,7 @@ import Image from 'react-bootstrap/Image';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useEffect, useState } from 'react';
-
+ 
 import HomePage from './Home'
 import AboutPage from './About'
 import ProfilePage from './ProfilePage'
@@ -23,13 +23,9 @@ import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
-import SponsorCatalog from "./SponsorCatalog";
 import { NavDropdown } from 'react-bootstrap';
-// Notification pages there is one for sponsors to send, one for drivers to view
-import SponsorNotificationsPage from './SponsorNotificationsPage';
-import DriverNotificationsPage from './DriverNotificationsPage';
-
-
+ 
+ 
 function App() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -37,7 +33,7 @@ function App() {
   
   // temporary until backend gets setup
   const [profilePic, setProfilePic] = useState(auth.user?.profile?.picture || "./profileTestPic.jpg");
-
+ 
   const hideNavs = {
     home: false,
     about: false,
@@ -46,20 +42,20 @@ function App() {
     login: false,
     creatPass: true
   }
-
+ 
   // when login is successful and the user is a sponsor, they are redirected to the sponsor dashboard
   useEffect(() => {
     if (!auth.isAuthenticated) return;
-
+ 
     const groups = auth.user?.profile?.["cognito:groups"];
-
+ 
     if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
       navigate("/SponsorPage", { replace: true });
-    } 
-
+    }
+ 
     setProfilePic(auth.user?.profile?.picture || "./profileTestPic.jpg");
   }, [auth.isAuthenticated, location.pathname, auth.user]);
-
+ 
   return (
     <div className="App">
         <Navbar expand="lg" className="bg-body-tertiary">
@@ -75,11 +71,7 @@ function App() {
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
                 <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>
-                {/* Headers for the notificatons no login required */}
-                <Nav.Link as={Link} to="/sponsor-notifications">Sponsor</Nav.Link>
-                <Nav.Link as={Link} to="/driver-notifications">Driver</Nav.Link>
                 {/* {auth.isAuthenticated && && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
-                <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
@@ -107,7 +99,7 @@ function App() {
             </Navbar.Collapse>
           </Container>
         </Navbar>
-
+ 
         <Routes>
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
@@ -120,15 +112,12 @@ function App() {
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
           <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
           <Route path="/Catalog" element={<Catalog />}/>
-          <Route path="/sponsor-notifications" element={<SponsorNotificationsPage />}/>
-          <Route path="/driver-notifications" element={<DriverNotificationsPage />}/>
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
-          <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
         </Routes>
     </div>
   );
 }
-
+ 
 export default App;
