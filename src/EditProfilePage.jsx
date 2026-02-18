@@ -147,7 +147,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3 align-items-center">
           <Form.Label column sm={3}>Profile Picture:</Form.Label>
-          <Col sm={7}>
+          <Col sm={9}>
             <div className="d-flex align-items-center">
             <Form.Control
               type="file"
