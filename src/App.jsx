@@ -23,6 +23,7 @@ import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
+import SponsorCatalog from "./SponsorCatalog";
 import { NavDropdown } from 'react-bootstrap';
 
 
@@ -72,6 +73,7 @@ function App() {
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
                 <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>
                 {/* {auth.isAuthenticated && && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
+                <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
@@ -115,6 +117,7 @@ function App() {
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
+          <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
         </Routes>
     </div>
   );
