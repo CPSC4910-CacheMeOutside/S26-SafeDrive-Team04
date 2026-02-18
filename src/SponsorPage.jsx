@@ -58,16 +58,16 @@ function SponsorPage() {
     const navigate = useNavigate();
   return(
             <Container className="mt-4">
-              <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>  
-                <h1 className="mb-3">Sponsor Dashboard</h1>
-                <Tabs defaultActiveKey="manage" className="mb-3">
+              <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>  
+                <h1><strong>Sponsor Dashboard</strong></h1>
+                <Tabs defaultActiveKey="manage" className="mb-4">
                     <Tab eventKey="manage" title="Manage Drivers">
                         <Row>
                             <Col md={4}>
                                 <Card>
                                     <Card.Body>
                                         <Card.Title>Drivers</Card.Title>
-                                        <div className="mb-2 d-flex gap-2">
+                                        <div className="mb-4 d-flex gap-2">
                                             <Button
                                                 size="sm"
                                                 variant={sortMode === "points" ? "primary" : "outline-primary"}

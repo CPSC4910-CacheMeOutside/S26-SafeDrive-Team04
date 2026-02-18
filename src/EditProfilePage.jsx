@@ -83,10 +83,11 @@ function EditProfilePage({ profilePic, setProfilePic }) {
   return (
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>  
-      <h1>Edit Profile</h1>
+      <h1><strong>Edit Profile</strong></h1>
       
       <Form onSubmit={handleSubmit}>
       
+      <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>  
         <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Full Name:</Form.Label>
           <Col sm={6}>
@@ -166,8 +167,8 @@ function EditProfilePage({ profilePic, setProfilePic }) {
             </div>
           </Col>
         </Form.Group>
-
         <Button type="Submit">Save Changes</Button>
+      </div>
       </Form>
       </div>
     </Container>

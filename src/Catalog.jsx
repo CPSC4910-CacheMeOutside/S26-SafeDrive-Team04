@@ -34,15 +34,17 @@ function CatalogItem({product}) {
 
 export default function Catalog({view}) {
     return (
-        <div>
-            <h1>Sponsor Catalog</h1>
+        <div style={{ position: "relative", minHeight: "100vh", padding: "60px" }}> 
+            <h1><strong>Sponsor Catalog</strong></h1>
             <Container>
+              <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}> 
                 {catalog.map(item => 
                     (
                         <Row>
                             <CatalogItem product={item}></CatalogItem>
                         </Row>
                     ))}
+              </div> 
             </Container>
         </div>
     );

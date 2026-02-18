@@ -1,8 +1,8 @@
 
 export default function HomePage () {
   return (
-    <div>
-      <h1>Welcome Home</h1>
+    <div style={{ position: "relative", minHeight: "100vh", padding: "60px" }}> 
+      <h1><strong>Welcome to Safe Drive!</strong></h1>
     </div>
   );
 }
