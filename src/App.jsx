@@ -24,6 +24,9 @@ import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
 import { NavDropdown } from 'react-bootstrap';
+// Notification pages there is one for sponsors to send, one for drivers to view
+import SponsorNotificationsPage from './SponsorNotificationsPage';
+import DriverNotificationsPage from './DriverNotificationsPage';
 
 
 function App() {
@@ -71,7 +74,9 @@ function App() {
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
                 <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>
-                {/* {auth.isAuthenticated && && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
+                {/* Headers for the notificatons no login required */}
+                <Nav.Link as={Link} to="/sponsor-notifications">Sponsor</Nav.Link>
+                <Nav.Link as={Link} to="/driver-notifications">Driver</Nav.Link>
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
@@ -112,6 +117,9 @@ function App() {
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
           <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
           <Route path="/Catalog" element={<Catalog />}/>
+          {/* Michael adding sponsor and driver notification page */}
+          <Route path="/sponsor-notifications" element={<SponsorNotificationsPage />}/>
+          <Route path="/driver-notifications" element={<DriverNotificationsPage />}/>
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
