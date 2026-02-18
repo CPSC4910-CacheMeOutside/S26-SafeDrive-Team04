@@ -5,12 +5,9 @@ import App from './App';
 import { AuthProvider } from 'react-oidc-context';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from "react-router-dom";
-import { ConversionRatioProvider } from './ConversionRatioContext';
-import { NotificationProvider } from './NotificationContext';
-import { PointsProvider } from './PointsContext';
-
+ 
 const isLocalHost = window.location.origin.includes("localhost");
-
+ 
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_7kWyOumWk",
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
@@ -23,27 +20,20 @@ const cognitoAuthConfig = {
   response_type: "code",
   scope: "openid profile email phone aws.cognito.signin.user.admin",
 };
-
+ 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-
+ 
 root.render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider {...cognitoAuthConfig}>
-        <ConversionRatioProvider>
-            <NotificationProvider>
-                <PointsProvider>
-                    <App />
-                </PointsProvider>
-            </NotificationProvider>
-        </ConversionRatioProvider>
+        <App />
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
-
-
-
+ 
+ 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
