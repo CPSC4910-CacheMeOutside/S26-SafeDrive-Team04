@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Container, Row, Col, Card, Button, CardBody } from 'react-bootstrap';
 
 /* Here to test the catalog. Future versions will pull items from store API and backend */
@@ -33,16 +34,43 @@ function CatalogItem({product}) {
 }
 
 export default function Catalog({view}) {
+    // Tracks the current text in the search bar
+    const [query, setQuery] = useState('');
+
+    // Filter catalog items whenever the query changes
+    // The search looks at the title of the item but also he description.
+    const filtered = catalog.filter(item =>
+        item.title.toLowerCase().includes(query.toLowerCase()) ||
+        item.desc.toLowerCase().includes(query.toLowerCase())
+    );
+
     return (
         <div>
-            <h1>Sponsor Catalog</h1>
+            {/* Changed the header row so the search bar is in there */}
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h1 className="mb-0">Sponsor Catalog</h1>
+                {/* The search updates on every keypress */}
+                <input
+                    type="search"
+                    className="form-control w-auto"
+                    placeholder="Search catalog..."
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    style={{ minWidth: '220px' }}
+                />
+            </div>
             <Container>
-                {catalog.map(item => 
+                {/* make is so only the items matching the search are shown */}
+                {filtered.map((item, idx) =>
                     (
-                        <Row>
+                        <Row key={idx}>
                             <CatalogItem product={item}></CatalogItem>
                         </Row>
                     ))}
+                {/* Display a message for when the search has no results */}
+                {filtered.length === 0 && (
+                    <p className="text-muted mt-3">No items match your search.</p>
+                )}
             </Container>
         </div>
     );

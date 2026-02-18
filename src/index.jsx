@@ -5,6 +5,9 @@ import App from './App';
 import { AuthProvider } from 'react-oidc-context';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from "react-router-dom";
+import NotificationProvider from './NotificationContext';
+import ConversionRatioProvider from './ConversionRatioContext';
+import PointsProvider from './PointsContext';
 
 const isLocalHost = window.location.origin.includes("localhost");
 
@@ -27,7 +30,14 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider {...cognitoAuthConfig}>
-        <App />
+        {/* makes the notification additions available throughout the entire app */}
+        <NotificationProvider>
+          <ConversionRatioProvider>
+            <PointsProvider>
+              <App />
+            </PointsProvider>
+          </ConversionRatioProvider>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
