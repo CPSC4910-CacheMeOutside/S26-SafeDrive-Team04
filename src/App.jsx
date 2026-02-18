@@ -85,8 +85,9 @@ function App() {
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
-                <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
