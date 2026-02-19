@@ -10,7 +10,7 @@ function LogoutPage() {
 
       const cognitoDomain = "https://us-east-17kwyoumwk.auth.us-east-1.amazoncognito.com";
       const clientId = "5qkcg4h6o51nq40der98l7qsvk";
-      const logoutUri = "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/";
+      const logoutUri = "https://dev.d2jawpaet8g6c9.amplifyapp.com/";
 
       window.location.assign(
         `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`

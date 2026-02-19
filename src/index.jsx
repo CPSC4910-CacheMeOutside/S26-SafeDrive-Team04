@@ -16,10 +16,10 @@ const cognitoAuthConfig = {
   client_id: "5qkcg4h6o51nq40der98l7qsvk",
   redirect_uri: isLocalHost
     ? "http://localhost:5173/callback"
-    : "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/callback",
+    : "https://dev.d2jawpaet8g6c9.amplifyapp.com/callback",
   post_logout_redirect_uri: isLocalHost
     ? "http://localhost:5173/"
-    : "https://adminprofilepage.d2jawpaet8g6c9.amplifyapp.com/",
+    : "https://dev.d2jawpaet8g6c9.amplifyapp.com/",
   response_type: "code",
   scope: "openid profile email phone aws.cognito.signin.user.admin",
 };
