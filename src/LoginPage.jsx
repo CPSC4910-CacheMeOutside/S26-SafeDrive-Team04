@@ -5,12 +5,10 @@ function LoginPage() {
   const auth = useAuth();
 
   useEffect(() => {
-    if (!auth.isAuthenticated && !auth.isLoading) {
-        auth.signinRedirect();
-    }
+    auth.signinRedirect();
   }, [auth]);
 
-  return null;
+  return <div>Redirecting to login...</div>;
 }
 
 export default LoginPage;

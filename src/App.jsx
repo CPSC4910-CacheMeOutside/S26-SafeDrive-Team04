@@ -5,10 +5,11 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
+import { NavDropdown } from 'react-bootstrap';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
-import { useEffect, useState } from 'react';
- 
+import { useEffect, useState, useRef } from 'react';
+
 import HomePage from './Home'
 import AboutPage from './About'
 import ProfilePage from './ProfilePage'
@@ -18,13 +19,11 @@ import LoginPage from './LoginPage';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
 import EditProfilePage from './EditProfilePage';
-import Sponsor_ViewDrivers from './Sponsor_ViewDrivers';
 import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
 import SponsorCatalog from "./SponsorCatalog";
-import { NavDropdown } from 'react-bootstrap';
 // Notification pages there is one for sponsors to send, one for drivers to view
 import SponsorNotificationsPage from './SponsorNotificationsPage';
 import DriverNotificationsPage from './DriverNotificationsPage';
@@ -34,7 +33,11 @@ function App() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
- 
+
+  const redirectedSubRef = useRef(null);
+
+  const groups = auth.user?.profile?.["cognito:groups"] || [];
+  
   // temporary until backend gets setup
   const [profilePic, setProfilePic] = useState(auth.user?.profile?.picture || "./profileTestPic.jpg");
  
@@ -42,24 +45,37 @@ function App() {
     home: false,
     about: false,
     profile: true,
-    admin: true,
     login: false,
     creatPass: true
   }
- 
-  // when login is successful and the user is a sponsor, they are redirected to the sponsor dashboard
+
+  // after a successful login, redirects users to their dashboard based on their group role (admin, driver, or sponsor)
   useEffect(() => {
-    if (!auth.isAuthenticated) return;
- 
-    const groups = auth.user?.profile?.["cognito:groups"];
- 
-    if (groups?.includes("Sponsor") && (location.pathname === "/" || location.pathname === "/login")) {
-      navigate("/SponsorPage", { replace: true });
+    if (!auth.isAuthenticated) {
+        redirectedSubRef.current = null;
+        return;
     }
- 
-    setProfilePic(auth.user?.profile?.picture || "./profileTestPic.jpg");
-  }, [auth.isAuthenticated, location.pathname, auth.user]);
- 
+    if (auth.isLoading || !auth.user?.profile) return;
+    if (location.pathname !== "/callback") return;
+
+    const sub = auth.user.profile.sub;
+    if (redirectedSubRef.current === sub) return;
+
+    const groups = auth.user.profile?.["cognito:groups"] || [];
+
+    let destination = "/";
+    if (groups.includes("Admin")) {
+        destination = "/admin";
+    } else if (groups.includes("Sponsor")) {
+        destination = "/SponsorPage";
+    }
+
+    redirectedSubRef.current = sub;
+    navigate(destination, { replace: true });
+
+    setProfilePic(auth.user.profile?.picture || "./profileTestPic.jpg");
+  }, [auth.isAuthenticated, auth.isLoading, auth.user, location.pathname, navigate]);
+
   return (
     <div className="App">
         <Navbar expand="lg" className="bg-body-tertiary">
@@ -71,18 +87,19 @@ function App() {
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>}
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
-                <Nav.Link hidden={hideNavs.admin} as={Link} to="/admin">Admin</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
-                <Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>
                 {/* Headers for the notificatons no login required */}
-                <Nav.Link as={Link} to="/sponsor-notifications">Sponsor</Nav.Link>
-                <Nav.Link as={Link} to="/driver-notifications">Driver</Nav.Link>
-                {/* {auth.isAuthenticated && && <Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>} */}
+                <Nav.Link as={Link} to="/sponsor-notifications">Sponsor Notif</Nav.Link>
+                <Nav.Link as={Link} to="/driver-notifications">Driver Notif</Nav.Link>
                 <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
-                {!auth.isAuthenticated && <Nav.Link as={Link} to="/login">Login</Nav.Link>}
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
                   <div className="d-flex align-items-center">
                     <span className="me-2">{auth.user?.profile?.email}</span>
@@ -118,7 +135,6 @@ function App() {
           <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
-          <Route path="/sponsor_viewDrivers" element={<Sponsor_ViewDrivers />}/>
           <Route path="/Catalog" element={<Catalog />}/>
           <Route path="/sponsor-notifications" element={<SponsorNotificationsPage />}/>
           <Route path="/driver-notifications" element={<DriverNotificationsPage />}/>
@@ -126,6 +142,7 @@ function App() {
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
           <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
+          <Route path="/callback" element={<div>Logging in...</div>} />
         </Routes>
     </div>
   );
