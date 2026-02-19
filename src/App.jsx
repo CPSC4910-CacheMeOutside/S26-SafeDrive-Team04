@@ -88,7 +88,6 @@ function App() {
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
-                {auth.isAuthenticated && <Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>}
                 {/* Headers for the notificatons no login required */}
                 <Nav.Link as={Link} to="/sponsor-notifications">Sponsor Notif</Nav.Link>
                 <Nav.Link as={Link} to="/driver-notifications">Driver Notif</Nav.Link>
