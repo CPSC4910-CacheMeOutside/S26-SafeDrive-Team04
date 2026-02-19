@@ -10,6 +10,8 @@ import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context';
 import { useEffect, useState, useRef } from 'react';
 
+import { Amplify } from 'aws-amplify';
+import outputs from '../amplify_outputs.json';
 import HomePage from './Home'
 import AboutPage from './About'
 import ProfilePage from './ProfilePage'
@@ -28,6 +30,8 @@ import SponsorCatalog from "./SponsorCatalog";
 import SponsorNotificationsPage from './SponsorNotificationsPage';
 import DriverNotificationsPage from './DriverNotificationsPage';
  
+
+Amplify.configure(outputs);
  
 function App() {
   const auth = useAuth();
