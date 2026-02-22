@@ -8,11 +8,8 @@ and "delete" any "Todo" records.
 =========================================================================*/
 const schema = a.schema({
   About: a.model({
-      headline: a.string().required(),
-      currentSprint: a.integer().required(),
-      nextReleaseDate: a.date().required(),
-      SafeDriveText: a.string().required(),
-      })
+      content: a.string().required(),
+  })
       .authorization((allow) => [allow.guest()]),
     });
     
