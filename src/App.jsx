@@ -23,6 +23,7 @@ import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
+import UpdateAbout from './UpdateAbout';
 import { NavDropdown } from 'react-bootstrap';
 
 /* Add the backend */
@@ -110,6 +111,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
+          <Route path="/updateAbout" element={<UpdateAbout />}/>
           <Route path="/profile" element={<ProfilePage />}/>
           <Route path="/admin" element={<AdminPage />}/>
           <Route path="/create_password" element={<CreatePassword />}/>
