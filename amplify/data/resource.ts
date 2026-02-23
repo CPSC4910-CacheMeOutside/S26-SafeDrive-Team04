@@ -1,7 +1,7 @@
 import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
 
 // Create our About Table
-const aboutTable = a.schema({
+const AboutSchema = a.schema({
   AboutInfo: a.model({
       sprintNo: a.integer(),
       releaseDate: a.string(),
@@ -13,11 +13,11 @@ const aboutTable = a.schema({
 });
 
 // Used for code completion / highlighting when making requests from frontend
-export type Schema = ClientSchema<typeof aboutTable>;
+export type AboutSchema = ClientSchema<typeof AboutSchema>;
 
 // defines the data resource to be deployed
 export const data = defineData({
-  schema: aboutTable,
+  schema: AboutSchema,
   authorizationModes: {
     defaultAuthorizationMode: 'apiKey',
     apiKeyAuthorizationMode: { expiresInDays: 30 }
