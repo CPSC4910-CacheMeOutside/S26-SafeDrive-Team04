@@ -1,6 +1,4 @@
 import { Container, Row, Col, Stack, Card } from 'react-bootstrap';
-import { generateClient } from 'aws-amplify/data'
-import { Schema }
 
 export default function AboutPage () {
     return (
