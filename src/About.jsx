@@ -2,6 +2,8 @@ import { Container, Row, Col, Stack, Card } from 'react-bootstrap';
 import { generateClient } from 'aws-amplify/data';
 import { useState, useEffect } from 'react';
 
+const currentSprint = 4;
+
 export default function AboutPage () {
 
     const client = generateClient();
@@ -18,7 +20,7 @@ export default function AboutPage () {
             try {
                 // get a specific item
                 const { data: info, errors } = await client.models.AboutInfo.get({
-                    sprintNo: 4
+                    sprintNo: currentSprint
                 });
 
                 if (errors) {

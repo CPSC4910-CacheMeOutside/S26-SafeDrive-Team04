@@ -17,6 +17,10 @@ export default function UpdateAbout() {
 
     // Submission Logic
     const createAbout = async () => {
+        await client.models.AboutInfo.delete({
+            sprintNo: Number(sprint)
+        })
+        
         const writeStatus = await client.models.AboutInfo.create({
             sprintNo: Number(sprint),
             releaseDate: date,
