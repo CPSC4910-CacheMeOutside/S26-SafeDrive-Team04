@@ -1,11 +1,54 @@
 import { Container, Row, Col, Stack, Card } from 'react-bootstrap';
+import { generateClient } from 'aws-amplify/data';
+import { useState, useEffect } from 'react';
 
 export default function AboutPage () {
+
+    const client = generateClient();
+    var [data, setData] = useState({
+        sprintNo: 0,
+        releaseDate: "00-00-0000",
+        teamName: "Team 00",
+        productName: "---",
+        desc: "If you are reading this, there's no data to pull or your query has failed."
+    });
+    
+    useEffect(() => {
+        async function getAboutData() {
+            try {
+                // get a specific item
+                const { data: info, errors } = await client.models.AboutInfo.get({
+                    sprintNo: 4
+                });
+
+                if (errors) {
+                    console.log(errors);
+                    return;
+                }
+
+                if (info) {
+                    console.log(`Recived the following from the backend ${info}`)
+                    setData({
+                        sprintNo: info.sprintNo,
+                        releaseDate: info.releaseDate,
+                        teamName: info.teamName,
+                        productName: info.productName,
+                        desc: info.desc
+                    });
+                }
+            } catch (err) {
+                console.log(`ERROR: ${err}`)
+            }
+        } 
+
+        getAboutData();
+
+    }, []);
+
     return (
     <div>
-    <h1>Hello! We are <strong>Team 04</strong></h1>
+    <h1>Hello! We are <strong>{data.teamName}</strong></h1>
 
-    
     <Container fluid>
         <div
         style={{
@@ -20,8 +63,8 @@ export default function AboutPage () {
                     <Card style={{ width: '18rem' }}>
                         <Card.Img variant="top" src="./truckIco.jpg"/>
                         <Card.Body>
-                            <Card.Title>Introducing Safe Drive</Card.Title>
-                            <Card.Text>Safe Drive is a driver incentive program allowing sponsors to reward their drivers for good driving behavior.</Card.Text>
+                            <Card.Title>Introducing {data.productName}</Card.Title>
+                            <Card.Text>{data.desc}</Card.Text>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -30,7 +73,7 @@ export default function AboutPage () {
                         <Card.Img variant="top" src="./sprintIco.png"/>
                         <Card.Body>
                             <Card.Title>Current Sprint</Card.Title>
-                            <Card.Text>01</Card.Text>
+                            <Card.Text>{data.sprintNo}</Card.Text>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -39,7 +82,7 @@ export default function AboutPage () {
                         <Card.Img variant="top" src="./calendarIco.png"/>
                         <Card.Body>
                             <Card.Title>Next Release Date</Card.Title>
-                            <Card.Text>02-05-2026</Card.Text>
+                            <Card.Text>{data.releaseDate}</Card.Text>
                         </Card.Body>
                     </Card>
                 </Col>

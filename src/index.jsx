@@ -6,6 +6,12 @@ import { AuthProvider } from 'react-oidc-context';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from "react-router-dom";
 
+/* Add the backend */
+import { Amplify } from 'aws-amplify';
+import outputs from '../amplify_outputs.json';
+
+Amplify.configure(outputs);
+
 const isLocalHost = window.location.origin.includes("localhost");
 
 const cognitoAuthConfig = {

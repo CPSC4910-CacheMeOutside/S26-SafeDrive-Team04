@@ -1,14 +1,14 @@
-import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
+import { a, defineData, type ClientSchema} from '@aws-amplify/backend';
 
 // Create our About Table
 const AboutSchema = a.schema({
   AboutInfo: a.model({
-      sprintNo: a.integer(),
+      sprintNo: a.id().required(),
       releaseDate: a.string(),
       teamName: a.string(),
       productName: a.string(),
       desc: a.string()
-    })
+    }).identifier(['sprintNo'])
     .authorization(allow => [allow.publicApiKey()])
 });
 
