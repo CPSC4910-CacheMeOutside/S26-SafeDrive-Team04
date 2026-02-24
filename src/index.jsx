@@ -16,6 +16,12 @@ import outputs from '../amplify_outputs.json';
 
 Amplify.configure(outputs);
 
+/* Add the backend */
+import { Amplify } from 'aws-amplify';
+import outputs from '../amplify_outputs.json';
+
+Amplify.configure(outputs);
+
 const isLocalHost = window.location.origin.includes("localhost");
  
 const cognitoAuthConfig = {
