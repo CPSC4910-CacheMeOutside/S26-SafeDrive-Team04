@@ -32,14 +32,8 @@ import DriverNotificationsPage from './DriverNotificationsPage';
 import UpdateAbout from './UpdateAbout';
 import { NavDropdown } from 'react-bootstrap';
 
-/* Add the backend */
-import { Amplify } from 'aws-amplify';
-import outputs from '../amplify_outputs.json';
-
-Amplify.configure(outputs);
-
-
 function App() {
+
   /* Nav config */
   const auth = useAuth();
   const navigate = useNavigate();
