@@ -47,12 +47,18 @@ export default function Catalog({view}) {
     /* Modal to display filtering options*/
 
     const[showFilter, setShowFilter] = useState(false);
-    const openFilter =() => setShowFilter(true);
+    const openFilter = () => setShowFilter(true);
     const closeFilter = () => setShowFilter(false);
 
     // State trackers for various search queries
+
+    const [name, setName] = useState('');
     const [queryByName, setQueryByName] = useState('');
+    
+    const [min, setMin] = useState(0);
     const [queryMinPrice, setQueryMinPrice] = useState(0);
+
+    const [max, setMax] = useState(Number.MAX_SAFE_INTEGER);
     const [queryMaxPrice, setQueryMaxPrice] = useState(Number.MAX_SAFE_INTEGER);
 
     // Filter catalog items whenever the query changes
@@ -60,16 +66,20 @@ export default function Catalog({view}) {
     const filtered = catalog.filter(item =>
         (item.title.toLowerCase().includes(queryByName.toLowerCase()) ||
         item.desc.toLowerCase().includes(queryByName.toLowerCase())) &&
-        (item.price >= queryMinPrice || item.price <= queryMaxPrice)
+        (item.price >= queryMinPrice && item.price <= queryMaxPrice)
     );
 
-    function applyFilter({}) {
-
+    function applyFilter() {
+        setQueryByName(name);
+        setQueryMinPrice(min);
+        setQueryMaxPrice(max);
+        closeFilter();
     }
 
-    function FilterModal({fShow, fHide}) {
+    function FilterModal() {
+
         return (
-            <Modal show={fShow} onHide={fHide}>
+            <Modal show={showFilter} onHide={closeFilter}>
                 <Modal.Header>
                     <Modal.Title>Filter</Modal.Title>
                 </Modal.Header>
@@ -80,7 +90,8 @@ export default function Catalog({view}) {
                         <Form.Group controlId='productName'>
                             <Form.Label>Product Name</Form.Label>
                             <Form.Control 
-                                value={queryByName}
+                                onChange={e => setName(String(e.target.value))}
+                                defaultValue={name}
                                 type='text'
                                 placeholder='Search items by name and description'/>
                         </Form.Group>
@@ -88,12 +99,14 @@ export default function Catalog({view}) {
                             <Form.Label>Price Range</Form.Label>
                             <Form.Text>From</Form.Text>
                             <Form.Control 
-                                value={queryMinPrice}
+                                onChange={e => setMin(Number(e.target.value))}
+                                defaultValue={min}
                                 type='text' 
                                 placeholder='0 - ...'/>
                             <Form.Text>To</Form.Text>
                             <Form.Control
-                                value={queryMaxPrice}
+                                onChange={e => setMax(Number(e.target.value))}
+                                defaultValue={max}
                                 type='text' 
                                 placeholder='0 - ...'/>
                         </Form.Group>
@@ -102,7 +115,7 @@ export default function Catalog({view}) {
 
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowFilter(false)} >Cancel</Button>
-                    <Button variant="primary" >Apply</Button>
+                    <Button variant="primary" onClick={() => applyFilter()}>Apply</Button>
                 </Modal.Footer>
             </Modal>
         );
@@ -164,7 +177,7 @@ export default function Catalog({view}) {
     /* The main Catalog Page */
     return (
         <div style={{ marginTop: '30px' }}>
-            <FilterModal fShow={showFilter} fHide={!showFilter}/>
+            <FilterModal />
             {/* Changed the header row so the search bar is in there */}
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h1 className="mb-0">Sponsor Catalog</h1>
@@ -172,14 +185,6 @@ export default function Catalog({view}) {
                 <Button variant='secondary' onClick={openFilter}>
                     <Image style={{height:'25px', width:'25px'}} src='filterIco.png' fluid/>
                 </Button>
-                <input
-                    type="search"
-                    className="form-control w-auto"
-                    placeholder="Search catalog..."
-                    value={queryByName}
-                    onChange={e => setQueryByName(e.target.value)}
-                    style={{ minWidth: '220px' }}
-                />
             </div>
             <Tab.Container id="driver-catalog" defaultActiveKey={"defaultChoice"}>
                 <Row>
