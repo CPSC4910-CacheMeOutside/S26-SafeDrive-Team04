@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
-import { CognitoIdentityProviderClient, DeleteUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 import { Form, Button, Container, Row, Col, Image } from "react-bootstrap";
 
 function EditProfilePage({ profilePic, setProfilePic }) {
@@ -80,55 +79,6 @@ function EditProfilePage({ profilePic, setProfilePic }) {
       alert("Error! Unable to update profile.");
     }
   };
-
-  // testing from amazon q
-  const DeleteAccountComponent = () => {
-    const auth = useAuth();
-
-    const deleteUser = async ({ region, accessToken }) => {
-      try {
-        const client = new CognitoIdentityProviderClient({ region });
-        const response = await client.send(
-          new DeleteUserCommand({ AccessToken: accessToken })
-        );
-        return [response, null];
-      } catch (err) {
-        return [null, err];
-      }
-    }
-  };
-
-  // testing from amazon q
-  const handleDeleteAccount = async () => {
-    try {
-      const confirmed = window.confirm(
-        "Are you sure you want to delete your account? This action cannot be undone."
-      );
-      if (!confirmed) return;
-
-      const accessToken = auth.user?.access_token;
-      if (!accessToken) {
-        alert("No valid access token found. Please sign in again.");
-        return;
-      }
-
-      const [response, error] = await deleteUser({
-        region: "us-east-1", 
-        accessToken: accessToken
-      });
-
-      if (error) {
-        throw error;
-      }
-      await auth.signoutRedirect();
-      alert("Your account has been successfully deleted.");
-      
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      alert("Failed to delete account. Please try again.");
-    }
-  };
-
 
   return (
     <Container className="mt-4">
@@ -225,7 +175,6 @@ function EditProfilePage({ profilePic, setProfilePic }) {
         <Button type="Submit">Save Changes</Button>
       </div>
       </Form>
-      <button onClick={handleDeleteAccount} style={{ padding: '10px 20px' }}>Delete My Account</button>
       </div>
     </Container>
   );

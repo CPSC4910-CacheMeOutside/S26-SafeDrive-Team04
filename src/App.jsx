@@ -17,6 +17,7 @@ import AdminPage from './AdminPage'
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import LogoutPage from './LogoutPage';
+import AccountManagement from './AccountManagement';
 import SponsorPage from './SponsorPage';
 import DriverPage from './DriverPage';
 import EditProfilePage from './EditProfilePage';
@@ -118,6 +119,8 @@ function App() {
                     >
                       <NavDropdown.Item as={Link} to="/edit_profile">Edit Profile</NavDropdown.Item>
                       <NavDropdown.Divider />
+                      <NavDropdown.Item as={Link} to="/AccountManagement">Manage Account</NavDropdown.Item>
+                      <NavDropdown.Divider />
                       <NavDropdown.Item as={Link} to="/logout">Logout</NavDropdown.Item>
                     </NavDropdown>
                   </div>
@@ -135,6 +138,7 @@ function App() {
           <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
           <Route path="/logout" element={<LogoutPage />}/>
+          <Route path="/AccountManagement" element={<AccountManagement />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/DriverPage" element={<DriverPage />}/>
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
