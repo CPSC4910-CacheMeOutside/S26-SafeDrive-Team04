@@ -27,6 +27,7 @@ function SponsorPage() {
     const [sortMode, setSortMode] = useState("id");
     const [description, setDescription] = useState("");
     const [logs, setLogs] = useState([]);
+    const [driverSearch, setDriverSearch] = useState("");
 
     const selectedDriver = drivers.find(d => d.id === selectedId);
 
@@ -53,6 +54,15 @@ function SponsorPage() {
         if (sortMode === "points") return b.points - a.points;
         if (sortMode === "id") return a.id - b.id;
         return 0;
+    });
+
+    const filteredDrivers = sortedDrivers.filter((d) => {
+        const q = driverSearch.trim().toLowerCase();
+        if(!q) return true;
+
+        return(
+            d.name.toLowerCase().includes(q) || String(d.id).includes(q)
+        );
     });
     
     const navigate = useNavigate();
@@ -84,8 +94,16 @@ function SponsorPage() {
                                                     Sort by ID
                                                 </Button>
                                         </div>
+                                        <Form.Group className="mb-3">
+                                            <Form.Control
+                                            type="text"
+                                            placeholder="Search drivers by name or ID.."
+                                            value={driverSearch}
+                                            onChange={(e) => setDriverSearch(e.target.value)}
+                                            />
+                                        </Form.Group>
                                         <ListGroup>
-                                            {sortedDrivers.map(driver => (
+                                            {filteredDrivers.map(driver => (
                             
                                             <ListGroup.Item
                                                 key={driver.id}
@@ -100,6 +118,7 @@ function SponsorPage() {
                                             </ListGroup.Item>
                                             ))}
                                         </ListGroup>
+
                                     </Card.Body>
                                 </Card>
                             </Col>
