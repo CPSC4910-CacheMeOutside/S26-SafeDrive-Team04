@@ -5,6 +5,10 @@ import App from './App';
 import { AuthProvider } from 'react-oidc-context';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from "react-router-dom";
+import  NotificationProvider from './NotificationContext';
+import ConversionRatioProvider from './ConversionRatioContext';
+import PointsProvider from './PointsContext';
+
 
 /* Add the backend */
 import { Amplify } from 'aws-amplify';

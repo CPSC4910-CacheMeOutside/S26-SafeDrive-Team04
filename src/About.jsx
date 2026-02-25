@@ -7,6 +7,7 @@ const currentSprint = 4;
 export default function AboutPage () {
 
     const client = generateClient();
+
     var [data, setData] = useState({
         sprintNo: 0,
         releaseDate: "00-00-0000",
@@ -48,7 +49,7 @@ export default function AboutPage () {
     }, []);
 
     return (
-    <div>
+    <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
     <h1>Hello! We are <strong>{data.teamName}</strong></h1>
 
     <Container fluid>
