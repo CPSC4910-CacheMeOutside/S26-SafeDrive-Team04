@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+// Import the front-end star rating widget for catalog items
+import StarRating from "./StarRating";
 
 // move to separate API file when set up
 const BASE_URL = "http://localhost:3000";
@@ -174,6 +176,9 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 </span>
                             )}
                         </p>
+
+                        {/* Star rating widget */}
+                        <StarRating itemKey={String(item.id)} />
 
                         <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
                             <button onClick={() => openEditModal(item)} style={{ fontSize: "12px" }}>
