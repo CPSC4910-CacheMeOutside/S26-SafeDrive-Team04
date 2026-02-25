@@ -28,10 +28,15 @@ function SponsorPage() {
     const [description, setDescription] = useState("");
     const [logs, setLogs] = useState([]);
     const [driverSearch, setDriverSearch] = useState("");
+    const [logSearch, setLogSearch] = useState("")
 
     const selectedDriver = drivers.find(d => d.id === selectedId);
 
     const pointAdjust = (value) => {
+        if(!selectedDriver) return;
+        const delta = Number(value);
+        if(!Number.isFinite(delta)) return;
+        
         const timestamp = new Date().toLocaleString();
             setDrivers(prev =>
                 prev.map(d =>
@@ -62,6 +67,18 @@ function SponsorPage() {
 
         return(
             d.name.toLowerCase().includes(q) || String(d.id).includes(q)
+        );
+    });
+
+    const filteredLogs = logs.filter((log) => {
+        const q = logSearch.trim().toLowerCase();
+        if(!q) return true;
+
+        return(
+            log.driver.toLowerCase().includes(q) ||
+            log.reason.toLowerCase().includes(q) ||
+            String(log.change).includes(q) ||
+            String(log.time).toLowerCase().includes(q)
         );
     });
     
@@ -167,8 +184,16 @@ function SponsorPage() {
                     <Tab eventKey="audit" title="Logs/Reports">
                        <Card>
                         <Card.Title>Adjustment History</Card.Title>
+                        <Form.Group className="mb-3">
+                            <Form.Control
+                                type="text"
+                                placeholder="Search Transaction History"
+                                value={logSearch}
+                                onChange={(e) => setLogSearch(e.target.value)}
+                                />
+                        </Form.Group>
                         <ListGroup>
-                            {logs.map((log, i) =>(
+                            {filteredLogs.map((log, i) =>(
                                 <ListGroup.Item key = {i}>
                                     <strong>{log.driver}</strong> {log.change > 0 ? "gained" : "lost"}{" "}
                                     <strong>{Math.abs(log.change)}</strong> points <br />
