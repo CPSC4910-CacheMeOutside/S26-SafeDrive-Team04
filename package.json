@@ -11,6 +11,7 @@
     "start": "npm run dev"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.997.0",
     "aws-amplify": "^6.16.2",
     "bootstrap": "^5.3.8",
     "react": "^19.2.0",
