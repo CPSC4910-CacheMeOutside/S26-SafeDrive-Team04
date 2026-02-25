@@ -19,7 +19,8 @@ function SponsorPage() {
         {id: 2, name: "Cledus Snow", points: 156},
         {id: 3, name: "Hot-Pants Hillard", points: 186},
         {id: 4, name: "Burt Reynolds", points: 330},
-        {id: 5, name: "Jerry Reed", points: 300}
+        {id: 5, name: "Jerry Reed", points: 300},
+        {id: 6, name: "Burt Schmekles", points: 100}
     ]);
 
     const [selectedId, setSelectedId] = useState(1);
