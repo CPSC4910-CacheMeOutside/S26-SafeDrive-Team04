@@ -45,33 +45,35 @@ export default function Catalog({view}) {
     );
 
     return (
-        <div>
-            {/* Changed the header row so the search bar is in there */}
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h1 className="mb-0">Sponsor Catalog</h1>
-                {/* The search updates on every keypress */}
-                <input
-                    type="search"
-                    className="form-control w-auto"
-                    placeholder="Search catalog..."
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    style={{ minWidth: '220px' }}
-                />
-            </div>
-            <Container>
-                {/* make is so only the items matching the search are shown */}
-                {filtered.map((item, idx) =>
-                    (
-                        <Row key={idx}>
-                            <CatalogItem product={item}></CatalogItem>
-                        </Row>
-                    ))}
-                {/* Display a message for when the search has no results */}
-                {filtered.length === 0 && (
-                    <p className="text-muted mt-3">No items match your search.</p>
-                )}
-            </Container>
+      <Container className="mt-4">
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+          {/* Changed the header row so the search bar is in there */}
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h1><strong>Catalog</strong></h1>
+            {/* The search updates on every keypress */}
+            <input
+                type="search"
+                className="form-control w-auto"
+                placeholder="Search catalog..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                style={{ minWidth: '220px' }}
+            />
+          </div>
+          <Container>
+            {/* make is so only the items matching the search are shown */}
+            {filtered.map((item, idx) =>
+              (
+                <Row key={idx}>
+                    <CatalogItem product={item}></CatalogItem>
+                </Row>
+              ))}
+            {/* Display a message for when the search has no results */}
+            {filtered.length === 0 && (
+              <p className="text-muted mt-3">No items match your search.</p>
+            )}
+          </Container>
         </div>
+      </Container>
     );
 }

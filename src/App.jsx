@@ -18,13 +18,13 @@ import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import LogoutPage from './LogoutPage';
 import SponsorPage from './SponsorPage';
+import DriverPage from './DriverPage';
 import EditProfilePage from './EditProfilePage';
 import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
 import Catalog from './Catalog';
 import SponsorCatalog from "./SponsorCatalog";
-// Notification pages there is one for sponsors to send, one for drivers to view
 import SponsorNotificationsPage from './SponsorNotificationsPage';
 import DriverNotificationsPage from './DriverNotificationsPage';
  
@@ -68,6 +68,8 @@ function App() {
         destination = "/admin";
     } else if (groups.includes("Sponsor")) {
         destination = "/SponsorPage";
+    } else if (groups.includes("Driver")) {
+        destination = "/DriverPage";
     }
 
     redirectedSubRef.current = sub;
@@ -88,14 +90,15 @@ function App() {
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
                 <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
-                {/* Headers for the notificatons no login required */}
-                <Nav.Link as={Link} to="/sponsor-notifications">Sponsor Notif</Nav.Link>
-                <Nav.Link as={Link} to="/driver-notifications">Driver Notif</Nav.Link>
-                <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
+                {/* Headers for the notificatons no login required */}
+                <Nav.Link as={Link} to="/sponsor-notifications">Sponsor Notif</Nav.Link>
+                <Nav.Link as={Link} to="/driver-notifications">Driver Notif</Nav.Link>
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
@@ -133,6 +136,7 @@ function App() {
           <Route path="/login" element={<LoginPage />}/>
           <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
+          <Route path="/DriverPage" element={<DriverPage />}/>
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
           <Route path="/Catalog" element={<Catalog />}/>
           <Route path="/sponsor-notifications" element={<SponsorNotificationsPage />}/>
