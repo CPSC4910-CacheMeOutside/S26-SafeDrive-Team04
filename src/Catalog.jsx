@@ -50,25 +50,28 @@ export default function Catalog({view}) {
     const openFilter =() => setShowFilter(true);
     const closeFilter = () => setShowFilter(false);
 
-    // Tracks the current text in the search bar
-    const [query, setQuery] = useState('');
+    // State trackers for various search queries
+    const [queryByName, setQueryByName] = useState('');
+    const [queryMinPrice, setQueryMinPrice] = useState(0);
+    const [queryMaxPrice, setQueryMaxPrice] = useState(Number.MAX_SAFE_INTEGER);
 
     // Filter catalog items whenever the query changes
     // The search looks at the title of the item but also he description.
     const filtered = catalog.filter(item =>
-        item.title.toLowerCase().includes(query.toLowerCase()) ||
-        item.desc.toLowerCase().includes(query.toLowerCase())
+        (item.title.toLowerCase().includes(queryByName.toLowerCase()) ||
+        item.desc.toLowerCase().includes(queryByName.toLowerCase())) &&
+        (item.price >= queryMinPrice || item.price <= queryMaxPrice)
     );
 
-    function CatalogFilter() {
+    function applyFilter({}) {
+
+    }
+
+    function FilterModal({fShow, fHide}) {
         return (
-            <div
-            className="modal show"
-            style={{ display: 'block', position: 'initial' }}
-            >
-            <Modal show={showFilter} onHide={closeFilter}>
-                <Modal.Header closeButton>
-                <Modal.Title>Filter</Modal.Title>
+            <Modal show={fShow} onHide={fHide}>
+                <Modal.Header>
+                    <Modal.Title>Filter</Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>
@@ -76,24 +79,32 @@ export default function Catalog({view}) {
                     <Form>
                         <Form.Group controlId='productName'>
                             <Form.Label>Product Name</Form.Label>
-                            <Form.Control type='text'/>
+                            <Form.Control 
+                                value={queryByName}
+                                type='text'
+                                placeholder='Search items by name and description'/>
                         </Form.Group>
                         <Form.Group controlId='priceRange'>
                             <Form.Label>Price Range</Form.Label>
                             <Form.Text>From</Form.Text>
-                            <Form.Control type='text' placeholder='0 - ...'/>
+                            <Form.Control 
+                                value={queryMinPrice}
+                                type='text' 
+                                placeholder='0 - ...'/>
                             <Form.Text>To</Form.Text>
-                            <Form.Control type='text' placeholder='0 - ...'/>
+                            <Form.Control
+                                value={queryMaxPrice}
+                                type='text' 
+                                placeholder='0 - ...'/>
                         </Form.Group>
                     </Form>
                 </Modal.Body>
 
                 <Modal.Footer>
-                <Button variant="secondary">Cancel</Button>
-                <Button variant="primary">Apply</Button>
+                    <Button variant="secondary" onClick={() => setShowFilter(false)} >Cancel</Button>
+                    <Button variant="primary" >Apply</Button>
                 </Modal.Footer>
             </Modal>
-    </div>
         );
     }
 
@@ -153,7 +164,7 @@ export default function Catalog({view}) {
     /* The main Catalog Page */
     return (
         <div style={{ marginTop: '30px' }}>
-            <CatalogFilter/>
+            <FilterModal fShow={showFilter} fHide={!showFilter}/>
             {/* Changed the header row so the search bar is in there */}
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h1 className="mb-0">Sponsor Catalog</h1>
@@ -165,8 +176,8 @@ export default function Catalog({view}) {
                     type="search"
                     className="form-control w-auto"
                     placeholder="Search catalog..."
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
+                    value={queryByName}
+                    onChange={e => setQueryByName(e.target.value)}
                     style={{ minWidth: '220px' }}
                 />
             </div>
