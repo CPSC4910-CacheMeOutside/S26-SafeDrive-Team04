@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Tab, ListGroup, Row, Col, 
-    Button, Image, Card,
-    ListGroupItem} from 'react-bootstrap';
+import { Tab, ListGroup, Row, Col, Modal,
+    Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 
 /* Here to test the catalog. Future versions will pull items from store API and backend */
 const catalog = [
@@ -43,58 +42,14 @@ const catalog = [
     }
 ]
 
-function CatalogItemList({product}) {
-    return (
-        <ListGroup.Item action eventKey={product.pId}>
-            <Row>
-                <h2>{product.title}</h2>
-            </Row>
-            <Row>
-                <Col>
-                    <Image src={product.img} fluid />
-                </Col>
-                <Col>
-                    <h4>{product.price} PTs</h4>
-                    <p>{product.synop}</p>
-                    {( product.available === true
-                        ? ( <Button variant='primary'>Request</Button> )
-                        : ( <p>Unavailable!</p>)
-                    )}
-                </Col>
-            </Row>
-        </ListGroup.Item>
-    );
-}
-
-function CatalogItemPane({product}) {
-    return (
-            <Tab.Pane eventKey={product.pId} >
-                <Card>
-                    <Col>
-                        <Row>
-                            {/* Maybe replace with a carousel */}
-                            <Image src={product.img}/>
-                        </Row>
-                        <Row>
-                            <h1>{product.title}</h1>
-                        </Row>
-                        <Row>
-                            <Col>
-                                <h3><strong>Price:</strong> {product.price} PTs</h3>
-                                <p><strong>Description: </strong>{product.desc}</p>
-                                {( product.available === true
-                                    ? ( <Button variant='primary'>Request</Button> )
-                                    : ( <p>Unavailable!</p>)
-                                )}
-                            </Col>
-                        </Row>
-                    </Col>
-                </Card>
-            </Tab.Pane>
-    );
-}
-
 export default function Catalog({view}) {
+
+    /* Modal to display filtering options*/
+
+    const[showFilter, setShowFilter] = useState(false);
+    const openFilter =() => setShowFilter(true);
+    const closeFilter = () => setShowFilter(false);
+
     // Tracks the current text in the search bar
     const [query, setQuery] = useState('');
 
@@ -105,12 +60,107 @@ export default function Catalog({view}) {
         item.desc.toLowerCase().includes(query.toLowerCase())
     );
 
+    function CatalogFilter() {
+        return (
+            <div
+            className="modal show"
+            style={{ display: 'block', position: 'initial' }}
+            >
+            <Modal show={showFilter} onHide={closeFilter}>
+                <Modal.Header closeButton>
+                <Modal.Title>Filter</Modal.Title>
+                </Modal.Header>
+
+                <Modal.Body>
+                {/* The filter form */}
+                    <Form>
+                        <Form.Group controlId='productName'>
+                            <Form.Label>Product Name</Form.Label>
+                            <Form.Control type='text'/>
+                        </Form.Group>
+                        <Form.Group controlId='priceRange'>
+                            <Form.Label>Price Range</Form.Label>
+                            <Form.Text>From</Form.Text>
+                            <Form.Control type='text' placeholder='0 - ...'/>
+                            <Form.Text>To</Form.Text>
+                            <Form.Control type='text' placeholder='0 - ...'/>
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+
+                <Modal.Footer>
+                <Button variant="secondary">Cancel</Button>
+                <Button variant="primary">Apply</Button>
+                </Modal.Footer>
+            </Modal>
+    </div>
+        );
+    }
+
+    /* The fully detailed view of each catalog item */
+    function CatalogItemPane({product}) {
+        return (
+                <Tab.Pane eventKey={product.pId} >
+                    <Card>
+                        <Col>
+                            <Row>
+                                {/* Maybe replace with a carousel */}
+                                <Image src={product.img}/>
+                            </Row>
+                            <Row>
+                                <h1>{product.title}</h1>
+                            </Row>
+                            <Row>
+                                <Col>
+                                    <h3><strong>Price:</strong> {product.price} PTs</h3>
+                                    <p><strong>Description: </strong>{product.desc}</p>
+                                    {( product.available === true
+                                        ? ( <Button variant='primary'>Request</Button> )
+                                        : ( <p>Unavailable!</p>)
+                                    )}
+                                </Col>
+                            </Row>
+                        </Col>
+                    </Card>
+                </Tab.Pane>
+        );
+    }
+
+    /* The container for each item in the list*/
+    function CatalogItemList({product}) {
+        return (
+            <ListGroup.Item action eventKey={product.pId}>
+                <Row>
+                    <h2>{product.title}</h2>
+                </Row>
+                <Row>
+                    <Col>
+                        <Image src={product.img} fluid />
+                    </Col>
+                    <Col>
+                        <h4>{product.price} PTs</h4>
+                        <p>{product.synop}</p>
+                        {( product.available === true
+                            ? ( <span className="btn btn-primary">Request</span> )
+                            : ( <p>Unavailable!</p>)
+                        )}
+                    </Col>
+                </Row>
+            </ListGroup.Item>
+        );
+    }
+
+    /* The main Catalog Page */
     return (
         <div style={{ marginTop: '30px' }}>
+            <CatalogFilter/>
             {/* Changed the header row so the search bar is in there */}
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h1 className="mb-0">Sponsor Catalog</h1>
                 {/* The search updates on every keypress */}
+                <Button variant='secondary' onClick={openFilter}>
+                    <Image style={{height:'25px', width:'25px'}} src='filterIco.png' fluid/>
+                </Button>
                 <input
                     type="search"
                     className="form-control w-auto"
