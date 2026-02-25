@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Tab, ListGroup, Row, Col, 
-    Button, Image, Card} from 'react-bootstrap';
+    Button, Image, Card,
+    ListGroupItem} from 'react-bootstrap';
 
 /* Here to test the catalog. Future versions will pull items from store API and backend */
 const catalog = [
@@ -119,11 +120,12 @@ export default function Catalog({view}) {
                     style={{ minWidth: '220px' }}
                 />
             </div>
-            <Tab.Container id="driver-catalog">
+            <Tab.Container id="driver-catalog" defaultActiveKey={"defaultChoice"}>
                 <Row>
                     <Col sm={5} className='pe-3'>
                         <Card>
                             <ListGroup style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                                <ListGroupItem hidden={true} action eventKey={'defaultChoice'}>Default</ListGroupItem>
                                 {/* make is so only the items matching the search are shown */}
                                 {filtered.map((item, idx) =>
                                     (
@@ -139,6 +141,12 @@ export default function Catalog({view}) {
                     </Col>
                     <Col sm={6}>
                         <Tab.Content style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                            <Tab.Pane eventKey={"defaultChoice"}> 
+                                <Card>
+                                    <Card.Title> Welcome </Card.Title>
+                                    <Card.Text> Click an item to view it.</Card.Text>
+                                </Card>
+                            </Tab.Pane>
                             {
                                 filtered.map((item, idx) =>
                                 (
