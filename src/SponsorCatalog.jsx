@@ -74,6 +74,10 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
     const [cartItems, setCartItems] = useState([]);
     const [showCart, setShowCart] = useState(false);
 
+    // state of wishlist
+    const [wishlistItems, setWishlistItems] = useState([]);
+    const [showWishlist, setShowWishlist] = useState(false);
+
     useEffect(() => {
         setItems(FAKE_ITEMS);
         setDrivers(FAKE_DRIVERS);
@@ -137,6 +141,23 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
         return cartItems.reduce((sum, c) => sum + c.quantity, 0);
     }
 
+    function isInWishlist(itemId) {
+        return wishlistItems.some((w) => w.id === itemId);
+    }
+
+    function addToWishlist(item) {
+        if (!isInWishlist(item.id)) {
+            setWishlistItems((prev) => [
+                ...prev,
+                { id: item.id, name: item.name, category: item.category },
+            ]);
+        }
+    }
+
+    function removeFromWishlist(itemId) {
+        setWishlistItems((prev) => prev.filter((w) => w.id !== itemId));
+    }
+
     async function handleSavePrice() {
         const parsed = parseInt(newPriceInput);
         if (isNaN(parsed) || parsed < 0) {
@@ -158,43 +179,84 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                 <h2 style={{ margin: 0 }}>Sponsor Catalog</h2>
 
-                <div style={{ position: "relative", display: "inline-block" }}>
-                    <button
-                        onClick={() => setShowCart(true)}
-                        style={{
-                            fontSize: "14px",
-                            padding: "8px 16px",
-                            backgroundColor: "#333",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        Cart
-                    </button>
-                    {getCartCount() > 0 && (
-                        <span
+                <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                        <button
+                            onClick={() => setShowWishlist(true)}
                             style={{
-                                position: "absolute",
-                                top: "-8px",
-                                right: "-8px",
-                                backgroundColor: "#e53935",
+                                fontSize: "14px",
+                                padding: "8px 16px",
+                                backgroundColor: "#7b1fa2",
                                 color: "white",
-                                borderRadius: "50%",
-                                width: "20px",
-                                height: "20px",
-                                fontSize: "11px",
-                                fontWeight: "bold",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                pointerEvents: "none",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
                             }}
                         >
-                            {getCartCount()}
-                        </span>
-                    )}
+                            Wishlist
+                        </button>
+                        {wishlistItems.length > 0 && (
+                            <span
+                                style={{
+                                    position: "absolute",
+                                    top: "-8px",
+                                    right: "-8px",
+                                    backgroundColor: "#e53935",
+                                    color: "white",
+                                    borderRadius: "50%",
+                                    width: "20px",
+                                    height: "20px",
+                                    fontSize: "11px",
+                                    fontWeight: "bold",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    pointerEvents: "none",
+                                }}
+                            >
+                                {wishlistItems.length}
+                            </span>
+                        )}
+                    </div>
+
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                        <button
+                            onClick={() => setShowCart(true)}
+                            style={{
+                                fontSize: "14px",
+                                padding: "8px 16px",
+                                backgroundColor: "#333",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Cart
+                        </button>
+                        {getCartCount() > 0 && (
+                            <span
+                                style={{
+                                    position: "absolute",
+                                    top: "-8px",
+                                    right: "-8px",
+                                    backgroundColor: "#e53935",
+                                    color: "white",
+                                    borderRadius: "50%",
+                                    width: "20px",
+                                    height: "20px",
+                                    fontSize: "11px",
+                                    fontWeight: "bold",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    pointerEvents: "none",
+                                }}
+                            >
+                                {getCartCount()}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -263,6 +325,21 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 style={{ fontSize: "12px", backgroundColor: "#2196F3", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}
                             >
                                 Add to Cart
+                            </button>
+                            <button
+                                onClick={() => addToWishlist(item)}
+                                disabled={isInWishlist(item.id)}
+                                style={{
+                                    fontSize: "12px",
+                                    backgroundColor: isInWishlist(item.id) ? "#ccc" : "#7b1fa2",
+                                    color: isInWishlist(item.id) ? "#888" : "white",
+                                    border: "none",
+                                    borderRadius: "4px",
+                                    padding: "4px 8px",
+                                    cursor: isInWishlist(item.id) ? "not-allowed" : "pointer",
+                                }}
+                            >
+                                {isInWishlist(item.id) ? "Wishlisted" : "Add to Wishlist"}
                             </button>
                         </div>
                     </div>
@@ -417,6 +494,82 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                         <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>
                             Total: {getCartTotal()} pts
                         </p>
+                    </div>
+                </div>
+            )}
+
+            {showWishlist && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        right: 0,
+                        width: "320px",
+                        height: "100%",
+                        background: "white",
+                        boxShadow: "-4px 0 12px rgba(0,0,0,0.2)",
+                        zIndex: 1100,
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: "16px",
+                            borderBottom: "1px solid #eee",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <h3 style={{ margin: 0 }}>Wishlist</h3>
+                        <button
+                            onClick={() => setShowWishlist(false)}
+                            style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", lineHeight: 1 }}
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+                        {wishlistItems.length === 0 && (
+                            <p style={{ color: "gray", textAlign: "center", marginTop: "32px" }}>Your wishlist is empty.</p>
+                        )}
+
+                        {wishlistItems.map((wItem) => (
+                            <div
+                                key={wItem.id}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "flex-start",
+                                    marginBottom: "12px",
+                                    paddingBottom: "12px",
+                                    borderBottom: "1px solid #eee",
+                                }}
+                            >
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>{wItem.name}</p>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "gray" }}>{wItem.category}</p>
+                                </div>
+
+                                <button
+                                    onClick={() => removeFromWishlist(wItem.id)}
+                                    title="Remove from wishlist"
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        color: "#e53935",
+                                        fontSize: "18px",
+                                        lineHeight: 1,
+                                        padding: "0 4px",
+                                    }}
+                                >
+                                    🗑
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
