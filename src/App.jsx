@@ -28,6 +28,7 @@ import SponsorCatalog from "./SponsorCatalog";
 import SponsorNotificationsPage from './SponsorNotificationsPage';
 import DriverNotificationsPage from './DriverNotificationsPage';
 import DriverApplication from './DriverApplication';
+import SponsorApplication from './SponsorApplication';
  
  
 function App() {
@@ -94,6 +95,7 @@ function App() {
                 <Nav.Link as={Link} to="/driver-notifications">Driver Notif</Nav.Link>
                 <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
                 <Nav.Link as={Link} to="/application">Application</Nav.Link>
+                <Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
@@ -145,6 +147,7 @@ function App() {
           <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
           <Route path="/callback" element={<div>Logging in...</div>} />
           <Route path="/application" element={<DriverApplication />}/>
+          <Route path="/sponsor-application" element={<SponsorApplication />} />
         </Routes>
     </div>
   );
