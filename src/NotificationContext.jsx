@@ -15,7 +15,8 @@ export default function NotificationProvider({ children }) {
       description: description.trim(),
       timestamp: Date.now(),
       closed: false,
-      starred: false 
+      starred: false,
+      pinned: false   // new field: only one notification can be pinned at a time
     };
 
     const updatedNotifications = [...notifications, newNotification];
@@ -26,6 +27,18 @@ export default function NotificationProvider({ children }) {
   const closeNotification = (id) => {
     const updatedNotifications = notifications.map(notification =>
       notification.id === id ? { ...notification, closed: true } : notification
+    );
+    setNotifications(updatedNotifications);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotifications));
+  };
+
+  // toggles the 'pinned' state of a notification by id only one notification can be pinned at a time
+  // pinning a new one automatically unpins the previously pinned notification
+  const togglePin = (id) => {
+    const updatedNotifications = notifications.map(notification =>
+      notification.id === id
+        ? { ...notification, pinned: !notification.pinned }
+        : { ...notification, pinned: false }  // unpin all others
     );
     setNotifications(updatedNotifications);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotifications));
@@ -49,6 +62,7 @@ export default function NotificationProvider({ children }) {
     addNotification,
     closeNotification,
     toggleStar,
+    togglePin,
     getActiveNotifications
   };
 
