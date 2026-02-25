@@ -49,7 +49,6 @@ export default function Catalog({view}) {
     const[showFilter, setShowFilter] = useState(false);
     const openFilter = () => setShowFilter(true);
     const closeFilter = () => setShowFilter(false);
-    const filterDisplay = useMemo( () => <FilterModal/>, [] );
 
     // State trackers for various search queries
 
@@ -64,7 +63,7 @@ export default function Catalog({view}) {
         item.desc.toLowerCase().includes(queryByName.toLowerCase())) &&
         (item.price >= queryMinPrice && item.price <= queryMaxPrice)
     );
-
+    
     function applyFilter(name, min, max) {
         setQueryByName(name);
         setQueryMinPrice(min);
@@ -76,6 +75,15 @@ export default function Catalog({view}) {
         const [name, setName] = useState('');
         const [min, setMin] = useState(0);
         const [max, setMax] = useState(Number.MAX_SAFE_INTEGER);
+
+        function clearFilter() {
+            setName('');
+            setMin(0);
+            setMax(Number.MAX_SAFE_INTEGER);
+            setQueryByName('');
+            setQueryMinPrice(0);
+            setQueryMaxPrice(Number.MAX_SAFE_INTEGER);
+        }
 
         return (
             <Modal show={showFilter} onHide={closeFilter}>
@@ -114,6 +122,7 @@ export default function Catalog({view}) {
 
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowFilter(false)} >Cancel</Button>
+                    <Button variant="secondary" onClick={() => clearFilter()} >Clear</Button>
                     <Button variant="primary" onClick={() => applyFilter(name, min, max)}>Apply</Button>
                 </Modal.Footer>
             </Modal>
