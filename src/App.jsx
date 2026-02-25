@@ -119,7 +119,7 @@ function App() {
                     >
                       <NavDropdown.Item as={Link} to="/edit_profile">Edit Profile</NavDropdown.Item>
                       <NavDropdown.Divider />
-                      <NavDropdown.Item as={Link} to="/AccountManagement">Manage Account</NavDropdown.Item>
+                      <NavDropdown.Item as={Link} to="/AccountManagement">Account Settings</NavDropdown.Item>
                       <NavDropdown.Divider />
                       <NavDropdown.Item as={Link} to="/logout">Logout</NavDropdown.Item>
                     </NavDropdown>
