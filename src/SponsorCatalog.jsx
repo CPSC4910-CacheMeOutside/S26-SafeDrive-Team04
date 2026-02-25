@@ -71,6 +71,9 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
     const [editItem, setEditItem] = useState(null);
     const [newPriceInput, setNewPriceInput] = useState("");
 
+    const [cartItems, setCartItems] = useState([]);
+    const [showCart, setShowCart] = useState(false);
+
     useEffect(() => {
         setItems(FAKE_ITEMS);
         setDrivers(FAKE_DRIVERS);
@@ -109,6 +112,31 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
         setOrderSuccess(true);
     }
 
+
+    function addToCart(item) {
+        setCartItems((prev) => {
+            const existing = prev.find((c) => c.id === item.id);
+            if (existing) {
+                return prev.map((c) =>
+                    c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
+                );
+            }
+            return [...prev, { id: item.id, name: item.name, category: item.category, sponsorPrice: item.sponsorPrice, quantity: 1 }];
+        });
+    }
+
+    function removeFromCart(itemId) {
+        setCartItems((prev) => prev.filter((c) => c.id !== itemId));
+    }
+
+    function getCartTotal() {
+        return cartItems.reduce((sum, c) => sum + c.sponsorPrice * c.quantity, 0);
+    }
+
+    function getCartCount() {
+        return cartItems.reduce((sum, c) => sum + c.quantity, 0);
+    }
+
     async function handleSavePrice() {
         const parsed = parseInt(newPriceInput);
         if (isNaN(parsed) || parsed < 0) {
@@ -127,7 +155,48 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
 
     return (
         <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-            <h2>Sponsor Catalog</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <h2 style={{ margin: 0 }}>Sponsor Catalog</h2>
+
+                <div style={{ position: "relative", display: "inline-block" }}>
+                    <button
+                        onClick={() => setShowCart(true)}
+                        style={{
+                            fontSize: "14px",
+                            padding: "8px 16px",
+                            backgroundColor: "#333",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Cart
+                    </button>
+                    {getCartCount() > 0 && (
+                        <span
+                            style={{
+                                position: "absolute",
+                                top: "-8px",
+                                right: "-8px",
+                                backgroundColor: "#e53935",
+                                color: "white",
+                                borderRadius: "50%",
+                                width: "20px",
+                                height: "20px",
+                                fontSize: "11px",
+                                fontWeight: "bold",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                pointerEvents: "none",
+                            }}
+                        >
+                            {getCartCount()}
+                        </span>
+                    )}
+                </div>
+            </div>
 
             <div style={{ marginBottom: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
                 <span>Filter by price (pts):</span>
@@ -189,6 +258,12 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 style={{ fontSize: "12px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}>
                                 Buy for Driver
                             </button>
+                            <button
+                                onClick={() => addToCart(item)}
+                                style={{ fontSize: "12px", backgroundColor: "#2196F3", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}
+                            >
+                                Add to Cart
+                            </button>
                         </div>
                     </div>
                 ))}
@@ -248,6 +323,100 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                             </div>
                         </div>
                 )}
+                    </div>
+                </div>
+            )}
+
+            {/* shopping cart side panel */}
+            {showCart && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        right: 0,
+                        width: "320px",
+                        height: "100%",
+                        background: "white",
+                        boxShadow: "-4px 0 12px rgba(0,0,0,0.2)",
+                        zIndex: 1100,
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: "16px",
+                            borderBottom: "1px solid #eee",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <h3 style={{ margin: 0 }}>Cart</h3>
+                        <button
+                            onClick={() => setShowCart(false)}
+                            style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", lineHeight: 1 }}
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+                        {cartItems.length === 0 && (
+                            <p style={{ color: "gray", textAlign: "center", marginTop: "32px" }}>Your cart is empty.</p>
+                        )}
+
+                        {cartItems.map((cartItem) => (
+                            <div
+                                key={cartItem.id}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "flex-start",
+                                    marginBottom: "12px",
+                                    paddingBottom: "12px",
+                                    borderBottom: "1px solid #eee",
+                                }}
+                            >
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>{cartItem.name}</p>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "gray" }}>
+                                        {cartItem.sponsorPrice} pts × {cartItem.quantity}
+                                    </p>
+                                    <p style={{ margin: "2px 0 0", fontSize: "14px", fontWeight: "600" }}>
+                                        {cartItem.sponsorPrice * cartItem.quantity} pts
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={() => removeFromCart(cartItem.id)}
+                                    title="Remove from cart"
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        color: "#e53935",
+                                        fontSize: "18px",
+                                        lineHeight: 1,
+                                        padding: "0 4px",
+                                    }}
+                                >
+                                    🗑
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div
+                        style={{
+                            padding: "16px",
+                            borderTop: "2px solid #eee",
+                            backgroundColor: "#fafafa",
+                        }}
+                    >
+                        <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>
+                            Total: {getCartTotal()} pts
+                        </p>
                     </div>
                 </div>
             )}
