@@ -179,12 +179,12 @@ export default function Catalog({view}) {
                                 {/* make is so only the items matching the search are shown */}
                                 {filtered.map((item, idx) =>
                                     (
-                                        <CatalogItemList key={idx} product={item} likeId={idx}></CatalogItemList>
+                                        <CatalogItemList key={item.pId} product={item} likeId={item.pId}></CatalogItemList>
                                     )
                                 )}
                                 {/* Display nothing if the filter doesn't retrieve anything */}
                                 {filtered.length === 0 && (
-                                    <ListGroup.Item className="text-muted mt-3">No items match your search.</ListGroup.Item>
+                                    <ListGroup.Item key={'noSearch'} likeId={'noSearch'} className="text-muted mt-3">No items match your search.</ListGroup.Item>
                                 )}
                             </ListGroup>
                         </Card>
@@ -200,7 +200,7 @@ export default function Catalog({view}) {
                             {
                                 filtered.map((item, idx) =>
                                 (
-                                    <CatalogItemPane product={item} likeId={idx}></CatalogItemPane>
+                                    <CatalogItemPane product={item} key={item.pId} likeId={item.pId}></CatalogItemPane>
                                 )
                             )}
                             {filtered.length === 0 && (
