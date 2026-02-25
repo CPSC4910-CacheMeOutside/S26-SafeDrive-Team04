@@ -49,16 +49,12 @@ export default function Catalog({view}) {
     const[showFilter, setShowFilter] = useState(false);
     const openFilter = () => setShowFilter(true);
     const closeFilter = () => setShowFilter(false);
+    const filterDisplay = useMemo( () => <FilterModal/>, [] );
 
     // State trackers for various search queries
 
-    const [name, setName] = useState('');
     const [queryByName, setQueryByName] = useState('');
-    
-    const [min, setMin] = useState(0);
     const [queryMinPrice, setQueryMinPrice] = useState(0);
-
-    const [max, setMax] = useState(Number.MAX_SAFE_INTEGER);
     const [queryMaxPrice, setQueryMaxPrice] = useState(Number.MAX_SAFE_INTEGER);
 
     // Filter catalog items whenever the query changes
@@ -69,7 +65,7 @@ export default function Catalog({view}) {
         (item.price >= queryMinPrice && item.price <= queryMaxPrice)
     );
 
-    function applyFilter() {
+    function applyFilter(name, min, max) {
         setQueryByName(name);
         setQueryMinPrice(min);
         setQueryMaxPrice(max);
@@ -77,6 +73,9 @@ export default function Catalog({view}) {
     }
 
     function FilterModal() {
+        const [name, setName] = useState('');
+        const [min, setMin] = useState(0);
+        const [max, setMax] = useState(Number.MAX_SAFE_INTEGER);
 
         return (
             <Modal show={showFilter} onHide={closeFilter}>
@@ -115,7 +114,7 @@ export default function Catalog({view}) {
 
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowFilter(false)} >Cancel</Button>
-                    <Button variant="primary" onClick={() => applyFilter()}>Apply</Button>
+                    <Button variant="primary" onClick={() => applyFilter(name, min, max)}>Apply</Button>
                 </Modal.Footer>
             </Modal>
         );
@@ -177,7 +176,7 @@ export default function Catalog({view}) {
     /* The main Catalog Page */
     return (
         <div style={{ marginTop: '30px' }}>
-            <FilterModal />
+            <FilterModal/>
             {/* Changed the header row so the search bar is in there */}
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h1 className="mb-0">Sponsor Catalog</h1>
