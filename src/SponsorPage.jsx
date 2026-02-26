@@ -19,7 +19,8 @@ function SponsorPage() {
         {id: 2, name: "Cledus Snow", points: 156},
         {id: 3, name: "Hot-Pants Hillard", points: 186},
         {id: 4, name: "Burt Reynolds", points: 330},
-        {id: 5, name: "Jerry Reed", points: 300}
+        {id: 5, name: "Jerry Reed", points: 300},
+        {id: 6, name: "Burt Schmekles", points: 100}
     ]);
 
     const [selectedId, setSelectedId] = useState(1);
@@ -27,10 +28,16 @@ function SponsorPage() {
     const [sortMode, setSortMode] = useState("id");
     const [description, setDescription] = useState("");
     const [logs, setLogs] = useState([]);
+    const [driverSearch, setDriverSearch] = useState("");
+    const [logSearch, setLogSearch] = useState("")
 
     const selectedDriver = drivers.find(d => d.id === selectedId);
 
     const pointAdjust = (value) => {
+        if(!selectedDriver) return;
+        const delta = Number(value);
+        if(!Number.isFinite(delta)) return;
+        
         const timestamp = new Date().toLocaleString();
             setDrivers(prev =>
                 prev.map(d =>
@@ -53,6 +60,27 @@ function SponsorPage() {
         if (sortMode === "points") return b.points - a.points;
         if (sortMode === "id") return a.id - b.id;
         return 0;
+    });
+
+    const filteredDrivers = sortedDrivers.filter((d) => {
+        const q = driverSearch.trim().toLowerCase();
+        if(!q) return true;
+
+        return(
+            d.name.toLowerCase().includes(q) || String(d.id).includes(q)
+        );
+    });
+
+    const filteredLogs = logs.filter((log) => {
+        const q = logSearch.trim().toLowerCase();
+        if(!q) return true;
+
+        return(
+            log.driver.toLowerCase().includes(q) ||
+            log.reason.toLowerCase().includes(q) ||
+            String(log.change).includes(q) ||
+            String(log.time).toLowerCase().includes(q)
+        );
     });
     
     const navigate = useNavigate();
@@ -84,8 +112,16 @@ function SponsorPage() {
                                                     Sort by ID
                                                 </Button>
                                         </div>
+                                        <Form.Group className="mb-3">
+                                            <Form.Control
+                                            type="text"
+                                            placeholder="Search drivers by name or ID.."
+                                            value={driverSearch}
+                                            onChange={(e) => setDriverSearch(e.target.value)}
+                                            />
+                                        </Form.Group>
                                         <ListGroup>
-                                            {sortedDrivers.map(driver => (
+                                            {filteredDrivers.map(driver => (
                             
                                             <ListGroup.Item
                                                 key={driver.id}
@@ -100,6 +136,7 @@ function SponsorPage() {
                                             </ListGroup.Item>
                                             ))}
                                         </ListGroup>
+
                                     </Card.Body>
                                 </Card>
                             </Col>
@@ -148,8 +185,16 @@ function SponsorPage() {
                     <Tab eventKey="audit" title="Logs/Reports">
                        <Card>
                         <Card.Title>Adjustment History</Card.Title>
+                        <Form.Group className="mb-3">
+                            <Form.Control
+                                type="text"
+                                placeholder="Search Transaction History"
+                                value={logSearch}
+                                onChange={(e) => setLogSearch(e.target.value)}
+                                />
+                        </Form.Group>
                         <ListGroup>
-                            {logs.map((log, i) =>(
+                            {filteredLogs.map((log, i) =>(
                                 <ListGroup.Item key = {i}>
                                     <strong>{log.driver}</strong> {log.change > 0 ? "gained" : "lost"}{" "}
                                     <strong>{Math.abs(log.change)}</strong> points <br />

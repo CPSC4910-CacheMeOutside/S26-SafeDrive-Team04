@@ -68,7 +68,7 @@ function App() {
 
     let destination = "/";
     if (groups.includes("Admin")) {
-        destination = "/admin";
+        destination = "/AdminPage";
     } else if (groups.includes("Sponsor")) {
         destination = "/SponsorPage";
     }
@@ -95,7 +95,7 @@ function App() {
                 <Nav.Link as={Link} to="/sponsor-notifications">Sponsor Notif</Nav.Link>
                 <Nav.Link as={Link} to="/driver-notifications">Driver Notif</Nav.Link>
                 <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
-                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/admin">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
@@ -132,7 +132,7 @@ function App() {
           <Route path="/about" element={<AboutPage />}/>
           <Route path="/updateAbout" element={<UpdateAbout />}/>
           <Route path="/profile" element={<ProfilePage />}/>
-          <Route path="/admin" element={<AdminPage />}/>
+          <Route path="/AdminPage" element={<AdminPage />}/>
           <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
           <Route path="/logout" element={<LogoutPage />}/>
