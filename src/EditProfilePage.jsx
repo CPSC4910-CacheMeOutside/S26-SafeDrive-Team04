@@ -134,7 +134,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
           </Col>
         </Form.Group>
 
-        <Form.Group as={Row} className="mb-1">
+        <Form.Group as={Row} className="mb-3">
           <Form.Label column sm={3}>Role:</Form.Label>
           <Col sm={6} className="d-flex align-items-start">
             {authRole.length > 0 ? (
@@ -147,7 +147,7 @@ function EditProfilePage({ profilePic, setProfilePic }) {
 
         <Form.Group as={Row} className="mb-3 align-items-center">
           <Form.Label column sm={3}>Profile Picture:</Form.Label>
-          <Col sm={9}>
+          <Col sm={6}>
             <div className="d-flex align-items-center">
             <Form.Control
               type="file"
@@ -163,14 +163,15 @@ function EditProfilePage({ profilePic, setProfilePic }) {
               <Image
                 src={profilePic}
                 roundedCircle
-                width={94}
-                height={94}
+                width={90}
+                height={90}
                 alt="Profile Preview"
               />
             )}
             
           </Col>
         </Form.Group>
+
         <Button type="Submit">Save Changes</Button>
       </div>
       </Form>
