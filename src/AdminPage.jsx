@@ -26,6 +26,8 @@ function AdminPage(){
   const [sortMode, setSortMode] = useState("id");
   const [description, setDescription] = useState("");
   const [logs, setLogs] = useState([]);
+  
+  const selectedDriver = drivers.find(d => d.id === selectedId);
   const pointAdjust = (value) => {
     const timestamp = new Date().toLocaleString();
     setDrivers(prev =>
