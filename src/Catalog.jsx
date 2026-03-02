@@ -133,7 +133,7 @@ export default function Catalog({view}) {
     function CatalogItemPane({product}) {
         return (
                 <Tab.Pane eventKey={product.pId} >
-                    <Card>
+                    <Card style={{ maxHeight: '500px', overflowY: 'auto' }}>
                         <Col>
                             <Row>
                                 {/* Maybe replace with a carousel */}
@@ -188,7 +188,7 @@ export default function Catalog({view}) {
             <FilterModal/>
             {/* Changed the header row so the search bar is in there */}
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h1 className="mb-0">Sponsor Catalog</h1>
+                <h1 className="mb-0">Your Catalog</h1>
                 {/* The search updates on every keypress */}
                 <Button variant='secondary' onClick={openFilter}>
                     <Image style={{height:'25px', width:'25px'}} src='filterIco.png' fluid/>
@@ -214,7 +214,7 @@ export default function Catalog({view}) {
                         </Card>
                     </Col>
                     <Col sm={6}>
-                        <Tab.Content style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                        <Tab.Content>
                             <Tab.Pane eventKey={"defaultChoice"}> 
                                 <Card>
                                     <Card.Title> Welcome </Card.Title>
