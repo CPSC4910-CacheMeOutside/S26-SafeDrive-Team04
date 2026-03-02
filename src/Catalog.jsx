@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Tab, ListGroup, Row, Col, Modal,
+import StarRating from "./StarRating";
+import { Tab, ListGroup, Row, Col, Modal, Stack,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 
 /* Here to test the catalog. Future versions will pull items from store API and backend */
@@ -145,6 +146,10 @@ export default function Catalog({view}) {
                             <Row>
                                 <Col>
                                     <h3><strong>Price:</strong> {product.price} PTs</h3>
+                                    <Stack direction='horizontal' gap={1}>
+                                        <div><p><strong>Rating:</strong></p></div>
+                                        <div><StarRating itemKey={String(product.pId)} /></div>
+                                    </Stack>
                                     <p><strong>Description: </strong>{product.desc}</p>
                                     {( product.available === true
                                         ? ( <Button variant='primary'>Request</Button> )
