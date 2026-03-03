@@ -101,7 +101,6 @@ function App() {
                 <Nav.Link as={Link} to="/sponsor-notifications">Sponsor Notif</Nav.Link>
                 <Nav.Link as={Link} to="/driver-notifications">Driver Notif</Nav.Link>
                 <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
-                <Nav.Link as={Link} to="/application">Application</Nav.Link>
                 <Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
@@ -160,8 +159,15 @@ function App() {
           <Route path="/PointsContext" element={<PointsProvider />}/>
           <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
           <Route path="/callback" element={<div>Logging in...</div>} />
-          <Route path="/application" element={<DriverApplication />}/>
           <Route path="/sponsor-list" element={<SponsorListings />} />
+            {
+            /* These imbeded routes are a proof of concept. Future versions will autopoulate these sub routes with 
+             one route from each registered sponsor. Sponsors will be passed via objects similar to those below. 
+             Application pages intake the sponsored user being applied to and use for processing.
+             
+             - Louis 
+             */}
+          <Route path="/application/:appliedSponsor" element={<DriverApplication appliedSponsor />} />
           <Route path="/sponsor-application" element={<SponsorApplication />} />
         </Routes>
     </div>

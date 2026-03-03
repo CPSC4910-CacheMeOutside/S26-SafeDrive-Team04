@@ -1,4 +1,5 @@
 import {Container, Col, Row, Card, Stack, Button, Image} from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import {useState} from 'react';
 
 /* This array will serve as test input until data can be fed from the backend
@@ -40,12 +41,12 @@ export default function SponsorListings() {
             <Stack direction="horizontal" gap={3}>
                 <Image height={200} width={200} src={usr.profileImg} roundedCircle/>
                 <Col>
-                    <div class="text-start">
+                    <div className="text-start">
                         <h4>{usr.affiliation}</h4>
                         <p>{usr.bio}</p>
                     </div>
                     
-                    <Button variation="primary">Apply Now!</Button>
+                    <Button variant="primary" as={Link} to={`/application/${usr.first}`}>Apply Now!</Button>
                 </Col>
             </Stack>
         </Card>
@@ -61,9 +62,7 @@ export default function SponsorListings() {
                 and find the one that best fits your goals</p>
 
                 <Container className="border p-3" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                    {sponsorList.map((spnsr, idx) =>
-                        (<SponsorCard usr={spnsr} key={idx}/>)
-                    )}
+                    {sponsorList.map((spnsr, idx) => (<SponsorCard usr={spnsr} key={idx}/>) )}
                 </Container>
             </Col>
             

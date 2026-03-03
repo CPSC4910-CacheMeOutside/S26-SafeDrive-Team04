@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 
 const fields = [
   { id: "firstName", label: "First Name", type: "text", required: true, placeholder: "John" },
@@ -51,6 +52,9 @@ function getError(field, value) {
 }
 
 export default function DriverApplicationForm() {
+
+  const {appliedSponsor} = useParams();
+
   const [values, setValues] = useState(
     fields.reduce((acc, f) => ({ ...acc, [f.id]: "" }), {})
   );
@@ -109,13 +113,12 @@ export default function DriverApplicationForm() {
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
 
-      <h1 style={{ textAlign: "center" }}>Driver Application</h1>
+      <h1 style={{ textAlign: "center" }}>Driver Application for {appliedSponsor}</h1>
       <p style={{ textAlign: "center", color: "#555" }}>
         Fields marked with <span style={{ color: "red" }}>*</span> are required
       </p>
 
       <form onSubmit={handleSubmit} noValidate>
-
         <h3 style={sectionTitleStyle}>Personal Info</h3>
         <div style={gridStyle}>
           {fields.slice(0, 4).map((field) => (
