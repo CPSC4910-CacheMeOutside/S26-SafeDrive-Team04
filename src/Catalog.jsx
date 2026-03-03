@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import StarRating from "./StarRating";
-import { Tab, ListGroup, Row, Col, Modal, Stack,
+import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 
 export default function Catalog({view}) {
@@ -127,8 +127,16 @@ export default function Catalog({view}) {
                     <Card style={{ maxHeight: '500px', overflowY: 'auto' }}>
                         <Col>
                             <Row>
-                                {/* Maybe replace with a carousel */}
-                                <Image src={product.imgs[0]}/>
+                                <Carousel className="bg-secondary">
+                                    {product.imgs.map(img => 
+                                        (
+                                            <Carousel.Item>
+                                                <Image width={300} src={img} fluid/>
+                                            </Carousel.Item>
+                                        )
+                                    )}
+                                </Carousel>
+                            
                             </Row>
                             <Row>
                                 <h1>{product.title}</h1>
