@@ -3,7 +3,7 @@ import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 
-export default function Catalog({view}) {
+export default function CatalogBuilder({view}) {
 
     // Load in the page. Contact the store api first
     useEffect(() => {

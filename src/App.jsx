@@ -24,7 +24,7 @@ import EditProfilePage from './EditProfilePage';
 import ConversionRatioProvider from './ConversionRatioContext';
 import NotificationProvider from './NotificationContext';
 import PointsProvider from './PointsContext';
-import Catalog from './Catalog';
+import CatalogBuilder from './CatalogBuilder';
 import SponsorCatalog from "./SponsorCatalog";
 import SponsorNotificationsPage from './SponsorNotificationsPage';
 import DriverNotificationsPage from './DriverNotificationsPage';
@@ -151,7 +151,7 @@ function App() {
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/DriverPage" element={<DriverPage />}/>
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
-          <Route path="/Catalog" element={<Catalog />}/>
+          <Route path="/CatalogBuilder" element={<CatalogBuilder />}/>
           <Route path="/sponsor-notifications" element={<SponsorNotificationsPage />}/>
           <Route path="/driver-notifications" element={<DriverNotificationsPage />}/>
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
