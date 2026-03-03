@@ -30,6 +30,7 @@ import SponsorNotificationsPage from './SponsorNotificationsPage';
 import DriverNotificationsPage from './DriverNotificationsPage';
 import DriverApplication from './DriverApplication';
 import SponsorApplication from './SponsorApplication';
+import SponsorListings from './Available-Sponsors';
  
 import UpdateAbout from './UpdateAbout';
 
@@ -160,6 +161,7 @@ function App() {
           <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
           <Route path="/callback" element={<div>Logging in...</div>} />
           <Route path="/application" element={<DriverApplication />}/>
+          <Route path="/sponsor-list" element={<SponsorListings />} />
           <Route path="/sponsor-application" element={<SponsorApplication />} />
         </Routes>
     </div>
