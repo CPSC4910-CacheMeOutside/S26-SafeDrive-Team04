@@ -51,6 +51,33 @@ function getError(field, value) {
   return null;
 }
 
+const mockSubmittedApplications = [
+  {
+    id: 101,
+    sponsorName: "SafeDrive Co.",
+    submittedDate: "2026-01-10",
+    status: "pending",
+    rejectionReason: null,
+    driverAction: null,
+  },
+  {
+    id: 102,
+    sponsorName: "FastFleet Inc.",
+    submittedDate: "2026-01-20",
+    status: "accepted",
+    rejectionReason: null,
+    driverAction: null,
+  },
+  {
+    id: 103,
+    sponsorName: "RoadReady LLC",
+    submittedDate: "2026-02-01",
+    status: "denied",
+    rejectionReason: "Your license state is not currently supported in our operating region.",
+    driverAction: null,
+  },
+];
+
 export default function DriverApplicationForm() {
 
   const {appliedSponsor} = useParams();
@@ -61,6 +88,8 @@ export default function DriverApplicationForm() {
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [done, setDone] = useState(false);
+  const [view, setView] = useState("form");
+  const [myApplications, setMyApplications] = useState(mockSubmittedApplications);
 
   const errors = {};
   for (const f of fields) {
@@ -90,6 +119,12 @@ export default function DriverApplicationForm() {
     }
   }
 
+  function handleDriverAction(appId, action) {
+    setMyApplications((prev) =>
+      prev.map((a) => (a.id === appId ? { ...a, driverAction: action } : a))
+    );
+  }
+
   if (done) {
     return (
       <div style={{ textAlign: "center", padding: "80px 20px", fontFamily: "Arial, sans-serif" }}>
@@ -106,6 +141,57 @@ export default function DriverApplicationForm() {
         >
           Submit Another One
         </button>
+      </div>
+    );
+  }
+
+  if (view === "myApplications") {
+    return (
+      <div style={{ maxWidth: 700, margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+          <button onClick={() => setView("form")} style={{ ...btnStyle, background: "#6c757d", padding: "6px 14px", fontSize: 13 }}>
+            ← Back
+          </button>
+          <h2 style={{ margin: 0 }}>My Applications</h2>
+        </div>
+
+        {myApplications.map((app) => (
+          <div key={app.id} style={{ border: "1px solid #ddd", borderRadius: 4, padding: 16, marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <strong>{app.sponsorName}</strong>
+              <StatusBadge status={app.driverAction ? (app.driverAction === "accepted" ? "offer_accepted" : "offer_declined") : app.status} />
+            </div>
+            <div style={{ fontSize: 13, color: "#888", marginBottom: 10 }}>Submitted: {app.submittedDate}</div>
+
+            <ApplicationStatusMessage
+              status={app.status}
+              rejectionReason={app.rejectionReason}
+              driverAction={app.driverAction}
+            />
+
+            {app.status === "accepted" && app.driverAction === null && (
+              <div style={{ marginTop: 12 }}>
+                <p style={{ fontSize: 13, fontWeight: "bold", marginBottom: 8 }}>
+                  Would you like to accept their offer?
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => handleDriverAction(app.id, "accepted")}
+                    style={{ ...btnStyle, background: "#28a745", padding: "7px 18px", fontSize: 13 }}
+                  >
+                    Accept Offer
+                  </button>
+                  <button
+                    onClick={() => handleDriverAction(app.id, "rejected")}
+                    style={{ ...btnStyle, background: "#dc3545", padding: "7px 18px", fontSize: 13 }}
+                  >
+                    Decline Offer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     );
   }
@@ -174,8 +260,58 @@ export default function DriverApplicationForm() {
           </p>
         )}
       </form>
+
+      <div style={{ textAlign: "center", marginTop: 16 }}>
+        <button onClick={() => setView("myApplications")} style={{ ...btnStyle, background: "#6c757d", fontSize: 13 }}>
+          View My Applications
+        </button>
+      </div>
     </div>
   );
+}
+
+function ApplicationStatusMessage({ status, rejectionReason, driverAction }) {
+  if (driverAction === "accepted") {
+    return (
+      <div style={{ background: "#d4edda", border: "1px solid #c3e6cb", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#155724" }}>
+        You accepted this sponsorship offer. Welcome aboard!
+      </div>
+    );
+  }
+  if (driverAction === "rejected") {
+    return (
+      <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#721c24" }}>
+        You declined this offer. You're free to look for other opportunities.
+      </div>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <div style={{ background: "#fff3cd", border: "1px solid #ffeeba", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#856404" }}>
+        Your application is under review.
+      </div>
+    );
+  }
+  if (status === "accepted") {
+    return (
+      <div style={{ background: "#d4edda", border: "1px solid #c3e6cb", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#155724" }}>
+        This sponsor has accepted your application! Please respond to their offer below.
+      </div>
+    );
+  }
+  if (status === "denied") {
+    return (
+      <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#721c24" }}>
+        <strong>Application Not Accepted</strong>
+        {rejectionReason ? (
+          <p style={{ margin: "6px 0 0" }}><strong>Reason:</strong> {rejectionReason}</p>
+        ) : (
+          <p style={{ margin: "6px 0 0" }}>No reason was provided.</p>
+        )}
+      </div>
+    );
+  }
+  return null;
 }
 
 function FormField({ field, value, error, showError, onChange, onBlur }) {
@@ -204,6 +340,29 @@ function FormField({ field, value, error, showError, onChange, onBlur }) {
         {showError ? `${error}` : ""}
       </span>
     </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const colors = {
+    pending: { background: "#fff3cd", color: "#856404" },
+    accepted: { background: "#d4edda", color: "#155724" },
+    denied: { background: "#f8d7da", color: "#721c24" },
+    offer_accepted: { background: "#d4edda", color: "#155724" },
+    offer_declined: { background: "#e2e3e5", color: "#383d41" },
+  };
+  const s = colors[status] || colors.pending;
+  const label = {
+    pending: "Pending",
+    accepted: "Offer Received",
+    denied: "Not Accepted",
+    offer_accepted: "Offer Accepted",
+    offer_declined: "Offer Declined",
+  }[status] || status;
+  return (
+    <span style={{ ...s, padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: "bold" }}>
+      {label}
+    </span>
   );
 }
 
