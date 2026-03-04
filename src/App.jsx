@@ -5,7 +5,8 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
-import { NavDropdown } from 'react-bootstrap';
+import { Button, NavDropdown } from 'react-bootstrap';
+import { useFontSize } from './FontSizeContext';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useEffect, useState, useRef } from 'react';
@@ -35,7 +36,7 @@ import UpdateAbout from './UpdateAbout';
 
 function App() {
 
-  /* Nav config */
+  const { fontSize, cycleFontSize } = useFontSize();
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,6 +111,15 @@ function App() {
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={cycleFontSize}
+                  aria-label={`Text size ${fontSize}%. Click to increase.`}
+                  className="me-2"
+                >
+                  A {fontSize}%
+                </Button>
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
                   <div className="d-flex align-items-center">
