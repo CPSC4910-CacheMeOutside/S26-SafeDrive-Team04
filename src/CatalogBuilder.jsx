@@ -176,9 +176,9 @@ export default function CatalogBuilder({view}) {
                     <Col>
                         <h4>{product.price} PTs</h4>
                         <p>{product.synop}</p>
-                        {( product.available === true
-                            ? ( <span className="btn btn-primary">Request</span> )
-                            : ( <p>Unavailable!</p>)
+                        {( product.inCatalog === true
+                            ? ( <RemoveButton product={product}/> )
+                            : ( <AddButton product={product}/> )
                         )}
                     </Col>
                 </Row>
