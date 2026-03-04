@@ -1,6 +1,6 @@
 import { useAuth } from 'react-oidc-context';
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -13,29 +13,113 @@ import Tab from"react-bootstrap/Tab"
 
 function AdminPage(){
   
-  const [drivers, setDrivers] = useState([
+  const [companies, setCompany] = useState([
+    {id: "EBD", name: "East Bound and Down", 
+      drivers: [
+        {id: 5, name: "Jerry Reed", points: 300},
+        {id: 4, name: "Burt Reynolds", points: 330}
+     ],
+      logs: [],
+    },
+
+    {id: "SmkBdt", name: "Smokey and the Bandit",
+      drivers: [
+        {id: 1, name: "Bo Darvilel", points: 200},
+        {id: 2, name: "Cledus Snow", points: 156},
+        {id: 3, name: "Hot-Pants Hillard", points: 186}
+      ],
+      logs: [],
+    },
+
+    {id: "HwyMn", name: "Highway Men", 
+      drivers: [
+        {id: 6, name: "Johnny Cash", points: 400 },
+        {id: 7, name: "Willie Nelson", points: 450},
+        {id: 8, name: "Waylon Jennings", points: 500},
+        {id: 9, name: "Kris Kristofferson", points: 400}
+      ],
+      logs: [],
+    },
+  ]);
+
+  const [selectedCompanyId, setSelectedCompanyId] = useState(companies[0]?.id ?? "");
+
+
+  /*const [drivers, setDrivers] = useState([
     { id: 1, name: "Bo Darvilel", points: 200 },
     { id: 2, name: "Cledus Snow", points: 156 },
     { id: 3, name: "Hot-Pants Hillard", points: 186 },
     { id: 4, name: "Burt Reynolds", points: 330 },
     { id: 5, name: "Jerry Reed", points: 300 }
   ]);
-
-  const [selectedId, setSelectedId] = useState(1);
+*/
+  const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [amount, setAmount] = useState(10);
   const [sortMode, setSortMode] = useState("id");
   const [description, setDescription] = useState("");
-  const [logs, setLogs] = useState([]);
+ 
+  const selectedCompany = useMemo(
+    () => companies.find((c) => c.id === selectedCompanyId),
+    [companies, selectedCompanyId]
+
+  );
+
+  const companyDrivers = selectedCompany?.drivers ?? [];
+  const companyLogs = selectedCompany?.logs ?? [];
+ 
+  const validDriver = useMemo(() => {
+    if (!companyDrivers.length) return null;
+    if(selectedDriverId == null) return companyDrivers[0].id;
+    const driverLoc = companyDrivers.some((d) => d.id === selectedDriverId);
+    return driverLoc ? selectedDriverId : companyDrivers[0].id;
+
+  }, [companyDrivers, selectedDriverId]);
+
+  const selectedDriver = useMemo(
+    () => companyDrivers.find((d) => d.id === validDriver) ?? null,
+    [companyDrivers, validDriver]
+  );
+
+  const sortedDrivers = useMemo(() => {
+    const copy = [...companyDrivers];
+    copy.sort((a,b) => {
+      if (sortMode === "points") return b.points - a.points;
+      if (sortMode === "id") return a.id - b.id;
+      return 0;
+    });
+    return copy;
+  }, [companyDrivers, sortMode]);
   
-  const selectedDriver = drivers.find(d => d.id === selectedId);
+  
   const pointAdjust = (value) => {
+    if(!selectedCompany || !selectedDriver) return;
     const timestamp = new Date().toLocaleString();
-    setDrivers(prev =>
-      prev.map(d =>
-        d.id === selectedId ? { ...d, points: d.points + value } : d
-      )
+    const reason = description?.trim() ? description.trim() : "No Reason Provided"
+    setCompany(prev =>
+      prev.map((company) => {
+        if(company.id !== selectedCompanyId) return company;
+
+        const updatedDrivers = company.drivers.map((d) =>
+          d.id === selectedDriver.id ? { ...d, points: d.points + value} : d
+        );
+        const newLog = {
+          driverId: selectedDriver.id,
+          driver: selectedDriver.name,
+          change: value,
+          reason,
+          time: timestamp,
+        };
+
+        return{
+          ...company,
+          drivers: updatedDrivers,
+          logs: [newLog, ...company.logs],
+        };
+      })
     );
-    setLogs(prev => [
+    setDescription("");
+  };
+    /*setLogs(prev => [
       {
         driver: selectedDriver.name,
         change: value,
@@ -46,12 +130,7 @@ function AdminPage(){
     ]);
     setDescription("");
   };
-  const sortedDrivers = [...drivers].sort((a, b) => {
-    if (sortMode === "points") return b.points - a.points;
-    if (sortMode === "id") return a.id - b.id;
-    return 0;
-  });
-    
+  */
     const navigate = useNavigate();
 
   return(
@@ -61,10 +140,10 @@ function AdminPage(){
         <Tabs defaultActiveKey="manage" className="mb-4">
           <Tab eventKey="manage" title="Manage Drivers">
             <Row>
-              <Col md={4}>
+              <Col md={3}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Drivers</Card.Title>
+                    <Card.Title>Companies</Card.Title>
                     <div className="mb-4 d-flex gap-2">
                       <Button
                         size="sm"
