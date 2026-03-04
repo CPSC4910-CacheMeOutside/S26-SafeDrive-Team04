@@ -57,7 +57,7 @@ export default function AboutPage () {
             <Row>
                 <Col>
                     <Card style={{ width: '18rem' }}>
-                        <Card.Img variant="top" src="./truckIco.jpg"/>
+                        <Card.Img variant="top" src="./truckIco.jpg" alt="Truck icon representing the SafeDrive product"/>
                         <Card.Body>
                             <Card.Title>Introducing {data.productName}</Card.Title>
                             <Card.Text>{data.desc}</Card.Text>
@@ -66,7 +66,7 @@ export default function AboutPage () {
                 </Col>
                 <Col>
                     <Card style={{ width: '18rem' }}>
-                        <Card.Img variant="top" src="./sprintIco.png"/>
+                        <Card.Img variant="top" src="./sprintIco.png" alt="Sprint icon indicating the current development sprint"/>
                         <Card.Body>
                             <Card.Title>Current Sprint</Card.Title>
                             <Card.Text>{data.sprintNo}</Card.Text>
@@ -75,7 +75,7 @@ export default function AboutPage () {
                 </Col>
                 <Col>
                     <Card style={{ width: '18rem' }}>
-                        <Card.Img variant="top" src="./calendarIco.png"/>
+                        <Card.Img variant="top" src="./calendarIco.png" alt="Calendar icon representing the next scheduled release date"/>
                         <Card.Body>
                             <Card.Title>Next Release Date</Card.Title>
                             <Card.Text>{data.releaseDate}</Card.Text>
