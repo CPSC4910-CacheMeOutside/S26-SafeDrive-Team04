@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
+import { generateClient } from 'aws-amplify/data';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 
+const testSponsorId = 7;
+
 export default function CatalogBuilder({view}) {
+
+    // Client used to add products to the backend catalog
+    const client = generateClient();
 
     // Load in the page. Contact the store api first
     useEffect(() => {
@@ -23,12 +29,81 @@ export default function CatalogBuilder({view}) {
     const [queryMinPrice, setQueryMinPrice] = useState(0);
     const [queryMaxPrice, setQueryMaxPrice] = useState(Number.MAX_SAFE_INTEGER);
 
-    // Contact the external store API
+    // Add the product to the sponsor's catalog
+    async function addProduct(prodId) {
+        const { data: sponsoredCatalog, errors } = await client.models.SponsorCatalog.get({
+            userId: testSponsorId
+        });
+
+        if (errors) {
+            console.log(errors);
+            return;
+        }
+
+        // If catalog isn't there, create one for the sponsor
+        if (!sponsoredCatalog) {
+            await client.models.SponsorCatalog.create({
+                userId: testSponsorId
+            })
+        }
+        // Find the product and add it to the catalog
+        var addedProduct = catalog.find((product) => (product.pId === prodId))
+        await client.models.Product.create({
+            pId: addedProduct.pId,
+            title: addedProduct.title,
+            imgs: addedProduct.imgs,
+            synop: addedProduct.synop,
+            catagory: addedProduct.catagory,
+            price: addedProduct.price,
+            available: addedProduct.available,
+            catalog: testSponsorId
+        })
+        updateCatalog(prev =>
+            prev.map(product =>
+                product.pId === prodId
+                    ? { ...product, inCatalog: true }
+                    : product
+            )
+        );
+        console.log(`Product has been added to the catalog${addedProduct}`);
+    }
+
+    // Remove an item from the catalog
+    async function removeProduct(prodId) {
+        const { data: sponsoredCatalog, errors } = await client.models.SponsorCatalog.get({
+            userId: testSponsorId
+        });
+
+        if (sponsoredCatalog === null)
+        {
+            console.log("Item removal failed. No sponsor catalog was found.")
+            return;
+        }
+
+        if (errors) {
+            console.log(errors);
+            return;
+        }
+
+        var deletedProduct = catalog.find((product) => (product.pId === prodId))
+        await client.models.Product.delete(deletedProduct.pId)
+        updateCatalog(prev =>
+            prev.map(product =>
+                product.pId === prodId
+                    ? { ...product, inCatalog: false }
+                    : product
+            )
+        );
+        console.log(`Product has been removed to the catalog${deletedProduct}`);
+    }
+
+    // Contact the external store API and retrieve all product information
     async function getProducts() {
         try {
             const productRequest = await fetch(`https://api.escuelajs.co/api/v1/products?offset=${catalogOffset}&limit=${catalogLimit}`);
             const productData = await productRequest.json();
             console.log(productData);
+
             let refinedCatalog = productData.map(rawProduct => (
                 {
                     pId: rawProduct.id,
@@ -38,9 +113,12 @@ export default function CatalogBuilder({view}) {
                     desc: rawProduct.description,
                     catagory: rawProduct.category.name,
                     price: rawProduct.price,
-                    available: true
+                    available: true,
+                    inCatalog: false,
                 }
             ));
+
+            
             updateCatalog(refinedCatalog)
         
         } catch (err) {
@@ -129,15 +207,14 @@ export default function CatalogBuilder({view}) {
                         <Col>
                             <Row>
                                 <Carousel className="bg-secondary">
-                                    {product.imgs.map(img => 
+                                    {product.imgs.map((img, idk) => 
                                         (
-                                            <Carousel.Item>
+                                            <Carousel.Item key={idk}>
                                                 <Image width={300} src={img} fluid/>
                                             </Carousel.Item>
                                         )
                                     )}
                                 </Carousel>
-                            
                             </Row>
                             <Row>
                                 <h1>{product.title}</h1>
@@ -150,10 +227,7 @@ export default function CatalogBuilder({view}) {
                                         <div><StarRating itemKey={String(product.pId)} /></div>
                                     </Stack>
                                     <p><strong>Description: </strong>{product.desc}</p>
-                                    {( product.available === true
-                                        ? ( <Button variant='primary'>Request</Button> )
-                                        : ( <p>Unavailable!</p>)
-                                    )}
+                                    <UpdateCatalogButton product={product}/>
                                 </Col>
                             </Row>
                         </Col>
@@ -176,15 +250,23 @@ export default function CatalogBuilder({view}) {
                     <Col>
                         <h4>{product.price} PTs</h4>
                         <p>{product.synop}</p>
-                        {( product.inCatalog === true
-                            ? ( <RemoveButton product={product}/> )
-                            : ( <AddButton product={product}/> )
-                        )}
+                        <UpdateCatalogButton product={product}/>
                     </Col>
                 </Row>
             </ListGroup.Item>
         );
     }
+
+    function UpdateCatalogButton({product}) {
+
+        if (product.inCatalog) {
+            return (<span onClick={ () => {removeProduct(product.pId);        
+            }} className="btn btn-danger">Remove</span>);
+        } else {
+            return (<span onClick={ () => {addProduct(product.pId); 
+            }} className="btn btn-primary">Add To Catalog</span>);
+        }
+    } 
 
     /* The main Catalog Page */
     return (
