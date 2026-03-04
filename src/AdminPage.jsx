@@ -10,6 +10,7 @@ import Col from "react-bootstrap/Col"
 import Form from "react-bootstrap/Form"
 import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
+import { CardBody, ListGroupItem } from 'react-bootstrap';
 
 function AdminPage(){
   
@@ -137,6 +138,7 @@ function AdminPage(){
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         <h1><strong>Admin Dashboard</strong></h1>
+
         <Tabs defaultActiveKey="manage" className="mb-4">
           <Tab eventKey="manage" title="Manage Drivers">
             <Row>
@@ -144,7 +146,35 @@ function AdminPage(){
                 <Card>
                   <Card.Body>
                     <Card.Title>Companies</Card.Title>
-                    <div className="mb-4 d-flex gap-2">
+                    <ListGroup>
+                      {companies.map((c) => (
+                        <ListGroupItem
+                          key={c.id}
+                          action
+                          active={c.id === selectedCompanyId}
+                          onClick={() => {
+                            setSelectedCompanyId(c.id);
+                            setSelectedDriverId(null);
+                          }}
+                        >
+                        {c.name}
+                        </ListGroupItem>
+                      ))}
+                    </ListGroup>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+          <Col md={4}>
+            <Card>
+              <Card.Body>
+                <Card.Title>
+                  Drivers{" "}
+                  {selectedCompany ? (
+                    <span className='text-muted'>({selectedCompany.name})</span>
+                  ) : null}
+                  </Card.Title>
+                    <div className="mb-3 d-flex gap-2">
                       <Button
                         size="sm"
                         variant={sortMode === "points" ? "primary" : "outline-primary"}
@@ -167,29 +197,42 @@ function AdminPage(){
                         <ListGroup.Item
                           key={driver.id}
                           action
-                          active={driver.id === selectedId}
-                          onClick={() => setSelectedId(driver.id)}
+                          active={driver.id === validDriver}
+                          onClick={() => setSelectedDriverId(driver.id)}
                         >
                           <div className="d-flex justify-content-between">
                             <span>{driver.name}</span>
-                            <span className="test-muted">{driver.points}</span>
+                            <span className="text-muted">{driver.points}</span>
                           </div>
                         </ListGroup.Item>
                       ))}
                     </ListGroup>
+
+                    {!companyDrivers.length && (
+                      <div className="text-muted mt-3">
+                        No Drivers Assigned to this Company Yet
+                      </div>
+                    )}
                   </Card.Body>
                 </Card>
               </Col>
 
-              <Col md={8}>
+              <Col md={5}>
                 <Card>
                   <Card.Body>
                     <Card.Title>Adjust Points</Card.Title>
 
-                    <p>
-                      Driver: <strong>{selectedDriver.name}</strong><br />
-                      Current Points: <strong>{selectedDriver.points}</strong>
-                    </p>
+                    {!selectedDriver ? (
+                      <div className="text-muted">Select a driver to adjust points.</div>
+                    ) : (
+                      <>
+                      <p>
+                        Company: <strong>{selectedCompany?.name}</strong>
+                        <br />
+                        Driver: <strong>{selectedDriver.name}</strong>
+                        <br />
+                        Current Points: <strong>{selectedDriver.points}</strong>
+                      </p>
 
                     <Form.Group className="mb-3">
                       <Form.Label>Amount</Form.Label>
@@ -200,6 +243,15 @@ function AdminPage(){
                         onChange={(e) => setAmount(Number(e.target.value))}
                       />
                     </Form.Group>
+                      <Form.Group className="mb-3">
+                        <Form.Label> Reason for Adjustment</Form.Label>
+                        <Form.Control
+                          type="text"
+                          placeholder="Description for Point Change"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                      />
+                    </Form.Group>
                     <div className="d-flex gap-2">
                       <Button variant="success" onClick={() => pointAdjust(amount)}>
                         + Add Points
@@ -208,15 +260,8 @@ function AdminPage(){
                         - Subtract Points
                       </Button>
                     </div>
-                    <Form.Group className="mb-3">
-                      <Form.Label> Reason for Adjustment</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Description for Point Change"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                      />
-                    </Form.Group>
+                  </>
+                  )}
                   </Card.Body>
                 </Card>
               </Col>
@@ -224,29 +269,34 @@ function AdminPage(){
           </Tab>
           <Tab eventKey="audit" title="Logs/Reports">
             <Card>
-              <Card.Title>Adjustment History</Card.Title>
-              <ListGroup>
-                {logs.map((log, i) => (
-                  <ListGroup.Item key={i}>
-                    <strong>{log.driver}</strong> {log.change > 0 ? "gained" : "lost"}{" "}
-                    <strong>{Math.abs(log.change)}</strong> points <br />
-                    <small>
-                      Reason: {log.reason} | {log.time}
-                    </small>
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
-            </Card>
-          </Tab>
+              <Card.Body>
+                <Card.Title>Companies</Card.Title>
+                <ListGroup>
+                  {companies.map((c) => (
+                    <ListGroup.Item
+                      key={c.id}
+                      action
+                      active={c.id === selectedCompanyId}
+                      onClick={() => {
+                        setSelectedCompanyId(c.id);
+                        setSelectedDriverId(null);
+                      }}
+                    >
+                    {c.name}
 
-          <Tab eventKey="settings" title="Settings">
-            <Card><Card.Body>Settings and Preferences Coming Soon</Card.Body></Card>
-          </Tab>
-
-        </Tabs>
-      </div>
-    </Container>
-  );
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+                {!companyLogs.length && (
+                  <div className="text-muted mt-3"> No adjustments logged yet.</div>
+                )}
+              </Card.Body>
+          </Card>
+    </Tab>
+  </Tabs>
+ </div>
+</Container>
+  );  
 }
 
 export default AdminPage;
