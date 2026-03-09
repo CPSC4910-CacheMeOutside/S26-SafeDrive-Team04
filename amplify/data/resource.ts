@@ -1,7 +1,15 @@
 import { a, defineData, type ClientSchema} from '@aws-amplify/backend';
+import { identifyUser } from 'aws-amplify/analytics';
 
 // Create our About Table
 const SafeDriveSchema = a.schema({
+
+  AppControl: a.model({
+    appCId: a.id().required(),
+    sprintNo: a.id()
+  }).identifier(['appCId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
   AboutInfo: a.model({
     sprintNo: a.id().required(),
     releaseDate: a.string(),
@@ -140,6 +148,13 @@ AdminMessage: a.model({
     allow.groups(['Admin'])
   ]),
 
+  Orders: a.model({
+    oId: a.id().required(),
+    stat: a.integer().required(),
+    notes: a.string().required(),
+
+    products: a.hasMany('Product', "oId")
+  }).authorization(allow => [allow.publicApiKey()]),
 
   Product: a.model({
     pId: a.id().required(),
@@ -149,13 +164,100 @@ AdminMessage: a.model({
     catagory: a.string(),
     price: a.float(),
     available: a.boolean(),
-    catalog: a.belongsTo('SponsorCatalog', 'pId'),
+
+    wishId: a.id(),
+    wishlist: a.belongsTo('Wishlist', 'wishId'),
+
+    cartId: a.id(),
+    cart: a.belongsTo('Cart', 'cartId'),
+
+    oId: a.id(),
+    order: a.belongsTo('Orders', 'oId')
+
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
 
-  SponsorCatalog: a.model({
+  Wishlist: a.model({
+    wishId: a.id().required(),
+
     userId: a.id().required(),
-    products: a.hasMany('Product', 'pId')
+    user: a.belongsTo('Drivers', 'userId'),
+
+    products: a.hasMany('Product', 'wishId')
+  }).identifier(['wishId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Cart: a.model({
+    cartId: a.id().required(),
+
+    userId: a.id().required(),
+    user: a.belongsTo('Drivers', 'userId'),
+
+    products: a.hasMany('Product', 'cartId')
+
+  }).identifier(['cartId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  DriverApplications: a.model({
+    appId: a.id().required(),
+    stat: a.integer().required(),
+    first: a.string().required(),
+    last: a.string().required(),
+    email: a.string().required(),
+    phone: a.string(),
+    licenseNo: a.string(),
+    state: a.string(),
+    expDate: a.string()
+  }).identifier(['appId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Users: a.model({
+    userID: a.id().required(),
+    cogID: a.id().required(),
+    first: a.string().required(),
+    last: a.string().required(),
+    email: a.string().required(),
+    phone: a.string()
+  }).identifier(['userID'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Drivers: a.model({
+    userId: a.id().required(),
+    licenseNo: a.string(),
+    state: a.string(),
+    expDate: a.string(),
+
+    wishlist: a.hasOne('Wishlist', 'userId'),
+    cart: a.hasOne('Cart', 'userId'),
+    ptAccounts: a.hasMany('PTAccounts', 'driverId')
+
+  }).identifier(['userId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  PTAccounts: a.model({
+    
+    driverId: a.id().required(),
+    driver: a.belongsTo('Drivers', 'driverId'),
+
+    sponsorId: a.id().required(),
+    sponsor: a.belongsTo('Sponsors', 'sponsorId'),
+
+    balance: a.integer()
+  }).identifier(['driverId', 'sponsorId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Sponsors: a.model({
+    userId: a.id().required(),
+    affiliation: a.string(),
+
+    conversion: a.integer(),
+    ptAccounts: a.hasMany('PTAccounts', 'sponsorId')
+
+  }).identifier(['userId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Admins: a.model({
+    userId: a.id().required()
   }).identifier(['userId'])
   .authorization(allow => [allow.publicApiKey()]),
 
@@ -168,7 +270,7 @@ AdminMessage: a.model({
 
 
 // Used for code completion / highlighting when making requests from frontend
-export type AboutSchema = ClientSchema<typeof SafeDriveSchema>;
+export type AppSchema = ClientSchema<typeof SafeDriveSchema>;
 
 // defines the data resource to be deployed
 export const data = defineData({

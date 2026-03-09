@@ -31,7 +31,7 @@ export default function CatalogBuilder({view}) {
 
     // Add the product to the sponsor's catalog
     async function addProduct(prodId) {
-        const { data: sponsoredCatalog, errors } = await client.models.SponsorCatalog.get({
+        const { data: sponsoredCatalog, errors } = await client.models.Sponsors.get({
             userId: testSponsorId
         });
 
@@ -42,13 +42,13 @@ export default function CatalogBuilder({view}) {
 
         // If catalog isn't there, create one for the sponsor
         if (!sponsoredCatalog) {
-            await client.models.SponsorCatalog.create({
+            await client.models.Sponsors.create({
                 userId: testSponsorId
             })
         }
         // Find the product and add it to the catalog
         var addedProduct = catalog.find((product) => (product.pId === prodId))
-        await client.models.Product.create({
+Product.create({
             pId: addedProduct.pId,
             title: addedProduct.title,
             imgs: addedProduct.imgs,
@@ -70,7 +70,7 @@ export default function CatalogBuilder({view}) {
 
     // Remove an item from the catalog
     async function removeProduct(prodId) {
-        const { data: sponsoredCatalog, errors } = await client.models.SponsorCatalog.get({
+        const { data: sponsoredCatalog, errors } = await client.models.Sponsors.get({
             userId: testSponsorId
         });
 
