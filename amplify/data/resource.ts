@@ -254,7 +254,9 @@ AdminMessage: a.model({
     // The driver's cart
     cart: a.hasOne('Cart', 'userId'),
     // The driver's point accounts
-    ptAccounts: a.hasMany('PTAccounts', 'driverId')
+    ptAccounts: a.hasMany('PTAccounts', 'driverId'),
+
+    sponsors: a.belongsTo('Sponsors', "userId")
 
   }).identifier(['userId'])
   .authorization(allow => [allow.publicApiKey()]),
@@ -281,7 +283,8 @@ AdminMessage: a.model({
     // The sponsor's said dollar to point conversion
     conversion: a.integer(),
     // The accounts the sponsor currently controls
-    ptAccounts: a.hasMany('PTAccounts', 'sponsorId')
+    ptAccounts: a.hasMany('PTAccounts', 'sponsorId'),
+    assignedDrivers: a.hasMany('Drivers', 'userId')
 
   }).identifier(['userId'])
   .authorization(allow => [allow.publicApiKey()]),
