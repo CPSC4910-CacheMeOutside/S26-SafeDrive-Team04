@@ -3,13 +3,16 @@ import { identifyUser } from 'aws-amplify/analytics';
 
 // Create our About Table
 const SafeDriveSchema = a.schema({
-
+  /* Used to store configs for website behavior. Should only be one of this schema type */
   AppControl: a.model({
+    // Should always be 1. There should never be more than one of this schema type
     appCId: a.id().required(),
+    // The number of the sprint whose info is displayed on the about page
     sprintNo: a.id()
   }).identifier(['appCId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* Holds data regarding our about page */
   AboutInfo: a.model({
     sprintNo: a.id().required(),
     releaseDate: a.string(),
@@ -150,12 +153,19 @@ AdminMessage: a.model({
 
   Orders: a.model({
     oId: a.id().required(),
+    /* The order's status represented by an integer. 
+    0: pending
+    1: approved
+    2: denied
+    */
     stat: a.integer().required(),
+    // Description of status
     notes: a.string().required(),
 
     products: a.hasMany('Product', "oId")
   }).authorization(allow => [allow.publicApiKey()]),
 
+  /* An item being sold in the store */
   Product: a.model({
     pId: a.id().required(),
     title: a.string(),
@@ -177,6 +187,7 @@ AdminMessage: a.model({
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* A driver's list of wanted items */
   Wishlist: a.model({
     wishId: a.id().required(),
 
@@ -187,6 +198,7 @@ AdminMessage: a.model({
   }).identifier(['wishId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* A driver's list of items queued for buying */
   Cart: a.model({
     cartId: a.id().required(),
 
@@ -198,8 +210,13 @@ AdminMessage: a.model({
   }).identifier(['cartId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* An application submitted by a driver for a sponsor's incentive program */
   DriverApplications: a.model({
     appId: a.id().required(),
+    /* The status of an application represented by a integer
+    0: New/Pending
+    1: Approved
+    2: Denied */
     stat: a.integer().required(),
     first: a.string().required(),
     last: a.string().required(),
@@ -207,10 +224,14 @@ AdminMessage: a.model({
     phone: a.string(),
     licenseNo: a.string(),
     state: a.string(),
-    expDate: a.string()
+    expDate: a.string(),
+    notes: a.string()
   }).identifier(['appId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* A user of our system. A user has both this type of schema and either
+  a driver, sponsor, or admin schema as well, both schemas having the same 
+  user ID*/
   Users: a.model({
     userID: a.id().required(),
     cogID: a.id().required(),
@@ -221,19 +242,24 @@ AdminMessage: a.model({
   }).identifier(['userID'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* A user part of the Driver classification */
   Drivers: a.model({
     userId: a.id().required(),
     licenseNo: a.string(),
     state: a.string(),
     expDate: a.string(),
 
+    // The driver's wishlist
     wishlist: a.hasOne('Wishlist', 'userId'),
+    // The driver's cart
     cart: a.hasOne('Cart', 'userId'),
+    // The driver's point accounts
     ptAccounts: a.hasMany('PTAccounts', 'driverId')
 
   }).identifier(['userId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* An account holding a driver's point balance provided by a sponsor*/
   PTAccounts: a.model({
     
     driverId: a.id().required(),
@@ -246,18 +272,26 @@ AdminMessage: a.model({
   }).identifier(['driverId', 'sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* A user classified as a sponsor */
   Sponsors: a.model({
     userId: a.id().required(),
+    // The sponsor's affilated company
     affiliation: a.string(),
 
+    // The sponsor's said dollar to point conversion
     conversion: a.integer(),
+    // The accounts the sponsor currently controls
     ptAccounts: a.hasMany('PTAccounts', 'sponsorId')
 
   }).identifier(['userId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  /* A user of admin classification */
   Admins: a.model({
     userId: a.id().required()
+
+    // TODO: Missing fields. To Be Implemented...
+
   }).identifier(['userId'])
   .authorization(allow => [allow.publicApiKey()]),
 
