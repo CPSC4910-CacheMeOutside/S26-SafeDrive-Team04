@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
+import { getProducts, PalatziQueryStruct } from './catalog/store-api';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
