@@ -24,11 +24,7 @@ export default function CatalogBuilder({view}) {
 
     // State trackers for various search queries
     const [catalog, updateCatalog] = useState([]);
-    const [catalogLimit, setCatalogLimit] = useState(10);
-    const [catalogOffset, setCatalogOffset] = useState(0);
-    const [queryByName, setQueryByName] = useState('');
-    const [queryMinPrice, setQueryMinPrice] = useState(0);
-    const [queryMaxPrice, setQueryMaxPrice] = useState(Number.MAX_SAFE_INTEGER);
+    const [filter, updateFilter] = useState(new PalatziQueryStruct())
 
     // Add the product to the sponsor's catalog
     async function addProduct(prodId) {
@@ -101,9 +97,7 @@ Product.create({
     // Contact the external store API and retrieve all product information
     async function loadProducts() {
         try {
-            const productData = getProducts(new PalatziQueryStruct(
-                
-            ))
+            const productData = getProducts(filter)
             let refinedCatalog = productData.map(rawProduct => (
                 {
                     pId: rawProduct.id,
@@ -126,21 +120,7 @@ Product.create({
             updateCatalog([])
         }
     }
-    // Filter catalog items whenever the query changes
-    // The search looks at the title of the item but also he description.
-    const filtered = catalog.filter(item =>
-        (item.title.toLowerCase().includes(queryByName.toLowerCase()) ||
-        item.desc.toLowerCase().includes(queryByName.toLowerCase())) &&
-        (item.price >= queryMinPrice && item.price <= queryMaxPrice)
-    );
     
-    function applyFilter(name, min, max) {
-        setQueryByName(name);
-        setQueryMinPrice(min);
-        setQueryMaxPrice(max);
-        closeFilter();
-    }
-
     function FilterModal() {
         const [name, setName] = useState('');
         const [min, setMin] = useState(0);
@@ -287,13 +267,13 @@ Product.create({
                             <ListGroup style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                                 <ListGroupItem hidden={true} action eventKey={'defaultChoice'}>Default</ListGroupItem>
                                 {/* make is so only the items matching the search are shown */}
-                                {filtered.map((item, idx) =>
+                                {catalog.map((item, idx) =>
                                     (
                                         <CatalogItemList key={item.pId} product={item} likeid={item.pId}></CatalogItemList>
                                     )
                                 )}
                                 {/* Display nothing if the filter doesn't retrieve anything */}
-                                {filtered.length === 0 && (
+                                {catalog.length === 0 && (
                                     <ListGroup.Item key={'noSearch'} likeid={'noSearch'} className="text-muted mt-3">No items match your search.</ListGroup.Item>
                                 )}
                             </ListGroup>
@@ -308,12 +288,12 @@ Product.create({
                                 </Card>
                             </Tab.Pane>
                             {
-                                filtered.map((item, idx) =>
+                                catalog.map((item, idx) =>
                                 (
                                     <CatalogItemPane product={item} key={item.pId} likeId={item.pId}></CatalogItemPane>
                                 )
                             )}
-                            {filtered.length === 0 && (
+                            {catalog.length === 0 && (
                                 <Card>
                                     <h1>No items match your search</h1>
                                 </Card>

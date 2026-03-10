@@ -1,4 +1,3 @@
-import { title } from "node:process";
 
 export class PalatziQueryStruct {
 
