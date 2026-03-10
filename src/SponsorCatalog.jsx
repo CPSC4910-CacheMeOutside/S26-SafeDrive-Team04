@@ -184,7 +184,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                         <button
                             onClick={() => setShowWishlist(true)}
                             style={{
-                                fontSize: "14px",
+                                fontSize: "0.875rem",
                                 padding: "8px 16px",
                                 backgroundColor: "#7b1fa2",
                                 color: "white",
@@ -206,7 +206,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                     borderRadius: "50%",
                                     width: "20px",
                                     height: "20px",
-                                    fontSize: "11px",
+                                    fontSize: "0.6875rem",
                                     fontWeight: "bold",
                                     display: "flex",
                                     alignItems: "center",
@@ -223,7 +223,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                         <button
                             onClick={() => setShowCart(true)}
                             style={{
-                                fontSize: "14px",
+                                fontSize: "0.875rem",
                                 padding: "8px 16px",
                                 backgroundColor: "#333",
                                 color: "white",
@@ -245,7 +245,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                     borderRadius: "50%",
                                     width: "20px",
                                     height: "20px",
-                                    fontSize: "11px",
+                                    fontSize: "0.6875rem",
                                     fontWeight: "bold",
                                     display: "flex",
                                     alignItems: "center",
@@ -296,13 +296,13 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                             width: "220px",
                         }}
                     >
-                        <p style={{ fontSize: "12px", color: "gray", margin: "0 0 4px" }}>{item.category}</p>
+                        <p style={{ fontSize: "0.75rem", color: "gray", margin: "0 0 4px" }}>{item.category}</p>
                         <h4 style={{ margin: "0 0 8px" }}>{item.name}</h4>
 
                         <p style={{ margin: "0 0 4px" }}>
                             <strong>{item.sponsorPrice} pts</strong>
                             {item.basePrice !== item.sponsorPrice && (
-                                <span style={{ color: "gray", textDecoration: "line-through", marginLeft: "8px", fontSize: "13px" }}>
+                                <span style={{ color: "gray", textDecoration: "line-through", marginLeft: "8px", fontSize: "0.8125rem" }}>
                                     {item.basePrice} pts
                                 </span>
                             )}
@@ -312,17 +312,17 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                         <StarRating itemKey={String(item.id)} />
 
                         <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
-                            <button onClick={() => openEditModal(item)} style={{ fontSize: "12px" }}>
+                            <button onClick={() => openEditModal(item)} style={{ fontSize: "0.75rem" }}>
                                 Edit Price
                             </button>
                             <button
                                 onClick={() => openBuyModal(item)}
-                                style={{ fontSize: "12px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}>
+                                style={{ fontSize: "0.75rem", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}>
                                 Buy for Driver
                             </button>
                             <button
                                 onClick={() => addToCart(item)}
-                                style={{ fontSize: "12px", backgroundColor: "#2196F3", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}
+                                style={{ fontSize: "0.75rem", backgroundColor: "#2196F3", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}
                             >
                                 Add to Cart
                             </button>
@@ -330,7 +330,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 onClick={() => addToWishlist(item)}
                                 disabled={isInWishlist(item.id)}
                                 style={{
-                                    fontSize: "12px",
+                                    fontSize: "0.75rem",
                                     backgroundColor: isInWishlist(item.id) ? "#ccc" : "#7b1fa2",
                                     color: isInWishlist(item.id) ? "#888" : "white",
                                     border: "none",
@@ -432,7 +432,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                         <h3 style={{ margin: 0 }}>Cart</h3>
                         <button
                             onClick={() => setShowCart(false)}
-                            style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", lineHeight: 1 }}
+                            style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", lineHeight: 1 }}
                         >
                             ✕
                         </button>
@@ -456,11 +456,11 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 }}
                             >
                                 <div>
-                                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>{cartItem.name}</p>
-                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "gray" }}>
+                                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "0.875rem" }}>{cartItem.name}</p>
+                                    <p style={{ margin: "2px 0 0", fontSize: "0.75rem", color: "gray" }}>
                                         {cartItem.sponsorPrice} pts × {cartItem.quantity}
                                     </p>
-                                    <p style={{ margin: "2px 0 0", fontSize: "14px", fontWeight: "600" }}>
+                                    <p style={{ margin: "2px 0 0", fontSize: "0.875rem", fontWeight: "600" }}>
                                         {cartItem.sponsorPrice * cartItem.quantity} pts
                                     </p>
                                 </div>
@@ -473,7 +473,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                         border: "none",
                                         cursor: "pointer",
                                         color: "#e53935",
-                                        fontSize: "18px",
+                                        fontSize: "1.125rem",
                                         lineHeight: 1,
                                         padding: "0 4px",
                                     }}
@@ -491,7 +491,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                             backgroundColor: "#fafafa",
                         }}
                     >
-                        <p style={{ margin: 0, fontWeight: "bold", fontSize: "16px" }}>
+                        <p style={{ margin: 0, fontWeight: "bold", fontSize: "1rem" }}>
                             Total: {getCartTotal()} pts
                         </p>
                     </div>
@@ -525,7 +525,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                         <h3 style={{ margin: 0 }}>Wishlist</h3>
                         <button
                             onClick={() => setShowWishlist(false)}
-                            style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", lineHeight: 1 }}
+                            style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", lineHeight: 1 }}
                         >
                             ✕
                         </button>
@@ -549,8 +549,8 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 }}
                             >
                                 <div>
-                                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "14px" }}>{wItem.name}</p>
-                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "gray" }}>{wItem.category}</p>
+                                    <p style={{ margin: 0, fontWeight: "bold", fontSize: "0.875rem" }}>{wItem.name}</p>
+                                    <p style={{ margin: "2px 0 0", fontSize: "0.75rem", color: "gray" }}>{wItem.category}</p>
                                 </div>
 
                                 <button
@@ -561,7 +561,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                         border: "none",
                                         cursor: "pointer",
                                         color: "#e53935",
-                                        fontSize: "18px",
+                                        fontSize: "1.125rem",
                                         lineHeight: 1,
                                         padding: "0 4px",
                                     }}
@@ -585,7 +585,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                     <div style={{ background: "white", padding: "24px", borderRadius: "8px", minWidth: "280px" }}>
                         <h3>Edit Price</h3>
                         <p>{editItem.name}</p>
-                        <p style={{ color: "gray", fontSize: "13px" }}>Original price: {editItem.basePrice} pts</p>
+                        <p style={{ color: "gray", fontSize: "0.8125rem" }}>Original price: {editItem.basePrice} pts</p>
 
                         <div style={{ marginBottom: "16px" }}>
                             <label>New Price (pts): </label>

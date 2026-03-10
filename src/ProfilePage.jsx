@@ -13,8 +13,8 @@ export default function ProfilePage(){
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
       }}>
         <h4>{alias}</h4>
-        <div style={{ fontsize: 14, opacity: 0.7}}>Current Points</div>
-        <div style={{ fontsize: 40, fontweight: 700}}>{points}</div>
+        <div style={{ fontSize: '0.875rem', opacity: 0.7}}>Current Points</div>
+        <div style={{ fontSize: '2.5rem', fontWeight: 700}}>{points}</div>
       </div>
 
     </Container>

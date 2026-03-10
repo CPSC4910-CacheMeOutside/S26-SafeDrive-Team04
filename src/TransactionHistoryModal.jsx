@@ -28,9 +28,9 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
           marginBottom: 20,
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: 14, opacity: 0.7 }}>Current Points</div>
-          <div style={{ fontSize: 40, fontWeight: 700 }}>{currentPoints}</div>
-          <div style={{ fontSize: 14, opacity: 0.7 }}>
+          <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>Current Points</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 700 }}>{currentPoints}</div>
+          <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>
             ≈ ${convertPointsToDollars(currentPoints).toFixed(2)}
           </div>
         </div>
@@ -61,17 +61,17 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                 <div style={{ flex: 1 }}>
                   {/* Date/Time */}
-                  <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 8 }}>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: 8 }}>
                     {new Date(transaction.timestamp).toLocaleString()}
                   </div>
 
                   {/* Description */}
-                  <p style={{ margin: 0, marginBottom: 8, fontSize: 16 }}>
+                  <p style={{ margin: 0, marginBottom: 8, fontSize: '1rem' }}>
                     {transaction.description}
                   </p>
 
                   {/* Performed By */}
-                  <div style={{ fontSize: 14, opacity: 0.7 }}>
+                  <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>
                     by {transaction.performedBy}
                   </div>
                 </div>
@@ -79,7 +79,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
                 <div style={{ marginLeft: 15, textAlign: 'right' }}>
                   {/* Amount with color coding */}
                   <div style={{
-                    fontSize: 24,
+                    fontSize: '1.5rem',
                     fontWeight: 700,
                     color: transaction.amount >= 0 ? '#28a745' : '#dc3545'
                   }}>
@@ -87,12 +87,12 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
                   </div>
 
                   {/* Dollar value */}
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>
                     {transaction.amount >= 0 ? '+' : ''}${convertPointsToDollars(Math.abs(transaction.amount)).toFixed(2)}
                   </div>
 
                   {/* New balance */}
-                  <div style={{ fontSize: 14, marginTop: 8, opacity: 0.7 }}>
+                  <div style={{ fontSize: '0.875rem', marginTop: 8, opacity: 0.7 }}>
                     Balance: {transaction.balance}
                   </div>
                 </div>
