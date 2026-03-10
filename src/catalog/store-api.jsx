@@ -22,7 +22,9 @@ function makeApiString(filters) {
             apiString += '/?'
         }
 
-        apiString += `${filter}=${filters[filter]}`
+        if (filters[filter]) {
+            apiString += `${filter}=${filters[filter]}`
+        }
 
         if (!(index === keys.length-1)) {
             apiString += '&'

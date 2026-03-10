@@ -14,7 +14,7 @@ export default function CatalogBuilder({view}) {
 
     // Load in the page. Contact the store api first
     useEffect(() => {
-        getProducts();
+        loadProducts();
     }, []);
 
     // Modal to display filtering options
@@ -99,12 +99,11 @@ Product.create({
     }
 
     // Contact the external store API and retrieve all product information
-    async function getProducts() {
+    async function loadProducts() {
         try {
-            const productRequest = await fetch(`https://api.escuelajs.co/api/v1/products?offset=${catalogOffset}&limit=${catalogLimit}`);
-            const productData = await productRequest.json();
-            console.log(productData);
-
+            const productData = getProducts(new PalatziQueryStruct(
+                
+            ))
             let refinedCatalog = productData.map(rawProduct => (
                 {
                     pId: rawProduct.id,
