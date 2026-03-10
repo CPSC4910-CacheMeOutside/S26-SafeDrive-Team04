@@ -14,6 +14,7 @@ import HomePage from './Home'
 import AboutPage from './About'
 import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
+import AdminAccountTakeover from './AdminAccountTakeover';
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import LogoutPage from './LogoutPage';
@@ -144,6 +145,7 @@ function App() {
           <Route path="/updateAbout" element={<UpdateAbout />}/>
           <Route path="/profile" element={<ProfilePage />}/>
           <Route path="/AdminPage" element={<AdminPage />}/>
+          <Route path="/admin/drivers/:driverId/edit" element={<AdminAccountTakeover />} />
           <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
           <Route path="/logout" element={<LogoutPage />}/>

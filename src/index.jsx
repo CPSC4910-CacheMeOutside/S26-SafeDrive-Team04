@@ -11,9 +11,18 @@ import PointsProvider from './PointsContext';
 
 /* Add the backend */
 import { Amplify } from 'aws-amplify';
+import { parseAmplifyConfig } from 'aws-amplify/utils';
 import outputs from '../amplify_outputs.json';
 
-Amplify.configure(outputs);
+const amplifyConfig = parseAmplifyConfig(outputs);
+
+Amplify.configure({
+  ...amplifyConfig,
+  API: {
+    ...amplifyConfig.API,
+    REST: outputs.custom?.API ?? {},
+  },
+});
 
 const isLocalHost = window.location.origin.includes("localhost");
  

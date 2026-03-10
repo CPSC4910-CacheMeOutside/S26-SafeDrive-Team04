@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "react-oidc-context";
-import { Form, Button, Container, Row, Col, Image } from "react-bootstrap";
+import { Form, Button, Container, Row, Col, Image, Alert } from "react-bootstrap";
+import { get, put } from 'aws-amplify/api';
 
-function EditProfilePage({ profilePic, setProfilePic }) {
+function EditProfilePage({ profilePic, setProfilePic, adminView = false, targetDriverId = null }) {
   const auth = useAuth();
 
   const [formData, setFormData] = useState({
@@ -13,19 +14,68 @@ function EditProfilePage({ profilePic, setProfilePic }) {
   });
 
   const [authRole, setAuthRole] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (auth.user) {
-        setFormData({
-            authFullName: auth.user.profile.name || "",
-            authPhoneNum: auth.user.profile.phone_number || "",
-            authEmail: auth.user.profile.email || "",
-            authPreferredName: auth.user.profile.preferred_username || ""
-        });
-        setAuthRole(auth.user.profile["cognito:groups"] || []);
-    }
+    const loadProfile = async () => {
+      if (!auth.user) return;
 
-  }, [auth.user]);
+      if (!adminView) {
+        setFormData({
+          authFullName: auth.user.profile.name || "",
+          authPhoneNum: auth.user.profile.phone_number || "",
+          authEmail: auth.user.profile.email || "",
+          authPreferredName: auth.user.profile.preferred_username || ""
+        });
+
+        setAuthRole(auth.user.profile["cognito:groups"] || []);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        console.log("id_token exists:", !!auth.user?.id_token);
+        console.log("groups:", auth.user?.profile?.["cognito:groups"]);
+        console.log("targetDriverId:", targetDriverId);
+        console.log("token issuer:", auth.user?.profile?.iss);
+
+        const restOperation = get({
+          apiName: 'adminApi',
+          path: `/admin/drivers/${encodeURIComponent(targetDriverId)}`,
+          options: {
+            headers: {
+              Authorization: auth.user.id_token
+            },
+          },
+        });
+
+        const response = await restOperation.response;
+        const data = await response.body.json();
+
+        setFormData({
+          authFullName: data.name || "",
+          authPreferredName: data.preferred_username || "",
+          authPhoneNum: data.phone_number || "",
+          authEmail: data.email || ""
+        });
+
+        setAuthRole(data.groups || ["Driver"]);
+
+        if (data.picture && setProfilePic) {
+          setProfilePic(data.picture);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Error loading driver profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+
+  }, [auth.user, adminView, targetDriverId, setProfilePic]);
 
   const handleChange = (e) => {
     setFormData({
@@ -48,35 +98,63 @@ function EditProfilePage({ profilePic, setProfilePic }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch(
-      "https://cognito-idp.us-east-1.amazonaws.com/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-amz-json-1.1",
-          "X-Amz-Target": "AWSCognitoIdentityProviderService.UpdateUserAttributes",
-          Authorization: auth.user.access_token
-        },
-        body: JSON.stringify({
-          UserAttributes: [
-            { Name: "name", Value: formData.authFullName },
-            { Name: "preferred_username", Value: formData.authPreferredName },
-            { Name: "phone_number", Value: formData.authPhoneNum },
-            { Name: "email", Value: formData.authEmail }
-          ],
-          AccessToken: auth.user.access_token,
-        })
-      }
-    );
+    try {
+      if (!adminView) {
+        const response = await fetch(
+          "https://cognito-idp.us-east-1.amazonaws.com/",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-amz-json-1.1",
+              "X-Amz-Target": "AWSCognitoIdentityProviderService.UpdateUserAttributes",
+              Authorization: auth.user.access_token
+            },
+            body: JSON.stringify({
+              UserAttributes: [
+                { Name: "name", Value: formData.authFullName },
+                { Name: "preferred_username", Value: formData.authPreferredName },
+                { Name: "phone_number", Value: formData.authPhoneNum },
+                { Name: "email", Value: formData.authEmail }
+              ],
+              AccessToken: auth.user.access_token,
+            })
+          }
+        );
 
-    if (response.ok) {
-      alert("Successfully saved changes!");
-      auth.signinSilent();
-    }
-    else {
-      const error = await response.json();
+        if (response.ok) {
+          alert("Successfully saved changes!");
+          auth.signinSilent();
+          return;
+        } else {
+          const error = await response.json();
+          console.error(error);
+          alert("Error! Unable to update profile.");
+          return;
+        }
+      }
+
+      const restOperation = put({
+        apiName: "adminApi",
+        path: `/admin/drivers/${encodeURIComponent(targetDriverId)}`,
+        options: {
+          headers: {
+            Authorization: auth.user.id_token,
+          },
+          body: {
+            name: formData.authFullName,
+            preferred_username: formData.authPreferredName,
+            phone_number: formData.authPhoneNum,
+            email: formData.authEmail,
+            picture: profilePic || null,
+          },
+        },
+      });
+
+      await restOperation.response;
+      alert("Driver profile updated successfully!");
+    } catch (error) {
       console.error(error);
-      alert("Error! Unable to update profile.");
+      alert("Something went wrong while saving.");
     }
   };
 
@@ -84,6 +162,12 @@ function EditProfilePage({ profilePic, setProfilePic }) {
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>  
       <h1><strong>Edit Profile</strong></h1>
+
+      {adminView && (
+        <Alert variant="warning">
+          Admin View: You are editing driver account {targetDriverId}
+        </Alert>
+      )}
       
       <Form onSubmit={handleSubmit}>
       

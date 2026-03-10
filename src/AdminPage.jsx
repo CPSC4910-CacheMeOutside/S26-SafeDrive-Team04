@@ -18,7 +18,8 @@ function AdminPage(){
     {id: "EBD", name: "East Bound and Down", 
       drivers: [
         {id: 5, name: "Jerry Reed", points: 300},
-        {id: 4, name: "Burt Reynolds", points: 330}
+        {id: 4, name: "Burt Reynolds", points: 330},
+        {id: "ghoegybusiness@gmail.com", name: "Gabby Hoegy", points: 300}
      ],
       logs: [],
     },
@@ -132,7 +133,12 @@ function AdminPage(){
     setDescription("");
   };
   */
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+
+  const handleAdminAccountTakeover = () => {
+    if (!selectedDriver) return;
+    navigate(`/admin/drivers/${selectedDriver.id}/edit`);
+  };
 
   return(
     <Container className="mt-4">
@@ -258,6 +264,9 @@ function AdminPage(){
                       </Button>
                       <Button variant="danger" onClick={() => pointAdjust(-amount)}>
                         - Subtract Points
+                      </Button>
+                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>
+                        Manage Account
                       </Button>
                     </div>
                   </>
