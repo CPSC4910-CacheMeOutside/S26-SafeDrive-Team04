@@ -18,8 +18,7 @@ function AdminPage(){
     {id: "EBD", name: "East Bound and Down", 
       drivers: [
         {id: 5, name: "Jerry Reed", points: 300},
-        {id: 4, name: "Burt Reynolds", points: 330},
-        {id: "ghoegybusiness@gmail.com", name: "Gabby Hoegy", points: 300}
+        {id: 4, name: "Burt Reynolds", points: 330}
      ],
       logs: [],
     },
@@ -273,10 +272,26 @@ function AdminPage(){
                   )}
                   </Card.Body>
                 </Card>
+          
+                <Card className="mt-4">
+                  <Card.Body>
+                    <Card.Title>Edit Driver Profile</Card.Title>
+                    {!selectedDriver ? (
+                      <div className="text-muted">Select a driver to manage their account.</div>
+                    ) : (
+                      <>
+                      <p className="mb-3"> Update account information for <strong>{selectedDriver.name}</strong>.</p>
+                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>View Account</Button>
+                      </>
+                    )}
+                  </Card.Body>
+                </Card>
+
               </Col>
             </Row>
           </Tab>
           <Tab eventKey="audit" title="Logs/Reports">
+
             <Card>
               <Card.Body>
                 <Card.Title>Companies</Card.Title>
