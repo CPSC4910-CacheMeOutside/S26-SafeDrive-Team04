@@ -1,5 +1,6 @@
 import { Container, Row, Col, Stack, Card } from 'react-bootstrap';
 import { generateClient } from 'aws-amplify/data';
+
 import { useState, useEffect } from 'react';
 
 const currentSprint = 5;
