@@ -116,9 +116,9 @@ export default function SpendPointsModal({ show, onHide }) {
               marginBottom: 20,
               backgroundColor: '#f8f9fa'
             }}>
-              <div style={{ fontSize: 14, opacity: 0.7 }}>Current Points Balance</div>
-              <div style={{ fontSize: 32, fontWeight: 700 }}>{currentPoints}</div>
-              <div style={{ fontSize: 14, opacity: 0.7 }}>
+              <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>Current Points Balance</div>
+              <div style={{ fontSize: '2rem', fontWeight: 700 }}>{currentPoints}</div>
+              <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>
                 ≈ ${convertPointsToDollars(currentPoints).toFixed(2)}
               </div>
             </div>

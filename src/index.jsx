@@ -7,6 +7,7 @@ import { BrowserRouter } from "react-router-dom";
 import  NotificationProvider from './NotificationContext';
 import ConversionRatioProvider from './ConversionRatioContext';
 import PointsProvider from './PointsContext';
+import { FontSizeProvider } from './FontSizeContext';
 
 /* Add the backend */
 import { Amplify } from 'aws-amplify';
@@ -30,13 +31,15 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
         {/* makes the notification additions available throughout the entire app */}
-        <NotificationProvider>
-          <ConversionRatioProvider>
-            <PointsProvider>
-              <App />
-            </PointsProvider>
-          </ConversionRatioProvider>
-        </NotificationProvider>
+        <FontSizeProvider>
+          <NotificationProvider>
+            <ConversionRatioProvider>
+              <PointsProvider>
+                <App />
+              </PointsProvider>
+            </ConversionRatioProvider>
+          </NotificationProvider>
+        </FontSizeProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

@@ -284,7 +284,7 @@ export default function CatalogBuilder({view}) {
                 <Row>
                     <Col sm={5} className='pe-3'>
                         <Card>
-                            <ListGroup style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                            <ListGroup style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                                 <ListGroupItem hidden={true} action eventKey={'defaultChoice'}>Default</ListGroupItem>
                                 {/* make is so only the items matching the search are shown */}
                                 {filtered.map((item, idx) =>
@@ -300,7 +300,7 @@ export default function CatalogBuilder({view}) {
                         </Card>
                     </Col>
                     <Col sm={6}>
-                        <Tab.Content>
+                        <Tab.Content style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                             <Tab.Pane eventKey={"defaultChoice"}> 
                                 <Card>
                                     <Card.Title> Welcome </Card.Title>
