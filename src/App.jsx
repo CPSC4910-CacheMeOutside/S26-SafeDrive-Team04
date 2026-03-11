@@ -7,7 +7,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
 import { NavDropdown } from 'react-bootstrap';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
+import useAmplifyAuth from './UseAmplifyAuth';
 import { useEffect, useState, useRef } from 'react';
 
 import HomePage from './Home'
@@ -17,7 +17,6 @@ import AdminPage from './AdminPage'
 import AdminAccountTakeover from './AdminAccountTakeover';
 import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
-import LogoutPage from './LogoutPage';
 import AccountManagement from './AccountManagement';
 import SponsorPage from './SponsorPage';
 import DriverPage from './DriverPage';
@@ -35,19 +34,20 @@ import SponsorListings from './Available-Sponsors';
  
 import UpdateAbout from './UpdateAbout';
 
+
 function App() {
 
   /* Nav config */
-  const auth = useAuth();
+  const auth = useAmplifyAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const redirectedSubRef = useRef(null);
 
-  const groups = auth.user?.profile?.["cognito:groups"] || [];
+  const groups = auth.groups || [];
   
   // temporary until backend gets setup
-  const [profilePic, setProfilePic] = useState(auth.user?.profile?.picture || "./profileTestPic.jpg");
+  const [profilePic, setProfilePic] = useState("./profileTestPic.jpg");
  
   const hideNavs = {
     home: false,
@@ -63,13 +63,11 @@ function App() {
         redirectedSubRef.current = null;
         return;
     }
-    if (auth.isLoading || !auth.user?.profile) return;
+    if (auth.isLoading || !auth.profile) return;
     if (location.pathname !== "/callback") return;
 
-    const sub = auth.user.profile.sub;
+    const sub = auth.profile?.sub;
     if (redirectedSubRef.current === sub) return;
-
-    const groups = auth.user.profile?.["cognito:groups"] || [];
 
     let destination = "/";
     if (groups.includes("Admin")) {
@@ -83,7 +81,7 @@ function App() {
     redirectedSubRef.current = sub;
     navigate(destination, { replace: true });
 
-    setProfilePic(auth.user.profile?.picture || "./profileTestPic.jpg");
+    setProfilePic(auth.profile?.picture || "./profileTestPic.jpg");
   }, [auth.isAuthenticated, auth.isLoading, auth.user, location.pathname, navigate]);
 
   return (
@@ -114,7 +112,7 @@ function App() {
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
                   <div className="d-flex align-items-center">
-                    <span className="me-2">{auth.user?.profile?.email}</span>
+                    <span className="me-2">{auth.profile?.email}</span>
                     <NavDropdown
                       title={
                         <Image
@@ -130,7 +128,7 @@ function App() {
                       <NavDropdown.Divider />
                       <NavDropdown.Item as={Link} to="/AccountManagement">Account Settings</NavDropdown.Item>
                       <NavDropdown.Divider />
-                      <NavDropdown.Item as={Link} to="/logout">Logout</NavDropdown.Item>
+                      <NavDropdown.Item onClick={() => auth.signoutRedirect()}>Logout</NavDropdown.Item>
                     </NavDropdown>
                   </div>
                 }
@@ -148,7 +146,6 @@ function App() {
           <Route path="/admin/drivers/:driverId/edit" element={<AdminAccountTakeover />} />
           <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
-          <Route path="/logout" element={<LogoutPage />}/>
           <Route path="/AccountManagement" element={<AccountManagement />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
           <Route path="/DriverPage" element={<DriverPage />}/>

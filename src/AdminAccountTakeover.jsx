@@ -1,11 +1,20 @@
-import { useParams } from 'react-router-dom';
-import EditProfilePage from './EditProfilePage';
+import { useParams } from "react-router-dom";
+import { useState } from "react";
+import EditProfilePage from "./EditProfilePage";
 
 function AdminAccountTakeover() {
   const { driverId } = useParams();
+  const [profilePic, setProfilePic] = useState("./profileTestPic.jpg");
+
+  console.log("AdminAccountTakeover rendered", { driverId });
 
   return (
-    <EditProfilePage adminView={true} targetDriverId={driverId} />
+    <EditProfilePage
+      profilePic={profilePic}
+      setProfilePic={setProfilePic}
+      adminView={true}
+      targetDriverId={driverId}
+    />
   );
 }
 

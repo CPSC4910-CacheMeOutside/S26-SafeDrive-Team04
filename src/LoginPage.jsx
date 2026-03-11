@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useAuth } from 'react-oidc-context';
+import useAmplifyAuth from './UseAmplifyAuth';
 
 function LoginPage() {
-  const auth = useAuth();
+  const auth = useAmplifyAuth();
 
   useEffect(() => {
     auth.signinRedirect();

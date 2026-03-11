@@ -1,9 +1,9 @@
 import { CognitoIdentityProviderClient, DeleteUserCommand } from '@aws-sdk/client-cognito-identity-provider';
-import { useAuth } from 'react-oidc-context';
+import useAmplifyAuth from './UseAmplifyAuth';
 import { Container, Form, Row, Col, Button } from 'react-bootstrap';
 
 export default function AccountManagement() {
-  const auth = useAuth();
+  const auth = useAmplifyAuth();
 
   const deleteUser = async ({ region, accessToken }) => {
     const client = new CognitoIdentityProviderClient({ region });

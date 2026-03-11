@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useAuth } from 'react-oidc-context';
+import useAmplifyAuth from './UseAmplifyAuth';
 
 function LogoutPage() {
-  const auth = useAuth();
+  const auth = useAmplifyAuth();
 
   useEffect(() => {
     const run = async () => {
