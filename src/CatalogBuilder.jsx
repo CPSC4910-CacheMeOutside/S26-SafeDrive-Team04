@@ -2,7 +2,7 @@ import { use, useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import { getProducts, PalatziQueryStruct } from './catalog/store-api';
 import StarRating from "./StarRating";
-import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel,
+import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 
 const testSponsorId = 7;
@@ -22,7 +22,6 @@ export default function CatalogBuilder({view}) {
     const [filter, updateFilter] = useState(new PalatziQueryStruct());
     const [pName, updatePName] = useState('');
     const [perPage, updatePerPage] = useState(10);
-    const [offset, updateOffset] = useState(0);
     
     // Load in the page. Contact the store api first
     useEffect(() => {
@@ -33,20 +32,21 @@ export default function CatalogBuilder({view}) {
     // Applies the staged title change
     function applyPName () {
         updateFilter(filter.update({
-            title: String(pName)
+            title: String(pName),
+            offset: 0
         }));
     }
 
     // Applies the staged per page change
     function applyPerPage (newLimit) {
         updateFilter(filter.update({
-            limit: Number(newLimit)
+            limit: Number(newLimit),
+            offset: 0
         }));
     }
 
     // Applies the staged page selection
     function applyOffset(newOffset) {
-        updateOffset(newOffset);
         updateFilter(filter.update({
             offset: Number(newOffset)
         }))
@@ -57,47 +57,28 @@ export default function CatalogBuilder({view}) {
         updateFilter(filter.update({
             title: String(pName),
             limit: Number(perPage),
-            offset: Number(offset),
+            offset: 0,
         }))
     }
 
     // Add the product to the sponsor's catalog
     async function addProduct(prodId) {
-        const { data: sponsoredCatalog, errors } = await client.models.Sponsors.get({
-            userId: testSponsorId
-        });
-
-        if (errors) {
-            console.log(errors);
-            return;
-        }
-
-        // If catalog isn't there, create one for the sponsor
-        if (!sponsoredCatalog) {
-            await client.models.Sponsors.create({
-                userId: testSponsorId
+        try {
+            const toBeAdded = catalog.find((product) => product.pId === prodId)
+            const { errs, data: newItem } = await client.models.Product.create({
+                pId: toBeAdded.id,
+                title: toBeAdded.title,
+                imgs: toBeAdded.images,
+                synop: toBeAdded.slug,
+                desc: toBeAdded.description,
+                catagory: toBeAdded.category.name,
+                price: toBeAdded.price,
+                available: true,
             })
+
+        } catch (err) {
+
         }
-        // Find the product and add it to the catalog
-        var addedProduct = catalog.find((product) => (product.pId === prodId))
-Product.create({
-            pId: addedProduct.pId,
-            title: addedProduct.title,
-            imgs: addedProduct.imgs,
-            synop: addedProduct.synop,
-            catagory: addedProduct.catagory,
-            price: addedProduct.price,
-            available: addedProduct.available,
-            catalog: testSponsorId
-        })
-        updateCatalog(prev =>
-            prev.map(product =>
-                product.pId === prodId
-                    ? { ...product, inCatalog: true }
-                    : product
-            )
-        );
-        console.log(`Product has been added to the catalog${addedProduct}`);
     }
 
     // Remove an item from the catalog
@@ -166,7 +147,7 @@ Product.create({
             updateFilter(filter.update({
                 title: String(pName),
                 limit: Number(perPage),
-                offset: Number(offset),
+                offset: 0,
                 price_min: min,
                 price_max: max,
                 categorySlug: category
@@ -300,10 +281,7 @@ Product.create({
         <div style={{ marginTop: '30px' }}>
             <FilterModal/>
             {/* Changed the header row so the search bar is in there */}
-            <Row>
-                <Col>
-                    <h1 className="mb-0">Your Catalog</h1>
-                </Col>
+            <Stack direction='horizontal' >
                 <Col>
                     <Form className="d-flex gap-2 align-items-end">
                         <Col>
@@ -334,7 +312,7 @@ Product.create({
                         <Image style={{height:'25px', width:'25px'}} src='filterIco.png' fluid/>
                     </Button>
                 </Col>
-            </Row>
+            </Stack>
             <Tab.Container id="driver-catalog" defaultActiveKey={"defaultChoice"}>
                 <Row>
                     <Col sm={5} className='pe-3'>
@@ -352,6 +330,24 @@ Product.create({
                                     <ListGroup.Item key={'noSearch'} likeid={'noSearch'} className="text-muted mt-3">No items match your search.</ListGroup.Item>
                                 )}
                             </ListGroup>
+                            <ButtonGroup className="mb-2">
+                                <Form>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Page:</Form.Label>
+                                        <Form.Control type="text" onChange={(e) => {applyOffset(e.target.value)}} value={filter.offset}/>
+                                    </Form.Group>
+                                </Form>
+                                <Button onClick={() => { 
+                                    if (filter.offset > 0) {
+                                        applyOffset(filter.offset-1);
+                                    }
+                                }}><Image style={{height:'25px', width:'25px'}} src='leftArrowIco.png' fluid/></Button>
+                                <Button onClick={() => {
+                                    if (catalog.length === filter.limit) {
+                                        applyOffset(filter.offset+1);
+                                    }
+                                }}><Image style={{height:'25px', width:'25px'}} src='rightArrowIco.png' fluid/></Button>
+                            </ButtonGroup>
                         </Card>
                     </Col>
                     <Col sm={6}>

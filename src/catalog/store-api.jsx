@@ -12,16 +12,16 @@ export class PalatziQueryStruct {
 
     /* Set a new set of filters while keeping the defaults
        Returns a new instance of the object*/
-    update(filter) {
+    update(newValues) {
         return new PalatziQueryStruct(
-            filter.title,
-            filter.limit,
-            filter.offset,
-            filter.price_min,
-            filter.price_max,
-            filter.categorySlug
-    );
-}
+            newValues.title ?? this.title,
+            newValues.limit ?? this.limit,
+            newValues.offset ?? this.offset,
+            newValues.price_min ?? this.price_min,
+            newValues.price_max ?? this.price_max,
+            newValues.categorySlug ?? this.categorySlug
+        );
+    }
 }
 
 function makeApiString(filters) {

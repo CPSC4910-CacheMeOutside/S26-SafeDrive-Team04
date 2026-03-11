@@ -182,7 +182,9 @@ AdminMessage: a.model({
     cart: a.belongsTo('Cart', 'cartId'),
 
     oId: a.id(),
-    order: a.belongsTo('Orders', 'oId')
+    order: a.belongsTo('Orders', 'oId'),
+
+    sponsoredCatalog: a.hasMany('SponsorsProducts', 'pId')
 
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
@@ -274,6 +276,15 @@ AdminMessage: a.model({
   }).identifier(['driverId', 'sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  SponsorsProducts: a.model({
+    id: a.id().required(),
+    userId: a.id().required(),
+    sponsor: a.belongsTo('Sponsors', 'userId'),
+    pId: a.id().required(),
+    products: a.belongsTo('Product', 'pId')
+  }).identifier(['id'])
+  .authorization(allow => [allow.publicApiKey()]),
+
   /* A user classified as a sponsor */
   Sponsors: a.model({
     userId: a.id().required(),
@@ -284,8 +295,8 @@ AdminMessage: a.model({
     conversion: a.integer(),
     // The accounts the sponsor currently controls
     ptAccounts: a.hasMany('PTAccounts', 'sponsorId'),
-    assignedDrivers: a.hasMany('Drivers', 'userId')
-
+    assignedDrivers: a.hasMany('Drivers', 'userId'),
+    catalog: a.hasMany('SponsorsProducts', 'userId')
   }).identifier(['userId'])
   .authorization(allow => [allow.publicApiKey()]),
 
