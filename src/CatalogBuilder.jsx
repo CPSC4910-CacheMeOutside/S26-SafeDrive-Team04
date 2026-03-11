@@ -330,7 +330,7 @@ export default function CatalogBuilder({view}) {
                                     <ListGroup.Item key={'noSearch'} likeid={'noSearch'} className="text-muted mt-3">No items match your search.</ListGroup.Item>
                                 )}
                             </ListGroup>
-                            <ButtonGroup className="mb-2">
+                            <ButtonGroup className="sm">
                                 <Form>
                                     <Form.Group className="mb-3">
                                         <Form.Label>Page:</Form.Label>
