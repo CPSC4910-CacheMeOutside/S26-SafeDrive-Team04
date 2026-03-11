@@ -29,17 +29,18 @@ function EditProfilePage({
       if (!auth.isAuthenticated) return;
 
       if (!adminView) {
+        const attrs = await fetchUserAttributes();
         setFormData({
-          authFullName: auth.profile?.name || "",
-          authPhoneNum: auth.profile?.phone_number || "",
-          authEmail: auth.profile?.email || "",
-          authPreferredName: auth.profile?.preferred_username || ""
+          authFullName: attrs.name || "",
+          authPhoneNum: attrs.phone_number || "",
+          authEmail: attrs.email || "",
+          authPreferredName: attrs.preferred_username || ""
         });
 
         setAuthRole(auth.groups || []);
 
-        if (auth.profile?.picture && setProfilePic) {
-          setProfilePic(auth.profile.picture);
+        if (attrs.picture && setProfilePic) {
+          setProfilePic(attrs.picture);
         }
 
         return;
@@ -128,10 +129,8 @@ function EditProfilePage({
       if (!adminView) {
         const result = await updateUserAttributes({
           userAttributes: {
-            name: formData.authFullName,
             preferred_username: formData.authPreferredName,
-            phone_number: formData.authPhoneNum,
-            email: formData.authEmail
+            phone_number: formData.authPhoneNum
           }
         });
 
@@ -146,7 +145,7 @@ function EditProfilePage({
           authEmail: latest.email || ""
         });
 
-        alert("Profile update submitted successfully.");
+        alert("Successfully saved changes!");
         return;
       }
 
@@ -170,8 +169,10 @@ function EditProfilePage({
       await restOperation.response;
       alert("Driver profile updated successfully!");
     } catch (error) {
-      console.error(error);
-      alert("Something went wrong while saving.");
+      console.error("Save error:", error);
+      console.error("Save error response:", error?.response);
+      console.error("Save error body:", error?.response?.body);
+      alert(error?.message || "Something went wrong while saving.");
     }
   };
 
