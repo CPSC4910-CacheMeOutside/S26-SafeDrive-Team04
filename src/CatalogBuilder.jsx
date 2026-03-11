@@ -256,7 +256,7 @@ export default function CatalogBuilder({view}) {
                         <Image src={product.imgs[0]} fluid />
                     </Col>
                     <Col>
-                        <h4>{product.price} PTs</h4>
+                        <h4>${product.price}</h4>
                         <p>{product.synop}</p>
                         <UpdateCatalogButton product={product}/>
                     </Col>
