@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import { getProducts, PalatziQueryStruct } from './catalog/store-api';
 import StarRating from "./StarRating";
@@ -12,11 +12,6 @@ export default function CatalogBuilder({view}) {
     // Client used to add products to the backend catalog
     const client = generateClient();
 
-    // Load in the page. Contact the store api first
-    useEffect(() => {
-        loadProducts();
-    }, []);
-
     // Modal to display filtering options
     const[showFilter, setShowFilter] = useState(false);
     const openFilter = () => setShowFilter(true);
@@ -24,7 +19,47 @@ export default function CatalogBuilder({view}) {
 
     // State trackers for various search queries
     const [catalog, updateCatalog] = useState([]);
-    const [filter, updateFilter] = useState(new PalatziQueryStruct())
+    const [filter, updateFilter] = useState(new PalatziQueryStruct());
+    const [pName, updatePName] = useState('');
+    const [perPage, updatePerPage] = useState(10);
+    const [offset, updateOffset] = useState(0);
+    
+    // Load in the page. Contact the store api first
+    useEffect(() => {
+        loadProducts();
+        console.log("Filters have been updated to: ", filter);
+    }, [filter]);
+
+    // Applies the staged title change
+    function applyPName () {
+        updateFilter(filter.update({
+            title: String(pName)
+        }));
+    }
+
+    // Applies the staged per page change
+    function applyPerPage (newLimit) {
+        updateFilter(filter.update({
+            limit: Number(newLimit)
+        }));
+    }
+
+    // Applies the staged page selection
+    function applyOffset(newOffset) {
+        updateOffset(newOffset);
+        updateFilter(filter.update({
+            offset: Number(newOffset)
+        }))
+    }
+
+    // Applies all staged filters
+    function applyAllFilter() {
+        updateFilter(filter.update({
+            title: String(pName),
+            limit: Number(perPage),
+            offset: Number(offset),
+        }))
+    }
 
     // Add the product to the sponsor's catalog
     async function addProduct(prodId) {
@@ -97,21 +132,7 @@ Product.create({
     // Contact the external store API and retrieve all product information
     async function loadProducts() {
         try {
-            const productData = getProducts(filter)
-            let refinedCatalog = productData.map(rawProduct => (
-                {
-                    pId: rawProduct.id,
-                    title: rawProduct.title,
-                    imgs: rawProduct.images,
-                    synop: rawProduct.slug,
-                    desc: rawProduct.description,
-                    catagory: rawProduct.category.name,
-                    price: rawProduct.price,
-                    available: true,
-                    inCatalog: false,
-                }
-            ));
-
+            let refinedCatalog = await getProducts(filter);
             
             updateCatalog(refinedCatalog)
         
@@ -122,17 +143,34 @@ Product.create({
     }
     
     function FilterModal() {
-        const [name, setName] = useState('');
-        const [min, setMin] = useState(0);
-        const [max, setMax] = useState(Number.MAX_SAFE_INTEGER);
+        const [min, setMin] = useState(filter.price_min);
+        const [max, setMax] = useState(filter.price_max);
+        const [category, setCategory] = useState(filter.categorySlug);
+
+        useEffect(() => {
+            if (showFilter) {
+                setMin(filter.price_min);
+                setMax(filter.price_max);
+                setCategory(filter.categorySlug);
+            }
+        }, [showFilter]);
 
         function clearFilter() {
-            setName('');
             setMin(0);
             setMax(Number.MAX_SAFE_INTEGER);
-            setQueryByName('');
-            setQueryMinPrice(0);
-            setQueryMaxPrice(Number.MAX_SAFE_INTEGER);
+            setCategory('')
+            updateFilter(new PalatziQueryStruct())
+        }
+
+        function applyExtraFilter() {
+            updateFilter(filter.update({
+                title: String(pName),
+                limit: Number(perPage),
+                offset: Number(offset),
+                price_min: min,
+                price_max: max,
+                categorySlug: category
+            }))
         }
 
         return (
@@ -144,26 +182,29 @@ Product.create({
                 <Modal.Body>
                 {/* The filter form */}
                     <Form>
-                        <Form.Group controlId='productName'>
-                            <Form.Label>Product Name</Form.Label>
-                            <Form.Control 
-                                onChange={e => setName(String(e.target.value))}
-                                defaultValue={name}
-                                type='text'
-                                placeholder='Search items by name and description'/>
+                        <Form.Group controlId='productCategory'>
+                            <Form.Label>Category</Form.Label>
+                            <Form.Select onChange={e => setCategory(String(e.target.value))}
+                                defaultValue={filter.categorySlug}>
+                                <option value="">All</option>
+                                <option value="clothes">Clothing</option>
+                                <option value="furniture">Furniture</option>
+                                <option value="shoes">Shoes</option>
+                                <option value="technology">Technology</option>
+                            </Form.Select>
                         </Form.Group>
                         <Form.Group controlId='priceRange'>
                             <Form.Label>Price Range</Form.Label>
                             <Form.Text>From</Form.Text>
                             <Form.Control 
                                 onChange={e => setMin(Number(e.target.value))}
-                                defaultValue={min}
+                                defaultValue={filter.price_min}
                                 type='text' 
                                 placeholder='0 - ...'/>
                             <Form.Text>To</Form.Text>
                             <Form.Control
                                 onChange={e => setMax(Number(e.target.value))}
-                                defaultValue={max}
+                                defaultValue={filter.price_max}
                                 type='text' 
                                 placeholder='0 - ...'/>
                         </Form.Group>
@@ -172,8 +213,14 @@ Product.create({
 
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowFilter(false)} >Cancel</Button>
-                    <Button variant="secondary" onClick={() => clearFilter()} >Clear</Button>
-                    <Button variant="primary" onClick={() => applyFilter(name, min, max)}>Apply</Button>
+                    <Button variant="secondary" onClick={() => {
+                        clearFilter();
+                        setShowFilter(false);
+                        }} >Clear</Button>
+                    <Button variant="primary" onClick={() => {
+                        applyExtraFilter();
+                        setShowFilter(false);
+                    }}>Apply</Button>
                 </Modal.Footer>
             </Modal>
         );
@@ -182,37 +229,37 @@ Product.create({
     /* The fully detailed view of each catalog item */
     function CatalogItemPane({product}) {
         return (
-                <Tab.Pane eventKey={product.pId} >
-                    <Card style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                        <Col>
-                            <Row>
-                                <Carousel className="bg-secondary">
-                                    {product.imgs.map((img, idk) => 
-                                        (
-                                            <Carousel.Item key={idk}>
-                                                <Image width={300} src={img} fluid/>
-                                            </Carousel.Item>
-                                        )
-                                    )}
-                                </Carousel>
-                            </Row>
-                            <Row>
-                                <h1>{product.title}</h1>
-                            </Row>
-                            <Row>
-                                <Col>
-                                    <h3><strong>Price:</strong> {product.price} PTs</h3>
-                                    <Stack direction='horizontal' gap={1}>
-                                        <div><p><strong>Rating:</strong></p></div>
-                                        <div><StarRating itemKey={String(product.pId)} /></div>
-                                    </Stack>
-                                    <p><strong>Description: </strong>{product.desc}</p>
-                                    <UpdateCatalogButton product={product}/>
-                                </Col>
-                            </Row>
-                        </Col>
-                    </Card>
-                </Tab.Pane>
+            <Tab.Pane eventKey={product.pId} >
+                <Card style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                    <Col>
+                        <Row>
+                            <Carousel className="bg-secondary">
+                                {product.imgs.map((img, idk) => 
+                                    (
+                                        <Carousel.Item key={idk}>
+                                            <Image width={300} src={img} fluid/>
+                                        </Carousel.Item>
+                                    )
+                                )}
+                            </Carousel>
+                        </Row>
+                        <Row>
+                            <h1>{product.title}</h1>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <h3><strong>Price:</strong> {product.price} PTs</h3>
+                                <Stack direction='horizontal' gap={1}>
+                                    <div><p><strong>Rating:</strong></p></div>
+                                    <div><StarRating itemKey={String(product.pId)} /></div>
+                                </Stack>
+                                <p><strong>Description: </strong>{product.desc}</p>
+                                <UpdateCatalogButton product={product}/>
+                            </Col>
+                        </Row>
+                    </Col>
+                </Card>
+            </Tab.Pane>
         );
     }
 
@@ -253,13 +300,41 @@ Product.create({
         <div style={{ marginTop: '30px' }}>
             <FilterModal/>
             {/* Changed the header row so the search bar is in there */}
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h1 className="mb-0">Your Catalog</h1>
-                {/* The search updates on every keypress */}
-                <Button variant='secondary' onClick={openFilter}>
-                    <Image style={{height:'25px', width:'25px'}} src='filterIco.png' fluid/>
-                </Button>
-            </div>
+            <Row>
+                <Col>
+                    <h1 className="mb-0">Your Catalog</h1>
+                </Col>
+                <Col>
+                    <Form className="d-flex gap-2 align-items-end">
+                        <Col>
+                            <Form.Control
+                                onChange={e => updatePName(e.target.value)}
+                                defaultValue={''}
+                                type='text' 
+                                placeholder='Search by name...'
+                                style={{ width: '18rem' }}/>
+                        </Col>
+                        <Col>
+                            <Form.Select 
+                                onChange={e => applyPerPage(e.target.value)}
+                                defaultValue={10}
+                                style={{ width: '5rem' }}>
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                            </Form.Select>
+                        </Col>
+                        <Col>
+                            <Button variant='primary' onClick={() => applyPName()}>Search</Button>
+                        </Col>
+                    </Form>
+                </Col>
+                <Col>
+                    <Button variant='secondary' onClick={openFilter}>
+                        <Image style={{height:'25px', width:'25px'}} src='filterIco.png' fluid/>
+                    </Button>
+                </Col>
+            </Row>
             <Tab.Container id="driver-catalog" defaultActiveKey={"defaultChoice"}>
                 <Row>
                     <Col sm={5} className='pe-3'>

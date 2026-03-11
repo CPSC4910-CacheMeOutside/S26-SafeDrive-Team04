@@ -9,26 +9,32 @@ export class PalatziQueryStruct {
         this.price_max = maxPrice,
         this.categorySlug = category
     }
+
+    /* Set a new set of filters while keeping the defaults
+       Returns a new instance of the object*/
+    update(filter) {
+        return new PalatziQueryStruct(
+            filter.title,
+            filter.limit,
+            filter.offset,
+            filter.price_min,
+            filter.price_max,
+            filter.categorySlug
+    );
+}
 }
 
 function makeApiString(filters) {
-    let apiString = 'https://api.escuelajs.co/api/v1/products'
+    let base = 'https://api.escuelajs.co/api/v1/products';
 
-    Object.keys(filters).filter(f => filters[f] != null)
-    .forEach((filter, index) => {
+    const params = Object.entries(filters)
+        .filter(([_, value]) => value !== '' && value !== null && value !== undefined)
+        .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+        .join('&');
 
-        if (index === 0 ) {
-            apiString += '/?'
-        }
-
-        if (filters[filter]) {
-            apiString += `${filter}=${filters[filter]}`
-        }
-
-        if (!(index === keys.length-1)) {
-            apiString += '&'
-        }
-    });
+    const apiString = params ? `${base}?${params}` : base;
+    console.log("Created Palazi API String: ", apiString);
+    return apiString;
 }
 
 export async function getProducts(filters){
@@ -36,6 +42,7 @@ export async function getProducts(filters){
         const apiStr = makeApiString(filters)
         const storeRequest = await fetch(apiStr);
         const storeData = await storeRequest.json();
+        console.log("The API pulled the following products: ", storeData);
 
         let products = storeData.map(rawProduct => (
         {
@@ -49,6 +56,7 @@ export async function getProducts(filters){
             available: true,
         }
         ));
+        console.log("Adding the following as the catalog: ", products)
         return products;
     } catch (err) {
         console.log("Storefront product retrieval failed: ", err);
