@@ -18,18 +18,8 @@ export const auth = defineAuth({
     },
   },
   userAttributes: {
-    email: {
-      required: false,
-      mutable: true,
-    },
-    phoneNumber: {
-      required: false,
-      mutable: true,
-    },
-    preferredUsername: {
-      required: false,
-      mutable: true,
-    },
+    givenName: { required: true, mutable: true },
+    phoneNumber: { required: true, mutable: true },
   },
   groups: ["Admin", "Sponsor", "Driver"],
 });

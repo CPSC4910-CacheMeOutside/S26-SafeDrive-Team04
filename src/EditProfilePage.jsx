@@ -14,7 +14,7 @@ function EditProfilePage({
   const auth = useAmplifyAuth();
 
   const [formData, setFormData] = useState({
-    authFullName: "",
+    authGivenName: "",
     authNickname: "",
     authPhoneNum: "",
     authEmail: ""
@@ -31,7 +31,7 @@ function EditProfilePage({
       if (!adminView) {
         const attrs = await fetchUserAttributes();
         setFormData({
-          authFullName: attrs.given_name || "",
+          authGivenName: attrs.given_name || "",
           authNickname: attrs.nickname || "",
           authPhoneNum: attrs.phone_number || "",
           authEmail: attrs.email || "",
@@ -69,7 +69,7 @@ function EditProfilePage({
         const data = await response.body.json();
 
         setFormData({
-          authFullName: data.given_name || "",
+          authGivenName: data.given_name || "",
           authNickname: data.nickname || "",
           authPhoneNum: data.phone_number || "",
           authEmail: data.email || ""
@@ -140,7 +140,7 @@ function EditProfilePage({
         const latest = await fetchUserAttributes();
 
         setFormData({
-          authFullName: latest.given_name || "",
+          authGivenName: latest.given_name || "",
           authNickname: latest.nickname || "",
           authPhoneNum: latest.phone_number || "",
           authEmail: latest.email || ""
@@ -158,7 +158,7 @@ function EditProfilePage({
             Authorization: auth.idToken
           },
           body: {
-            given_name: formData.authFullName,
+            given_name: formData.authGivenName,
             nickname: formData.authNickname,
             phone_number: formData.authPhoneNum,
             email: formData.authEmail,
@@ -197,8 +197,8 @@ function EditProfilePage({
                 <Form.Label column sm={3}>Full Name:</Form.Label>
                 <Col sm={6}>
                   <Form.Control
-                    name="authFullName"
-                    value={formData.authFullName}
+                    name="authGivenName"
+                    value={formData.authGivenName}
                     readOnly
                     plaintext
                   />

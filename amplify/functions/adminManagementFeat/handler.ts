@@ -5,7 +5,7 @@ const cognito = new CognitoIdentityProviderClient({});
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const claims =event.requestContext.authorizer?.claims
+    const claims = event.requestContext.authorizer?.claims
 
     const groups = claims["cognito:groups"] || [];
     const isAdmin =
@@ -55,11 +55,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           "Access-Control-Allow-Headers": "*",
         },
         body: JSON.stringify({
-          username: result.Username,
-          name: attrs.name || "",
-          preferred_username: attrs.preferred_username || "",
-          phone_number: attrs.phone_number || "",
-          email: attrs.email || "",
+          email: attrs.email,
+          given_name: attrs.given_name,
+          phone_number: attrs.phone_number,
           groups: ["Driver"],
         }),
       };
@@ -67,17 +65,23 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (event.httpMethod === "PUT") {
       const body = JSON.parse(event.body || "{}");
+      const updates = [];
 
+      if (body.email) {
+        updates.push({ Name: "email", Value: body.email });
+      }
+      if (body.given_name) {
+        updates.push({ Name: "given_name", Value: body.given_name });
+      }
+      if (body.phone_number) {
+        updates.push({ Name: "phone_number", Value: body.phone_number });
+      }
+      
       await cognito.send(
         new AdminUpdateUserAttributesCommand({
           UserPoolId: userPoolId,
           Username: driverId,
-          UserAttributes: [
-            { Name: "name", Value: body.name || "" },
-            { Name: "preferred_username", Value: body.preferred_username || "" },
-            { Name: "phone_number", Value: body.phone_number || "" },
-            { Name: "email", Value: body.email || "" },
-          ],
+          UserAttributes: updates,
         })
       );
 
