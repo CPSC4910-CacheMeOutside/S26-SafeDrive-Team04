@@ -15,7 +15,7 @@ function EditProfilePage({
 
   const [formData, setFormData] = useState({
     authFullName: "",
-    authPreferredName: "",
+    authNickname: "",
     authPhoneNum: "",
     authEmail: ""
   });
@@ -31,7 +31,8 @@ function EditProfilePage({
       if (!adminView) {
         const attrs = await fetchUserAttributes();
         setFormData({
-          authFullName: attrs.name || "",
+          authFullName: attrs.given_name || "",
+          authNickname: attrs.nickname || "",
           authPhoneNum: attrs.phone_number || "",
           authEmail: attrs.email || "",
           authPreferredName: attrs.preferred_username || ""
@@ -68,8 +69,8 @@ function EditProfilePage({
         const data = await response.body.json();
 
         setFormData({
-          authFullName: data.name || "",
-          authPreferredName: data.preferred_username || "",
+          authFullName: data.given_name || "",
+          authNickname: data.nickname || "",
           authPhoneNum: data.phone_number || "",
           authEmail: data.email || ""
         });
@@ -129,7 +130,7 @@ function EditProfilePage({
       if (!adminView) {
         const result = await updateUserAttributes({
           userAttributes: {
-            preferred_username: formData.authPreferredName,
+            nickname: formData.authNickname,
             phone_number: formData.authPhoneNum
           }
         });
@@ -139,8 +140,8 @@ function EditProfilePage({
         const latest = await fetchUserAttributes();
 
         setFormData({
-          authFullName: latest.name || "",
-          authPreferredName: latest.preferred_username || "",
+          authFullName: latest.given_name || "",
+          authNickname: latest.nickname || "",
           authPhoneNum: latest.phone_number || "",
           authEmail: latest.email || ""
         });
@@ -157,8 +158,8 @@ function EditProfilePage({
             Authorization: auth.idToken
           },
           body: {
-            name: formData.authFullName,
-            preferred_username: formData.authPreferredName,
+            given_name: formData.authFullName,
+            nickname: formData.authNickname,
             phone_number: formData.authPhoneNum,
             email: formData.authEmail,
             picture: profilePic || null
@@ -208,8 +209,8 @@ function EditProfilePage({
                 <Form.Label column sm={3}>Preferred Name:</Form.Label>
                 <Col sm={6}>
                   <Form.Control
-                    name="authPreferredName"
-                    value={formData.authPreferredName}
+                    name="authNickname"
+                    value={formData.authNickname}
                     onChange={handleChange}
                   />
                 </Col>

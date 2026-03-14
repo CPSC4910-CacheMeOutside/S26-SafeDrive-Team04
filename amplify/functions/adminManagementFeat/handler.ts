@@ -5,8 +5,7 @@ const cognito = new CognitoIdentityProviderClient({});
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const claims =
-      (event.requestContext.authorizer as any)?.claims || {};
+    const claims =event.requestContext.authorizer?.claims
 
     const groups = claims["cognito:groups"] || [];
     const isAdmin =
