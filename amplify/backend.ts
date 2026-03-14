@@ -13,13 +13,11 @@ import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { adminTakeover } from './functions/adminManagementFeat/resource';
-import { updateDriver } from './functions/adminManagementFeat/resource';
 
 const backend = defineBackend({
   auth,
   data,
   adminTakeover,
-  updateDriver,
 });
 
 const userPool = backend.auth.resources.userPool;

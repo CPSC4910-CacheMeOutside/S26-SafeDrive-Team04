@@ -5,11 +5,3 @@ export const adminTakeover = defineFunction({
   entry: './handler.ts',
   resourceGroupName: 'auth',
 });
-
-export const updateDriver = defineFunction({
-  name: 'updateDriver',
-  entry: './handler.ts',
-  environment: {
-    USER_POOL_ID: 'us-east-1_ef9pmhpQq',
-  },
-});
