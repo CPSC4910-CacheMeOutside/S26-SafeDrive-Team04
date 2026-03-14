@@ -14,7 +14,7 @@ function EditProfilePage({
   const auth = useAmplifyAuth();
 
   const [formData, setFormData] = useState({
-    authGivenName: "",
+    authName: "",
     authNickname: "",
     authPhoneNum: "",
     authEmail: ""
@@ -31,11 +31,10 @@ function EditProfilePage({
       if (!adminView) {
         const attrs = await fetchUserAttributes();
         setFormData({
-          authGivenName: attrs.given_name || "",
+          authName: attrs.name || "",
           authNickname: attrs.nickname || "",
           authPhoneNum: attrs.phone_number || "",
           authEmail: attrs.email || "",
-          authPreferredName: attrs.preferred_username || ""
         });
 
         setAuthRole(auth.groups || []);
@@ -69,7 +68,7 @@ function EditProfilePage({
         const data = await response.body.json();
 
         setFormData({
-          authGivenName: data.given_name || "",
+          authName: data.name || "",
           authNickname: data.nickname || "",
           authPhoneNum: data.phone_number || "",
           authEmail: data.email || ""
@@ -140,7 +139,7 @@ function EditProfilePage({
         const latest = await fetchUserAttributes();
 
         setFormData({
-          authGivenName: latest.given_name || "",
+          authName: latest.name || "",
           authNickname: latest.nickname || "",
           authPhoneNum: latest.phone_number || "",
           authEmail: latest.email || ""
@@ -158,7 +157,7 @@ function EditProfilePage({
             Authorization: auth.idToken
           },
           body: {
-            given_name: formData.authGivenName,
+            name: formData.authName,
             nickname: formData.authNickname,
             phone_number: formData.authPhoneNum,
             email: formData.authEmail,
@@ -197,8 +196,8 @@ function EditProfilePage({
                 <Form.Label column sm={3}>Full Name:</Form.Label>
                 <Col sm={6}>
                   <Form.Control
-                    name="authGivenName"
-                    value={formData.authGivenName}
+                    name="authName"
+                    value={formData.authName}
                     readOnly
                     plaintext
                   />

@@ -5,11 +5,10 @@ const cognito = new CognitoIdentityProviderClient({});
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const claims = event.requestContext.authorizer?.claims
-
-    const groups = claims["cognito:groups"] || [];
-    const isAdmin =
-      Array.isArray(groups) ? groups.includes("Admin") : groups === "Admin";
+    const claims = event.requestContext.authorizer?.claims ?? {};
+    const rawGroups = claims["cognito:groups"];
+    const groups = Array.isArray(rawGroups) ? rawGroups : typeof rawGroups === "string" ? rawGroups.split(",").map((g) => g.trim()).filter(Boolean) : [];
+    const isAdmin = groups.includes("Admin");
 
     if (!isAdmin) {
       return {
@@ -44,9 +43,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         })
       );
 
-      const attrs = Object.fromEntries(
-        (result.UserAttributes || []).map((a) => [a.Name, a.Value])
-      );
+      const attrs = Object.fromEntries((result.UserAttributes || []).map((a) => [a.Name, a.Value]));
 
       return {
         statusCode: 200,
@@ -55,9 +52,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           "Access-Control-Allow-Headers": "*",
         },
         body: JSON.stringify({
-          email: attrs.email,
-          given_name: attrs.given_name,
-          phone_number: attrs.phone_number,
+          email: attrs.email || "",
+          name: attrs.name || "",
+          nickname: attrs.nickname || "",
+          phone_number: attrs.phone_number || "",
           groups: ["Driver"],
         }),
       };
@@ -70,8 +68,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       if (body.email) {
         updates.push({ Name: "email", Value: body.email });
       }
-      if (body.given_name) {
-        updates.push({ Name: "given_name", Value: body.given_name });
+      if (body.name) {
+        updates.push({ Name: "name", Value: body.name });
+      }
+      if (body.nickname) {
+        updates.push({ Name: "nickname", Value: body.nickname });
       }
       if (body.phone_number) {
         updates.push({ Name: "phone_number", Value: body.phone_number });
