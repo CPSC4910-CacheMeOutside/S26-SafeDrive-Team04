@@ -1,9 +1,26 @@
-import { referenceAuth } from '@aws-amplify/backend';
+import { defineAuth } from '@aws-amplify/backend';
 
-export const auth = referenceAuth({
-  userPoolId: 'us-east-1_ef9pmhpQq',
-  userPoolClientId: '76h0ov3f9tb3jvbaiurc7qsq9p',
-  identityPoolId: 'us-east-1:b12fb4d7-fcd0-42ce-9ff0-1b0cd9fa972d',
-  authRoleArn: 'arn:aws:iam::274815321855:role/amplify-d2jawpaet8g6c9-am-amplifyAuthauthenticatedU-3QosvDZEQmfJ',
-  unauthRoleArn: 'arn:aws:iam::274815321855:role/amplify-d2jawpaet8g6c9-am-amplifyAuthunauthenticate-JgOG3lp32qm3',
+export const auth = defineAuth({
+  loginWith: {
+    email: true,
+    externalProviders: {
+      callbackUrls: [
+        'http://localhost:5173/callback',
+        'https://dev.d2jawpaet8g6c9.amplifyapp.com/callback',
+        'https://amplifydeployfix.d2jawpaet8g6c9.amplifyapp.com/callback',
+        'https://main.d2jawpaet8g6c9.amplifyapp.com/callback',
+      ],
+      logoutUrls: [
+        'http://localhost:5173/',
+        'https://dev.d2jawpaet8g6c9.amplifyapp.com/',
+        'https://amplifydeployfix.d2jawpaet8g6c9.amplifyapp.com/',
+        'https://main.d2jawpaet8g6c9.amplifyapp.com/',
+      ],
+    },
+  },
+  userAttributes: {
+    fullname: { required: true, mutable: true },
+    phoneNumber: { required: true, mutable: true },
+  },
+  groups: ["Admin", "Sponsor", "Driver"],
 });
