@@ -8,24 +8,26 @@ export const auth = defineAuth({
       callbackUrls: [
         'http://localhost:5173/callback',
         'https://dev.d2jawpaet8g6c9.amplifyapp.com/callback',
+        'https://amplifyDeployFix.d2jawpaet8g6c9.amplifyapp.com/callback',
       ],
       logoutUrls: [
         'http://localhost:5173/',
         'https://dev.d2jawpaet8g6c9.amplifyapp.com/',
+        'https://amplifyDeployFix.d2jawpaet8g6c9.amplifyapp.com/',
       ],
     },
   },
   userAttributes: {
     fullname: {
-      required: true,
-      mutable: false,
+      required: false,
+      mutable: true,
     },
     phoneNumber: {
-      required: true,
+      required: false,
       mutable: true,
     },
     preferredUsername: {
-      required: true,
+      required: false,
       mutable: true,
     },
   },
