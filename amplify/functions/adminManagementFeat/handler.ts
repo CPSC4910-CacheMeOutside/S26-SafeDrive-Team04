@@ -1,23 +1,37 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
-import { CognitoIdentityProviderClient, AdminGetUserCommand, AdminUpdateUserAttributesCommand } from '@aws-sdk/client-cognito-identity-provider';
+import {
+  CognitoIdentityProviderClient,
+  AdminGetUserCommand,
+  AdminUpdateUserAttributesCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 
 const cognito = new CognitoIdentityProviderClient({});
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
+};
+
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const claims = event.requestContext.authorizer?.claims ?? {};
-    const rawGroups = claims["cognito:groups"];
-    const groups = Array.isArray(rawGroups) ? rawGroups : typeof rawGroups === "string" ? rawGroups.split(",").map((g) => g.trim()).filter(Boolean) : [];
-    const isAdmin = groups.includes("Admin");
+    if (event.httpMethod === 'OPTIONS') {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: '',
+      };
+    }
 
-    if (!isAdmin) {
+    const claims = (event.requestContext as any)?.authorizer?.claims ?? (event.requestContext as any)?.authorizer?.jwt?.claims ?? {};
+    const rawGroups = claims['cognito:groups'];
+    const groups = Array.isArray(rawGroups) ? rawGroups : typeof rawGroups === 'string' ? rawGroups.split(',').map((g: string) => g.trim()).filter(Boolean) : [];
+
+    if (!groups.includes('Admin')) {
       return {
         statusCode: 403,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "*",
-        },
-        body: JSON.stringify({ message: "Not authorized" }),
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Not authorized' }),
       };
     }
 
@@ -27,15 +41,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     if (!userPoolId || !driverId) {
       return {
         statusCode: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "*",
-        },
-        body: JSON.stringify({ message: "Missing USER_POOL_ID or driverId" }),
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Missing USER_POOL_ID or driverId' }),
       };
     }
 
-    if (event.httpMethod === "GET") {
+    if (event.httpMethod === 'GET') {
       const result = await cognito.send(
         new AdminGetUserCommand({
           UserPoolId: userPoolId,
@@ -43,41 +54,42 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         })
       );
 
-      const attrs = Object.fromEntries((result.UserAttributes || []).map((a) => [a.Name, a.Value]));
+      const attrs = Object.fromEntries(
+        (result.UserAttributes ?? []).map((a) => [a.Name!, a.Value ?? ''])
+      );
 
       return {
         statusCode: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "*",
-        },
+        headers: corsHeaders,
         body: JSON.stringify({
-          email: attrs.email || "",
-          name: attrs.name || "",
-          nickname: attrs.nickname || "",
-          phone_number: attrs.phone_number || "",
-          groups: ["Driver"],
+          email: attrs.email ?? '',
+          name: attrs.name ?? '',
+          nickname: attrs.nickname ?? '',
+          phone_number: attrs.phone_number ?? '',
         }),
       };
     }
 
-    if (event.httpMethod === "PUT") {
-      const body = JSON.parse(event.body || "{}");
-      const updates = [];
+    if (event.httpMethod === 'PUT') {
+      const body = JSON.parse(event.body || '{}');
 
-      if (body.email) {
-        updates.push({ Name: "email", Value: body.email });
+      const updates = [
+        body.email !== undefined ? { Name: 'email', Value: String(body.email) } : null,
+        body.name !== undefined ? { Name: 'name', Value: String(body.name) } : null,
+        body.nickname !== undefined ? { Name: 'nickname', Value: String(body.nickname) } : null,
+        body.phone_number !== undefined
+          ? { Name: 'phone_number', Value: String(body.phone_number) }
+          : null,
+      ].filter(Boolean) as { Name: string; Value: string }[];
+
+      if (updates.length === 0) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'No attributes provided to update' }),
+        };
       }
-      if (body.name) {
-        updates.push({ Name: "name", Value: body.name });
-      }
-      if (body.nickname) {
-        updates.push({ Name: "nickname", Value: body.nickname });
-      }
-      if (body.phone_number) {
-        updates.push({ Name: "phone_number", Value: body.phone_number });
-      }
-      
+
       await cognito.send(
         new AdminUpdateUserAttributesCommand({
           UserPoolId: userPoolId,
@@ -88,33 +100,25 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
       return {
         statusCode: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "*",
-        },
-        body: JSON.stringify({ message: "Driver updated successfully" }),
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Driver updated successfully' }),
       };
     }
 
     return {
       statusCode: 405,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*",
-      },
-      body: JSON.stringify({ message: "Method not allowed" }),
+      headers: corsHeaders,
+      body: JSON.stringify({ message: 'Method not allowed' }),
     };
   } catch (error: any) {
     console.error(error);
+
     return {
       statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*",
-      },
+      headers: corsHeaders,
       body: JSON.stringify({
-        message: "Server error",
-        error: error.message,
+        message: 'Server error',
+        error: error?.message ?? 'Unknown error',
       }),
     };
   }
