@@ -14,8 +14,8 @@ import { CardBody, ListGroupItem } from 'react-bootstrap';
 
 function AdminPage(){
   
-  const [companies, setCompany] = useState([
-    {id: "EBD", name: "East Bound and Down", 
+  const [SponsoredUsers, setSponsUser] = useState([
+    {id: "SPUser1", name: "East Bound and Down", 
       drivers: [
         {id: 5, name: "Jerry Reed", points: 300},
         {id: 4, name: "Burt Reynolds", points: 330}
@@ -23,7 +23,7 @@ function AdminPage(){
       logs: [],
     },
 
-    {id: "SmkBdt", name: "Smokey and the Bandit",
+    {id: "SPUser2", name: "Smokey and the Bandit",
       drivers: [
         {id: 1, name: "Bo Darvilel", points: 200},
         {id: 2, name: "Cledus Snow", points: 156},
@@ -32,7 +32,7 @@ function AdminPage(){
       logs: [],
     },
 
-    {id: "HwyMn", name: "Highway Men", 
+    {id: "SPUser3", name: "Highway Men", 
       drivers: [
         {id: 6, name: "Johnny Cash", points: 400 },
         {id: 7, name: "Willie Nelson", points: 450},
@@ -43,7 +43,7 @@ function AdminPage(){
     },
   ]);
 
-  const [selectedCompanyId, setSelectedCompanyId] = useState(companies[0]?.id ?? "");
+  const [selectedSponsUserId, setSelectedSponsUserId] = useState(SponsoredUsers[0]?.id ?? "");
 
 
   /*const [drivers, setDrivers] = useState([
@@ -59,48 +59,48 @@ function AdminPage(){
   const [sortMode, setSortMode] = useState("id");
   const [description, setDescription] = useState("");
  
-  const selectedCompany = useMemo(
-    () => companies.find((c) => c.id === selectedCompanyId),
-    [companies, selectedCompanyId]
+  const selectedSponsUser = useMemo(
+    () => SponsoredUsers.find((c) => c.id === selectedSponsUserId),
+    [SponsoredUsers, selectedSponsUserId]
 
   );
 
-  const companyDrivers = selectedCompany?.drivers ?? [];
-  const companyLogs = selectedCompany?.logs ?? [];
+  const SponsUserDrivers = selectedSponsUser?.drivers ?? [];
+  const SponsUserLogs = selectedSponsUser?.logs ?? [];
  
   const validDriver = useMemo(() => {
-    if (!companyDrivers.length) return null;
-    if(selectedDriverId == null) return companyDrivers[0].id;
-    const driverLoc = companyDrivers.some((d) => d.id === selectedDriverId);
-    return driverLoc ? selectedDriverId : companyDrivers[0].id;
+    if (!SponsUserDrivers.length) return null;
+    if(selectedDriverId == null) return SponsUserDrivers[0].id;
+    const driverLoc = SponsUserDrivers.some((d) => d.id === selectedDriverId);
+    return driverLoc ? selectedDriverId : SponsUserDrivers[0].id;
 
-  }, [companyDrivers, selectedDriverId]);
+  }, [SponsUserDrivers, selectedDriverId]);
 
   const selectedDriver = useMemo(
-    () => companyDrivers.find((d) => d.id === validDriver) ?? null,
-    [companyDrivers, validDriver]
+    () => SponsUserDrivers.find((d) => d.id === validDriver) ?? null,
+    [SponsUserDrivers, validDriver]
   );
 
   const sortedDrivers = useMemo(() => {
-    const copy = [...companyDrivers];
+    const copy = [...SponsUserDrivers];
     copy.sort((a,b) => {
       if (sortMode === "points") return b.points - a.points;
       if (sortMode === "id") return a.id - b.id;
       return 0;
     });
     return copy;
-  }, [companyDrivers, sortMode]);
+  }, [SponsUserDrivers, sortMode]);
   
   
   const pointAdjust = (value) => {
-    if(!selectedCompany || !selectedDriver) return;
+    if(!selectedSponsUser || !selectedDriver) return;
     const timestamp = new Date().toLocaleString();
     const reason = description?.trim() ? description.trim() : "No Reason Provided"
-    setCompany(prev =>
-      prev.map((company) => {
-        if(company.id !== selectedCompanyId) return company;
+    setSponsUser(prev =>
+      prev.map((SponsUser) => {
+        if(SponsUser.id !== selectedSponsUserId) return SponsUser;
 
-        const updatedDrivers = company.drivers.map((d) =>
+        const updatedDrivers = SponsUser.drivers.map((d) =>
           d.id === selectedDriver.id ? { ...d, points: d.points + value} : d
         );
         const newLog = {
@@ -112,9 +112,9 @@ function AdminPage(){
         };
 
         return{
-          ...company,
+          ...SponsUser,
           drivers: updatedDrivers,
-          logs: [newLog, ...company.logs],
+          logs: [newLog, ...SponsUser.logs],
         };
       })
     );
@@ -150,15 +150,15 @@ function AdminPage(){
               <Col md={3}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Companies</Card.Title>
+                    <Card.Title>SponsoredUsers</Card.Title>
                     <ListGroup>
-                      {companies.map((c) => (
+                      {SponsoredUsers.map((c) => (
                         <ListGroupItem
                           key={c.id}
                           action
-                          active={c.id === selectedCompanyId}
+                          active={c.id === selectedSponsUserId}
                           onClick={() => {
-                            setSelectedCompanyId(c.id);
+                            setSelectedSponsUserId(c.id);
                             setSelectedDriverId(null);
                           }}
                         >
@@ -175,8 +175,8 @@ function AdminPage(){
               <Card.Body>
                 <Card.Title>
                   Drivers{" "}
-                  {selectedCompany ? (
-                    <span className='text-muted'>({selectedCompany.name})</span>
+                  {selectedSponsUser ? (
+                    <span className='text-muted'>({selectedSponsUser.name})</span>
                   ) : null}
                   </Card.Title>
                     <div className="mb-3 d-flex gap-2">
@@ -213,9 +213,9 @@ function AdminPage(){
                       ))}
                     </ListGroup>
 
-                    {!companyDrivers.length && (
+                    {!SponsUserDrivers.length && (
                       <div className="text-muted mt-3">
-                        No Drivers Assigned to this Company Yet
+                        No Drivers Assigned to this Sponsored User Yet
                       </div>
                     )}
                   </Card.Body>
@@ -232,7 +232,7 @@ function AdminPage(){
                     ) : (
                       <>
                       <p>
-                        Company: <strong>{selectedCompany?.name}</strong>
+                        Sponsored User: <strong>{selectedSponsUser?.name}</strong>
                         <br />
                         Driver: <strong>{selectedDriver.name}</strong>
                         <br />
@@ -295,15 +295,15 @@ function AdminPage(){
             <Col md={4}>
             <Card>
               <Card.Body>
-                <Card.Title>Companies</Card.Title>
+                <Card.Title>Sponsored Users</Card.Title>
                 <ListGroup>
-                  {companies.map((c) => (
+                  {SponsoredUsers.map((c) => (
                     <ListGroup.Item
                       key={c.id}
                       action
-                      active={c.id === selectedCompanyId}
+                      active={c.id === selectedSponsUserId}
                       onClick={() => {
-                        setSelectedCompanyId(c.id);
+                        setSelectedSponsUserId(c.id);
                         setSelectedDriverId(null);
                       }}
                     >
@@ -320,13 +320,13 @@ function AdminPage(){
             <Card>
               <Card.Body>
                 <Card.Title>
-                  Logs {selectedCompany ? `(${selectedCompany.name})` :""}
+                  Logs {selectedSponsUser ? `(${selectedSponsUser.name})` :""}
                   </Card.Title>
-                  {!companyLogs.length ? (
+                  {!SponsUserLogs.length ? (
                     <div className="text-muted mt-3"> No adjustments logged yet.</div>
                 ) : (
                   <ListGroup>
-                    {companyLogs.map((log,index) => (
+                    {SponsUserLogs.map((log,index) => (
                       <ListGroupItem key={index}>
                         <div>
                           <strong>{log.driver}</strong>
