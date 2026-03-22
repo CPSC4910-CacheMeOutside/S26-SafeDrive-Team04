@@ -291,7 +291,8 @@ function AdminPage(){
             </Row>
           </Tab>
           <Tab eventKey="audit" title="Logs/Reports">
-
+            <Row>
+            <Col md={4}>
             <Card>
               <Card.Body>
                 <Card.Title>Companies</Card.Title>
@@ -311,11 +312,43 @@ function AdminPage(){
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
-                {!companyLogs.length && (
-                  <div className="text-muted mt-3"> No adjustments logged yet.</div>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          <Col md={8}>
+            <Card>
+              <Card.Body>
+                <Card.Title>
+                  Logs {selectedCompany ? `(${selectedCompany.name})` :""}
+                  </Card.Title>
+                  {!companyLogs.length ? (
+                    <div className="text-muted mt-3"> No adjustments logged yet.</div>
+                ) : (
+                  <ListGroup>
+                    {companyLogs.map((log,index) => (
+                      <ListGroupItem key={index}>
+                        <div>
+                          <strong>{log.driver}</strong>
+                        </div>
+                        <div>
+                          Change:{" "}
+                          <span className={log.change >= 0 ? "text-success" : "text-danger"}>
+                            {log.change >= 0 ? `+${log.change}` : log.change}
+                          </span>
+                        </div>
+                          <div>Reason: {log.reason}</div>
+                          <div className="text-muted" style={{ fontSize: "0.9rem"}}>
+                            {log.time}
+                          </div>
+                      </ListGroupItem>
+                    ))}
+                  </ListGroup>
                 )}
               </Card.Body>
           </Card>
+        </Col>
+      </Row>
     </Tab>
   </Tabs>
  </div>
