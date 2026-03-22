@@ -15,7 +15,7 @@ import { CardBody, ListGroupItem } from 'react-bootstrap';
 function AdminPage(){
   
   const [SponsoredUsers, setSponsUser] = useState([
-    {id: "SPUser1", name: "East Bound and Down", 
+    {id: "SPUser1", name: "SPUser1", 
       drivers: [
         {id: 5, name: "Jerry Reed", points: 300},
         {id: 4, name: "Burt Reynolds", points: 330}
@@ -23,7 +23,7 @@ function AdminPage(){
       logs: [],
     },
 
-    {id: "SPUser2", name: "Smokey and the Bandit",
+    {id: "SPUser2", name: "SPUser2",
       drivers: [
         {id: 1, name: "Bo Darvilel", points: 200},
         {id: 2, name: "Cledus Snow", points: 156},
@@ -32,7 +32,7 @@ function AdminPage(){
       logs: [],
     },
 
-    {id: "SPUser3", name: "Highway Men", 
+    {id: "SPUser3", name: "SPUser3", 
       drivers: [
         {id: 6, name: "Johnny Cash", points: 400 },
         {id: 7, name: "Willie Nelson", points: 450},
@@ -150,7 +150,7 @@ function AdminPage(){
               <Col md={3}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>SponsoredUsers</Card.Title>
+                    <Card.Title>Sponsored Users</Card.Title>
                     <ListGroup>
                       {SponsoredUsers.map((c) => (
                         <ListGroupItem
