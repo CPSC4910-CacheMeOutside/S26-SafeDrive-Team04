@@ -80,6 +80,7 @@ const SafeDriveSchema = a.schema({
 
   Wishlist: a.model({
     wishId: a.id().required(),
+    products: a.hasMany('WishlistProduct', 'wishId'),
     driverId: a.id().required(),
     driver: a.belongsTo('Driver', 'driverId')
   }).identifier(['wishId'])
@@ -105,7 +106,9 @@ const SafeDriveSchema = a.schema({
 
   WishlistProduct: a.model({
     wishId: a.id().required(),
-    pId: a.id().required()
+    wishList: a.belongsTo('Wishlist', 'wishId'),
+    pId: a.id().required(),
+    product: a.belongsTo('Product', 'pId')
   }).identifier(['wishId', 'pId'])
   .authorization(allow => [allow.publicApiKey()]),
  
@@ -115,11 +118,13 @@ const SafeDriveSchema = a.schema({
     title: a.string(),
     imgs: a.json(),
     synop: a.string(),
-    catagory: a.string(),
+    category: a.string(),
     price: a.float(),
     available: a.boolean(),
+
+    wishlists: a.hasMany('WishlistProduct', 'pId')
   }).identifier(['pId'])
-  .authorization(allow => [allow.publicApiKey()]),
+  .authorization(allow => [allow.publicApiKey()])
  
 });
  
