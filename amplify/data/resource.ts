@@ -1,4 +1,5 @@
 import { a, defineData, type ClientSchema} from '@aws-amplify/backend';
+import { Product } from 'aws-cdk-lib/aws-servicecatalog';
 import { id } from 'aws-sdk/clients/datapipeline';
  
 // Create our About Table
@@ -68,7 +69,8 @@ const SafeDriveSchema = a.schema({
     points: a.integer().default(0),
 
     sponsors: a.hasMany("DriverSponsor", "driverId"),
-    wishlist: a.hasOne('Wishlist', 'driverId')
+    wishlist: a.hasOne('Wishlist', 'driverId'),
+    cart: a.hasOne('Cart', 'driverId')
     
   })
   .identifier(['driverId'])
@@ -78,12 +80,28 @@ const SafeDriveSchema = a.schema({
     allow.groups(['Driver'])
   ]),
 
+  Catalog: a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    products: a.hasMany('CatalogProduct', ['driverId', 'sponsorId'])
+
+  }).identifier(['driverId', 'sponsorId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
   Wishlist: a.model({
     wishId: a.id().required(),
     products: a.hasMany('WishlistProduct', 'wishId'),
     driverId: a.id().required(),
     driver: a.belongsTo('Driver', 'driverId')
   }).identifier(['wishId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Cart: a.model({
+    cartId: a.id().required(),
+    driverId: a.id().required(),
+    driver: a.belongsTo('Driver', 'driverId'),
+    products: a.hasMany('CartProduct', 'cartId')
+  }).identifier(['cartId'])
   .authorization(allow => [allow.publicApiKey()]),
 
   // TODO: Model is slated for deprication. Ensure all references are handled before removing
@@ -111,6 +129,25 @@ const SafeDriveSchema = a.schema({
     product: a.belongsTo('Product', 'pId')
   }).identifier(['wishId', 'pId'])
   .authorization(allow => [allow.publicApiKey()]),
+
+  CartProduct: a.model({
+    cartId: a.id().required(),
+    cart: a.belongsTo('Cart', 'cartId'),
+    pId: a.id().required(),
+    product: a.belongsTo('Product', 'pId')
+  }).identifier(['cartId', 'pId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  CatalogProduct: a.model({
+    
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    catalog: a.belongsTo('Catalog', ['driverId', 'sponsorId']),
+
+    pId: a.id().required(),
+    product: a.belongsTo('Product', 'pId')
+  }).identifier(['driverId', 'sponsorId', 'pId'])
+  .authorization(allow => [allow.publicApiKey()]),
  
   // A product designed for 
   Product: a.model({
@@ -122,7 +159,9 @@ const SafeDriveSchema = a.schema({
     price: a.float(),
     available: a.boolean(),
 
-    wishlists: a.hasMany('WishlistProduct', 'pId')
+    wishlists: a.hasMany('WishlistProduct', 'pId'),
+    carts: a.hasMany('CartProduct', 'pId'),
+    catalogs: a.hasMany('CatalogProduct', 'pId')
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()])
  
