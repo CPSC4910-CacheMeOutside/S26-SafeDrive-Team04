@@ -40,7 +40,8 @@ const SafeDriveSchema = a.schema({
     userId: a.id(),
     affiliation: a.string(),
 
-    drivers: a.hasMany("DriverSponsor", 'sponsorId')
+    drivers: a.hasMany("DriverSponsor", 'sponsorId'),
+    catalog: a.hasOne("Catalog", 'sponsorId')
   })
   .identifier(['sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
@@ -70,7 +71,8 @@ const SafeDriveSchema = a.schema({
 
     sponsors: a.hasMany("DriverSponsor", "driverId"),
     wishlist: a.hasOne('Wishlist', 'driverId'),
-    cart: a.hasOne('Cart', 'driverId')
+    cart: a.hasOne('Cart', 'driverId'),
+    catalogs: a.hasMany("Catalog", "driverId")
     
   })
   .identifier(['driverId'])
@@ -82,9 +84,10 @@ const SafeDriveSchema = a.schema({
 
   Catalog: a.model({
     driverId: a.id().required(),
+    driver: a.belongsTo('Driver', 'driverId'),
     sponsorId: a.id().required(),
+    sponsor: a.belongsTo('Sponsor', 'sponsorId'),
     products: a.hasMany('CatalogProduct', ['driverId', 'sponsorId'])
-
   }).identifier(['driverId', 'sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
 
@@ -139,7 +142,7 @@ const SafeDriveSchema = a.schema({
   .authorization(allow => [allow.publicApiKey()]),
 
   CatalogProduct: a.model({
-    
+
     driverId: a.id().required(),
     sponsorId: a.id().required(),
     catalog: a.belongsTo('Catalog', ['driverId', 'sponsorId']),
