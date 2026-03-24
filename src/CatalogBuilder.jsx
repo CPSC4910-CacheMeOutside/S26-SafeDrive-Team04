@@ -63,51 +63,12 @@ export default function CatalogBuilder({view}) {
 
     // Add the product to the sponsor's catalog
     async function addProduct(prodId) {
-        try {
-            const toBeAdded = catalog.find((product) => product.pId === prodId)
-            const { errs, data: newItem } = await client.models.Product.create({
-                pId: toBeAdded.id,
-                title: toBeAdded.title,
-                imgs: toBeAdded.images,
-                synop: toBeAdded.slug,
-                desc: toBeAdded.description,
-                catagory: toBeAdded.category.name,
-                price: toBeAdded.price,
-                available: true,
-            })
-
-        } catch (err) {
-
-        }
+        
     }
 
     // Remove an item from the catalog
     async function removeProduct(prodId) {
-        const { data: sponsoredCatalog, errors } = await client.models.Sponsors.get({
-            userId: testSponsorId
-        });
-
-        if (sponsoredCatalog === null)
-        {
-            console.log("Item removal failed. No sponsor catalog was found.")
-            return;
-        }
-
-        if (errors) {
-            console.log(errors);
-            return;
-        }
-
-        var deletedProduct = catalog.find((product) => (product.pId === prodId))
-        await client.models.Product.delete(deletedProduct.pId)
-        updateCatalog(prev =>
-            prev.map(product =>
-                product.pId === prodId
-                    ? { ...product, inCatalog: false }
-                    : product
-            )
-        );
-        console.log(`Product has been removed to the catalog${deletedProduct}`);
+        
     }
 
     // Contact the external store API and retrieve all product information

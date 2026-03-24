@@ -1,4 +1,5 @@
 import { a, defineData, type ClientSchema} from '@aws-amplify/backend';
+import { id } from 'aws-sdk/clients/datapipeline';
  
 // Create our About Table
 const SafeDriveSchema = a.schema({
@@ -10,74 +11,65 @@ const SafeDriveSchema = a.schema({
     desc: a.string()
   }).identifier(['sprintNo'])
   .authorization(allow => [allow.publicApiKey()]),
+
+  // A user in the SafeDrive application
+  User: a.model({
+    userId: a.id(),
+    // An id to the user's corrosponding entry in Cognito
+    subId: a.id(),
+    first: a.string(),
+    last: a.string(),
+    email: a.string(),
+    phone: a.string()
+  }).identifier(['userId'])
+  .authorization(allow => [allow.publicApiKey()]),
  
- 
+  // A admin class user
   Admin: a.model({
     adminId: a.id().required(),
-    name: a.string().required(),
-    email: a.string().required(),
- 
-    messages: a.hasMany('AdminMessage', 'adminId'),
+    userId: a.id()
   }).identifier(['adminId'])
   .authorization(allow => [
     allow.groups(['Admin'])
   ]),
  
-AdminMessage: a.model({
-  messageId: a.id().required(),
- 
-  driverId: a.id().required(),
-  adminId: a.id(),
- 
-  subject: a.string(),
-  message: a.string(),
-  status: a.string(),
-  createdAt: a.datetime(),
- 
-  admin: a.belongsTo('Admin', 'adminId')
-}).identifier(['messageId'])
-.authorization(allow => [
-  allow.groups(['Admin']),
-  allow.groups(['Driver'])
-]),
- 
- 
+  // A sponsor class user
   Sponsor: a.model({
     sponsorId: a.id().required(),
-    name: a.string().required(),
-    email: a.string(),
-    company: a.string(),
- 
- 
-    drivers: a.hasMany('Driver', 'sponsorId'),
-    transacitons: a.hasMany('SponsorTransaction', 'sponsorId')
+    userId: a.id(),
+    affiliation: a.string(),
+
+    drivers: a.hasMany("DriverSponsor", 'sponsorId')
   })
   .identifier(['sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
+
+  // A model that assigns sponsors to drivers and vise versa 
+  DriverSponsor: a.model({
+    driverId: a.id().required(),
+    driver: a.belongsTo('Driver', 'driverId'),
+    sponsorId: a.id().required(),
+    sponsor: a.belongsTo('Sponsor', 'sponsorId'),
+
+    // The total number of points the sponsor has rewarded the driver
+    points: a.integer()
+  }).identifier(['driverId', 'sponsorId'])
+  .authorization(allow => [allow.publicApiKey()]),
  
- 
- 
- 
- 
- 
+  // A driver class user
   Driver: a.model({
     driverId: a.id().required(),
-    firstName: a.string().required(),
-    lastName: a.string().required(),
-    email: a.string(),
-    phone: a.string(),
-    DL: a.string(),
+    userId: a.id(),
+    licenseNo: a.string(),
+    state: a.string(),
+    expDate: a.string(),
+
+    // TODO: This attribute is being depriciated in favor of the new SponsorDriver schema 
     points: a.integer().default(0),
-    status: a.string(),
- 
-    transactions: a.hasMany('SponsorTransaction', 'driverId'),
-    pointLogs: a.hasMany('DriverPointsLog', 'driverId'),
-    notificationsEnabled: a.boolean().default(true),
- 
- 
- 
-    sponsorId: a.id(),
-    sponsor: a.belongsTo('Sponsor', 'sponsorId')
+
+    sponsors: a.hasMany("DriverSponsor", "driverId"),
+    wishlist: a.hasOne('Wishlist', 'driverId')
+    
   })
   .identifier(['driverId'])
   .authorization(allow => [
@@ -85,16 +77,22 @@ AdminMessage: a.model({
     allow.groups(['Sponsor']),
     allow.groups(['Driver'])
   ]),
- 
- 
- 
+
+  Wishlist: a.model({
+    wishId: a.id().required(),
+    driverId: a.id().required(),
+    driver: a.belongsTo('Driver', 'driverId')
+  }).identifier(['wishId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  // TODO: Model is slated for deprication. Ensure all references are handled before removing
   SponsorTransaction: a.model({
     transactionId: a.id().required(),
+    // TODO: Re-add relationship link to sponsor
     sponsorId: a.id().required(),
-    sponsor: a.belongsTo('Sponsor', 'sponsorId'),
+    // TODO: Re-add relationship link to driver
     driverId: a.id().required(),
-    driver: a.belongsTo('Driver', 'driverId'),
-   
+    
     amount: a.integer().required(),
     type: a.string().required(),
     reason: a.string(),
@@ -103,44 +101,15 @@ AdminMessage: a.model({
     balanceAfter: a.integer(),
   })
   .identifier(['transactionId'])
+  .authorization(allow => [allow.publicApiKey()]), 
+
+  WishlistProduct: a.model({
+    wishId: a.id().required(),
+    pId: a.id().required()
+  }).identifier(['wishId', 'pId'])
   .authorization(allow => [allow.publicApiKey()]),
  
- 
- 
-  DriverPointsLog: a.model({
-    logId: a.id().required(),
-    driverId: a.id().required(),
-    changeAmount: a.integer().required(),
-    reason: a.string(),
-    createdBy: a.string(),
-    driver: a.belongsTo('Driver', 'driverId')
-  })
-  .identifier(['logId'])
-  .authorization(allow => [allow.publicApiKey()]),
- 
- 
- 
-  DrivingGuidance: a.model({
-    guidanceId: a.id().required(),
- 
-    sponsorId: a.id(),
- 
-    title: a.string(),
-    content: a.string(),
- 
-    createdAt: a.datetime(),
- 
-   
- 
-  })
-  .identifier(['guidanceId'])
-  .authorization(allow => [
-    allow.groups(['Sponsor']),
-    allow.groups(['Driver']),
-    allow.groups(['Admin'])
-  ]),
- 
- 
+  // A product designed for 
   Product: a.model({
     pId: a.id().required(),
     title: a.string(),
@@ -149,23 +118,10 @@ AdminMessage: a.model({
     catagory: a.string(),
     price: a.float(),
     available: a.boolean(),
-    catalog: a.belongsTo('SponsorCatalog', 'pId'),
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
  
-  SponsorCatalog: a.model({
-    userId: a.id().required(),
-    products: a.hasMany('Product', 'pId')
-  }).identifier(['userId'])
-  .authorization(allow => [allow.publicApiKey()]),
- 
 });
- 
- 
- 
- 
- 
- 
  
 // Used for code completion / highlighting when making requests from frontend
 export type AboutSchema = ClientSchema<typeof SafeDriveSchema>;

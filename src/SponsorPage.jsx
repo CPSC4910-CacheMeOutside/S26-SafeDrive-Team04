@@ -104,6 +104,13 @@ function SponsorPage() {
         try{
             const updateResult = await client.models.Driver.update({
                 driverId: selectedDriver.id,
+
+                /* TODO: Points are no longer part of the driver, but rather stored in a 
+                seperate schema called DriverSponsor whose primary key is a combination 
+                of the driver's id and the sponsor's id. 
+
+                Please modify this to reflect the new schema. 
+                */ 
                 points: newPoints
             });
 
@@ -113,6 +120,7 @@ function SponsorPage() {
                 return
             }
 
+            // TODO: SponsorTransaction model slated for decreciation.
             const txResult = await client.models.SponsorTransaction.create({
                 transactionId: crypto.randomUUID(),
                 sponsorId: sponsorId,
