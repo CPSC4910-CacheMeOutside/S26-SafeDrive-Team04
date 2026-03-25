@@ -5,12 +5,13 @@ import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 
-const testSponsorId = 7;
-
-export default function CatalogBuilder({view}) {
+export default function CatalogBuilder(sponsorId) {
 
     // Client used to add products to the backend catalog
     const client = generateClient();
+
+    // The current user's data, including driver assignments
+    const [activeUser, switchActiveUser] = useState(null);
 
     // Modal to display filtering options
     const[showFilter, setShowFilter] = useState(false);
@@ -23,8 +24,26 @@ export default function CatalogBuilder({view}) {
     const [pName, updatePName] = useState('');
     const [perPage, updatePerPage] = useState(10);
     
-    // Load in the page. Contact the store api first
+    // Load in the page. Load the sponsor's user data, then contact store api
     useEffect(() => {
+
+        // Retrieve the sponsor's pool of assigned drivers
+        console.log("Retrieving sponsor user data...")
+        const { Sponsor: SponsoredUser, SErrors} = client.models.Sponsor.get({
+            sponsorId: sponsorId
+        })
+
+        if (SErrors) {
+            console.log(`Failure: Could not retireve sponsor of ID ${sponsorId}: `, SErrors);
+            return;
+        } else if (SponsoredUser === null) {
+            console.log(`Failure: Sponsor of ID ${sponsorId} does not exist`);
+            return;
+        }
+        
+        switchActiveUser(SponsoredUser);
+        console.log("Retrieved sponsor user data: ", SponsoredUser)
+
         loadProducts();
         console.log("Filters have been updated to: ", filter);
     }, [filter]);
@@ -62,24 +81,88 @@ export default function CatalogBuilder({view}) {
     }
 
     // Add the product to the sponsor's catalog
-    async function addProduct(prodId) {
-        
+    async function addProduct(product) {
+        // Check if product in database
+        console.log("Checking database for product: ", product)
+        const {productData: dbProduct, dbErrors} = await client.models.Product.get({
+            pId: product.pId
+        });
+
+        if (dbErrors) {
+            console.log("Failure: Couldn't find product in database: ", dbErrors);
+            return;
+        }
+
+        // If not add product to database
+        if (dbProduct === null) {
+            console.log("product wasn't found in databse. Adding it now...")
+            const {dbData: addedProduct, errors} = await client.models.Product.create({
+                pId: product.pId,
+                title: product.title,
+                imgs: product.imgs,
+                synop: product.synop,
+                category: product.category,
+                price: product.price,
+                available: true
+            });
+
+            if (errors) {
+                console.log("Failure: Couldn't add product to database: ", errors);
+                return;
+            }
+        }
+
+        // Add the product to the sponsor's catalog. Create CatalogProduct instances for each
+        console.log(`Adding product id${product.pId} to catalog of sponsor id:${sponsorId}`)
+        await activeUser.drivers.forEach(driver => {
+            console.log("Adding for driver id:", driver.driverId)
+            const {driverCatalog: addedToCatalog, dErrors} = client.models.CatalogProduct.create({
+                driverId: driver.driverId,
+                sponsorId: sponsorId,
+                pId: product.pId
+            })
+
+            if (dErrors) {
+                console.log(`Failure: Couldn't add product id:${product.pId} to sponsor id:${sponsorId}: `, dErrors);
+                return;
+            } else if (addedToCatalog === null) {
+                console.log(`Failure: Couldn't add product id:${product.pId} to sponsor id:${sponsorId}: The ProductCatalog
+                model was created as null`);
+                return;
+            }
+        });
     }
 
     // Remove an item from the catalog
-    async function removeProduct(prodId) {
-        
+    async function removeProduct(product) {
+        console.log(`Removing product id:${product.pId} from sponsor's id:${sponsorId} catalog`)
+        await activeUser.drivers.forEach(driver => {
+            console.log()
+            const {driverCatalog: removedFromCatalog, dErrors} = client.models.CatalogProduct.delete({
+                driverId: driver.driverId,
+                sponsorId: sponsorId,
+                pId: product.pId
+            });
+
+            if (dErrors) {
+                console.log(`Failure: Couldn't remove product id:${product.pId} from catalog of sponsor id:${sponsorId}: `, dErrors);
+                return;
+            } else if (removedFromCatalog === null) {
+                console.log(`Failure: Couldn't add product id:${product.pId} to sponsor id:${sponsorId}: You cannot remove
+                an item that is null`);
+                return;
+            }
+        });
     }
 
     // Contact the external store API and retrieve all product information
     async function loadProducts() {
         try {
             let refinedCatalog = await getProducts(filter);
-            
             updateCatalog(refinedCatalog)
         
         } catch (err) {
-            console.log(err);
+            console.log("Failure: Could not load products: ", err);
             updateCatalog([])
         }
     }
@@ -226,13 +309,29 @@ export default function CatalogBuilder({view}) {
         );
     }
 
-    function UpdateCatalogButton({product}) {
+    async function UpdateCatalogButton({product}) {
+        const { data: rProduct, errors } = await client.models.CatalogProduct.list({
+            pId: product.pId,
+            sponsorId: sponsorId
+        }) 
 
-        if (product.inCatalog) {
-            return (<span onClick={ () => {removeProduct(product.pId);        
+        if (errors) {
+            console.log(`Failure: The update catalog button on product ${product.pId} could not 
+            verify if the product was in the catalog: `, errors)
+        }
+
+        const [inCatalog, updateInCatalog] = useState(rProduct.length > 0);
+
+        if (inCatalog) {
+            return (<span onClick={ () => {
+                removeProduct(product);
+                updateInCatalog(false);
+                
             }} className="btn btn-danger">Remove</span>);
         } else {
-            return (<span onClick={ () => {addProduct(product.pId); 
+            return (<span onClick={ () => {
+                addProduct(product); 
+                updateInCatalog(true);
             }} className="btn btn-primary">Add To Catalog</span>);
         }
     } 
