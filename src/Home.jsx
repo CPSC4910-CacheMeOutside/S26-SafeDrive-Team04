@@ -1,12 +1,14 @@
 import { Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import useAmplifyAuth from "./UseAmplifyAuth";
 
 export default function HomePage () {
+  const auth = useAmplifyAuth();
+
   return (
     <div style={{ position: "relative", minHeight: "100vh", padding: "60px" }}> 
       <h1><strong>Welcome to Safe Drive!</strong></h1>
-      <p>Ready to drive safely. Apply to a sponsor today!</p>
-      <Button as={Link} to='/sponsor-list'>Apply Now!</Button>
+      <p className="fs-3">Safe Driving. Big Rewards.</p>
+      <Button size="lg" className="mt-5" onClick={() => auth.signupRedirect()}>Get Started!</Button>
     </div>
   );
 }

@@ -122,15 +122,15 @@ function App() {
                 </Button>
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
-                  <div className="d-flex align-items-center">
-                    <span className="me-2">{auth.profile?.email}</span>
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="me-2" style={{ fontSize: "18px" }}>{auth.profile?.email}</span>
                     <NavDropdown
                       title={
                         <Image
                           src={profilePic || "./profileTestPic.jpg" }
                           roundedCircle
-                          width={50}
-                          height={50}/>
+                          width={60}
+                          height={60}/>
                       }
                       id="profile-dropdown"
                       align="end"
