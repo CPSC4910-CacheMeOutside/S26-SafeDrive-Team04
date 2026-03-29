@@ -104,11 +104,9 @@ function App() {
                 <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
                 <Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 <Button
@@ -120,6 +118,7 @@ function App() {
                 >
                   A {fontSize}%
                 </Button>
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>Sign Up</Nav.Link>}
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
                   <div className="d-flex align-items-center gap-2">
