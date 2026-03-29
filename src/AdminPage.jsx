@@ -1,6 +1,6 @@
 import useAmplifyAuth from './UseAmplifyAuth';
 import { useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -10,10 +10,84 @@ import Col from "react-bootstrap/Col"
 import Form from "react-bootstrap/Form"
 import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
-import { CardBody, ListGroupItem } from 'react-bootstrap';
+import { ListGroupItem } from 'react-bootstrap';
+import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 
 function AdminPage(){
+
+  const [unassignedUsers, setUnassignedUsers] = useState([]);
+  const [selectedPendingUsername, setSelectedPendingUsername] = useState("");
+  const [selectedRole, setSelectedRole] = useState("Driver");
+  const [loadingPendingUsers, setLoadingPendingUsers] = useState(false);
+  const [assigningRole, setAssigningRole] = useState(false);
+  const [roleCardMessage, setRoleCardMessage] = useState("");
+  const [roleCardError, setRoleCardError] = useState("");
+
+  const selectedPendingUser = useMemo(() => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null, [unassignedUsers, selectedPendingUsername]);
   
+  const loadUnassignedUsers = async () => {
+    try {
+      setLoadingPendingUsers(true);
+      setRoleCardError("");
+      setRoleCardMessage("");
+
+      const data = await fetchUnassignedUsers();
+      const users = Array.isArray(data) ? data : [];
+
+      setUnassignedUsers(users);
+      setSelectedPendingUsername((prev) => {
+        if (prev && users.some((u) => u.username === prev)) return prev;
+        return users[0]?.username ?? "";
+      });
+    } catch (error) {
+      console.error(error);
+      setRoleCardError("Failed to load unassigned users.");
+    } finally {
+      setLoadingPendingUsers(false);
+    }
+  };
+
+  useEffect(() => {loadUnassignedUsers();}, []);
+
+  const handleAssignRole = async () => {
+    if (!selectedPendingUser) return;
+
+    try {
+      setAssigningRole(true);
+      setRoleCardError("");
+      setRoleCardMessage("");
+
+      await assignUserGroup(selectedPendingUser.username, selectedRole);
+
+      setRoleCardMessage(
+        `${selectedPendingUser.name || selectedPendingUser.username} assigned to ${selectedRole}.`
+      );
+
+      const updatedUsers = unassignedUsers.filter(
+        (u) => u.username !== selectedPendingUser.username
+      );
+      setUnassignedUsers(updatedUsers);
+      setSelectedPendingUsername(updatedUsers[0]?.username ?? "");
+    } catch (error) {
+      console.error(error);
+      setRoleCardError("Failed to assign role.");
+    } finally {
+      setAssigningRole(false);
+    }
+  };
+
+  const handleDismissUnassignedUser = () => {
+    if (!selectedPendingUser) return;
+
+    const updatedUsers = unassignedUsers.filter((u) => u.username !== selectedPendingUser.username);
+
+    setUnassignedUsers(updatedUsers);
+    setSelectedPendingUsername(updatedUsers[0]?.username ?? "");
+    setRoleCardMessage(`${selectedPendingUser.name || selectedPendingUser.username} removed from the list.`);
+    setRoleCardError("");
+  };
+
+
   const [SponsoredUsers, setSponsUser] = useState([
     {id: "SPUser1", name: "SPUser1", 
       drivers: [
@@ -44,16 +118,6 @@ function AdminPage(){
   ]);
 
   const [selectedSponsUserId, setSelectedSponsUserId] = useState(SponsoredUsers[0]?.id ?? "");
-
-
-  /*const [drivers, setDrivers] = useState([
-    { id: 1, name: "Bo Darvilel", points: 200 },
-    { id: 2, name: "Cledus Snow", points: 156 },
-    { id: 3, name: "Hot-Pants Hillard", points: 186 },
-    { id: 4, name: "Burt Reynolds", points: 330 },
-    { id: 5, name: "Jerry Reed", points: 300 }
-  ]);
-*/
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [amount, setAmount] = useState(10);
   const [sortMode, setSortMode] = useState("id");
@@ -166,6 +230,85 @@ function AdminPage(){
                         </ListGroupItem>
                       ))}
                     </ListGroup>
+                  </Card.Body>
+                </Card>
+              </Col>
+            
+              <Col md={4}>
+                <Card className="mb-4">
+                  <Card.Body>
+                    <Card.Title>Assign User Role</Card.Title>
+                      {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
+                      {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
+                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>) : 
+                        !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>) : 
+                      (
+                        <>
+                          <ListGroup className="mb-3">
+                            {unassignedUsers.map((user) => (
+                              <ListGroupItem
+                                key={user.username}
+                                action
+                                active={user.username === selectedPendingUsername}
+                                onClick={() => setSelectedPendingUsername(user.username)}
+                              >
+                                <div className="fw-semibold">
+                                  {user.name || user.preferred_username || user.username}
+                                </div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                  {user.email || user.username}
+                                </div>
+                              </ListGroupItem>
+                            ))}
+                          </ListGroup>
+
+                          {selectedPendingUser && (
+                            <>
+                              <div className="mb-3">
+                                <strong>Selected User:</strong><br />
+                                {selectedPendingUser.name || "No name"}<br />
+                                <span className="text-muted">
+                                  {selectedPendingUser.email || selectedPendingUser.username}
+                                </span>
+                              </div>
+
+                              <Form.Group className="mb-3">
+                                <Form.Label>Assign Group</Form.Label>
+                                <Form.Select
+                                  value={selectedRole}
+                                  onChange={(e) => setSelectedRole(e.target.value)}
+                                >
+                                  <option value="Admin">Admin</option>
+                                  <option value="Driver">Driver</option>
+                                  <option value="Sponsor">Sponsor</option>
+                                </Form.Select>
+                              </Form.Group>
+
+                              <div className="d-flex gap-2">
+                                <Button onClick={handleAssignRole} disabled={assigningRole}>
+                                  {assigningRole ? "Assigning..." : "Assign Role"}
+                                </Button>
+
+                                <Button
+                                  variant="outline-secondary"
+                                  onClick={handleDismissUnassignedUser}
+                                >
+                                  Remove From List
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+
+                      <Button
+                        variant="outline-secondary"
+                        className="mt-3"
+                        onClick={loadUnassignedUsers}
+                        disabled={loadingPendingUsers}
+                      >
+                        Refresh
+                      </Button>
                   </Card.Body>
                 </Card>
               </Col>

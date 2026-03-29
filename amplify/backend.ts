@@ -6,30 +6,36 @@ import {
   Cors,
   LambdaIntegration,
   RestApi,
+  GatewayResponse,
+  ResponseType,
 } from 'aws-cdk-lib/aws-apigateway';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { adminTakeover } from './functions/adminManagementFeat/resource';
+import { adminUsersFunction } from './functions/adminManagementFeat/resource';
 
 const backend = defineBackend({
   auth,
   data,
-  adminTakeover,
+  adminUsersFunction,
 });
 
 const userPool = backend.auth.resources.userPool;
-const adminTakeoverLambda = backend.adminTakeover.resources.lambda as LambdaFunction;
+const adminUserLambda = backend.adminUsersFunction.resources.lambda as LambdaFunction;
 
-adminTakeoverLambda.addEnvironment('USER_POOL_ID', userPool.userPoolId);
+adminUserLambda.addEnvironment('USER_POOL_ID', userPool.userPoolId);
 
-adminTakeoverLambda.addToRolePolicy(
+adminUserLambda.addToRolePolicy(
   new PolicyStatement({
     actions: [
+      'cognito-idp:ListUsers',
       'cognito-idp:AdminGetUser',
       'cognito-idp:AdminUpdateUserAttributes',
+      'cognito-idp:AdminListGroupsForUser',
+      'cognito-idp:AdminAddUserToGroup',
+      'cognito-idp:AdminRemoveUserFromGroup',
     ],
     resources: [userPool.userPoolArn],
   })
@@ -38,25 +44,58 @@ adminTakeoverLambda.addToRolePolicy(
 const apiStack = backend.createStack('admin-api-stack');
 
 const adminApi = new RestApi(apiStack, 'AdminRestApi', {
-  restApiName: 'adminApi',
+  restApiName: 'SafeDriveAPI',
   deploy: true,
   deployOptions: {
     stageName: 'dev',
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: Cors.ALL_ORIGINS,
+    allowOrigins: ['http://localhost:5173'],
     allowMethods: Cors.ALL_METHODS,
-    allowHeaders: Cors.DEFAULT_HEADERS,
+    allowHeaders: [
+      'Content-Type',
+      'X-Amz-Date',
+      'Authorization',
+      'X-Api-Key',
+      'X-Amz-Security-Token',
+    ],
   },
 });
 
-const lambdaIntegration = new LambdaIntegration(adminTakeoverLambda);
-
-const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, 'AdminCognitoAuth', {
-  cognitoUserPools: [userPool],
+new GatewayResponse(apiStack, 'Default4xxGatewayResponse', {
+  restApi: adminApi,
+  type: ResponseType.DEFAULT_4XX,
+  responseHeaders: {
+    'Access-Control-Allow-Origin': "'http://localhost:5173'",
+    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+  },
 });
 
+new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
+  restApi: adminApi,
+  type: ResponseType.DEFAULT_5XX,
+  responseHeaders: {
+    'Access-Control-Allow-Origin': "'http://localhost:5173'",
+    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+  },
+});
+
+const lambdaIntegration = new LambdaIntegration(adminUserLambda);
+
+const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, 'AdminCognitoAuth', {cognitoUserPools: [userPool]});
+
+
 const adminPath = adminApi.root.addResource('admin');
+const usersPath = adminPath.addResource('users');
+const unassignedPath = usersPath.addResource('unassigned');
+
+unassignedPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
 const driversPath = adminPath.addResource('drivers');
 const driverIdPath = driversPath.addResource('{driverId}');
 
@@ -70,15 +109,25 @@ driverIdPath.addMethod('PUT', lambdaIntegration, {
   authorizer: cognitoAuth,
 });
 
+const usernamePath = usersPath.addResource('{username}');
+const groupPath = usernamePath.addResource('group');
+
+groupPath.addMethod('PUT', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
 backend.addOutput({
   custom: {
     API: {
-      [adminApi.restApiName]: {
-        endpoint: adminApi.url,
-        region: Stack.of(adminApi).region,
-        apiName: adminApi.restApiName,
+      SafeDriveAPI: {
+        endpoint: adminApi.url.replace(/\/$/, ''),
+        region: Stack.of(apiStack).region,
+        authorizationType: 'AMAZON_COGNITO_USER_POOLS',
       },
     },
   },
 });
+
+export { backend };
 
