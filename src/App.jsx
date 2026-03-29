@@ -6,7 +6,6 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
 import { Button, NavDropdown } from 'react-bootstrap';
-import { useFontSize } from './FontSizeContext';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAmplifyAuth from './UseAmplifyAuth';
 import { useEffect, useState, useRef } from 'react';
@@ -39,7 +38,6 @@ import UpdateAbout from './UpdateAbout';
 function App() {
 
   /* Nav config */
-  const { fontSize, cycleFontSize } = useFontSize();
   const auth = useAmplifyAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -90,7 +88,10 @@ function App() {
     <div className="App">
         <Navbar expand="lg" className="bg-body-tertiary">
           <Container fluid>
-              <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
+              {!auth.isAuthenticated && (<Navbar.Brand href="#home">Safe Drive</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Admin") && (<Navbar.Brand href="#home">Safe Drive (Admin)</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Driver") && (<Navbar.Brand href="#home">Safe Drive (Driver)</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Sponsor") && (<Navbar.Brand href="#home">Safe Drive (Sponsor)</Navbar.Brand>)}
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
               <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="me-auto">
@@ -109,15 +110,6 @@ function App() {
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={cycleFontSize}
-                  aria-label={`Text size ${fontSize}%. Click to increase.`}
-                  className="me-2"
-                >
-                  A {fontSize}%
-                </Button>
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>Sign Up</Nav.Link>}
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
