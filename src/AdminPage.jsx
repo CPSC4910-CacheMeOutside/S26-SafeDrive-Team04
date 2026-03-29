@@ -320,15 +320,12 @@ function AdminPage(){
                           onChange={(e) => setDescription(e.target.value)}
                       />
                     </Form.Group>
-                    <div className="d-flex gap-2">
-                      <Button variant="success" onClick={() => pointAdjust(amount)}>
+                    <div className="d-flex justify-content-center gap-4">
+                      <Button style={{ width: "160px", height: "50px" }} variant="success" onClick={() => pointAdjust(amount)}>
                         + Add Points
                       </Button>
-                      <Button variant="danger" onClick={() => pointAdjust(-amount)}>
+                      <Button style={{ width: "160px", height: "50px" }} variant="danger" onClick={() => pointAdjust(-amount)}>
                         - Subtract Points
-                      </Button>
-                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>
-                        Manage Account
                       </Button>
                     </div>
                   </>
@@ -338,13 +335,13 @@ function AdminPage(){
           
                 <Card className="mt-4">
                   <Card.Body>
-                    <Card.Title>Edit Driver Profile</Card.Title>
+                    <Card.Title>Edit Driver Account</Card.Title>
                     {!selectedDriver ? (
                       <div className="text-muted">Select a driver to manage their account.</div>
                     ) : (
                       <>
-                      <p className="mb-3"> Update account information for <strong>{selectedDriver.name}</strong>.</p>
-                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>View Account</Button>
+                      <p className="mb-3"> Manage account information for <strong>{selectedDriver.name}</strong>.</p>
+                      <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={handleAdminAccountTakeover}>Edit Account</Button>
                       </>
                     )}
                   </Card.Body>
@@ -405,31 +402,15 @@ function AdminPage(){
                                 </Form.Select>
                               </Form.Group>
 
-                              <div className="d-flex gap-2">
-                                <Button onClick={handleAssignRole} disabled={assigningRole}>
-                                  {assigningRole ? "Assigning..." : "Assign Role"}
-                                </Button>
-
-                                <Button
-                                  variant="outline-secondary"
-                                  onClick={handleDismissUnassignedUser}
-                                >
-                                  Remove From List
-                                </Button>
+                              <div className="d-flex justify-content-center gap-4">
+                                <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
+                                <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
                               </div>
                             </>
                           )}
                         </>
                       )}
-
-                      <Button
-                        variant="outline-secondary"
-                        className="mt-3"
-                        onClick={loadUnassignedUsers}
-                        disabled={loadingPendingUsers}
-                      >
-                        Refresh
-                      </Button>
+                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
                   </Card.Body>
                 </Card>
               </Col>
