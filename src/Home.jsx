@@ -6,9 +6,9 @@ export default function HomePage () {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", padding: "60px" }}> 
-      <h1><strong>Welcome to Safe Drive!</strong></h1>
-      <p className="fs-3">Safe Driving. Big Rewards.</p>
-      <Button size="lg" className="mt-5" onClick={() => auth.signupRedirect()}>Get Started!</Button>
+      <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Welcome to Safe Drive!</h1>
+      <p className="fs-2">Safe Driving. Big Rewards.</p>
+      <Button className="mt-5 px-5 py-3 fs-3 fw-bold" onClick={() => auth.signupRedirect()}>Get Started!</Button>
     </div>
   );
 }
