@@ -1,4 +1,3 @@
-import useAmplifyAuth from './UseAmplifyAuth';
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import Container from "react-bootstrap/Container";
@@ -233,95 +232,16 @@ function AdminPage(){
                   </Card.Body>
                 </Card>
               </Col>
-            
+
               <Col md={4}>
-                <Card className="mb-4">
+                <Card>
                   <Card.Body>
-                    <Card.Title>Assign User Role</Card.Title>
-                      {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
-                      {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
-                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>) : 
-                        !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>) : 
-                      (
-                        <>
-                          <ListGroup className="mb-3">
-                            {unassignedUsers.map((user) => (
-                              <ListGroupItem
-                                key={user.username}
-                                action
-                                active={user.username === selectedPendingUsername}
-                                onClick={() => setSelectedPendingUsername(user.username)}
-                              >
-                                <div className="fw-semibold">
-                                  {user.name || user.preferred_username || user.username}
-                                </div>
-                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                  {user.email || user.username}
-                                </div>
-                              </ListGroupItem>
-                            ))}
-                          </ListGroup>
-
-                          {selectedPendingUser && (
-                            <>
-                              <div className="mb-3">
-                                <strong>Selected User:</strong><br />
-                                {selectedPendingUser.name || "No name"}<br />
-                                <span className="text-muted">
-                                  {selectedPendingUser.email || selectedPendingUser.username}
-                                </span>
-                              </div>
-
-                              <Form.Group className="mb-3">
-                                <Form.Label>Assign Group</Form.Label>
-                                <Form.Select
-                                  value={selectedRole}
-                                  onChange={(e) => setSelectedRole(e.target.value)}
-                                >
-                                  <option value="Admin">Admin</option>
-                                  <option value="Driver">Driver</option>
-                                  <option value="Sponsor">Sponsor</option>
-                                </Form.Select>
-                              </Form.Group>
-
-                              <div className="d-flex gap-2">
-                                <Button onClick={handleAssignRole} disabled={assigningRole}>
-                                  {assigningRole ? "Assigning..." : "Assign Role"}
-                                </Button>
-
-                                <Button
-                                  variant="outline-secondary"
-                                  onClick={handleDismissUnassignedUser}
-                                >
-                                  Remove From List
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                        </>
-                      )}
-
-                      <Button
-                        variant="outline-secondary"
-                        className="mt-3"
-                        onClick={loadUnassignedUsers}
-                        disabled={loadingPendingUsers}
-                      >
-                        Refresh
-                      </Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-
-          <Col md={4}>
-            <Card>
-              <Card.Body>
-                <Card.Title>
-                  Drivers{" "}
-                  {selectedSponsUser ? (
-                    <span className='text-muted'>({selectedSponsUser.name})</span>
-                  ) : null}
-                  </Card.Title>
+                    <Card.Title>
+                      Drivers{" "}
+                      {selectedSponsUser ? (
+                        <span className='text-muted'>({selectedSponsUser.name})</span>
+                      ) : null}
+                    </Card.Title>
                     <div className="mb-3 d-flex gap-2">
                       <Button
                         size="sm"
@@ -433,6 +353,88 @@ function AdminPage(){
               </Col>
             </Row>
           </Tab>
+
+          <Tab eventKey="pendingUsers" title="Pending Users">
+            <Col md={5}>
+                <Card className="mb-4">
+                  <Card.Body>
+                    <Card.Title>Assign Role</Card.Title>
+                      {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
+                      {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
+                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>) : 
+                        !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>) : 
+                      (
+                        <>
+                          <ListGroup className="mb-3">
+                            {unassignedUsers.map((user) => (
+                              <ListGroupItem
+                                key={user.username}
+                                action
+                                active={user.username === selectedPendingUsername}
+                                onClick={() => setSelectedPendingUsername(user.username)}
+                              >
+                                <div className="fw-semibold">
+                                  {user.name || user.preferred_username || user.username}
+                                </div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                  {user.email || user.username}
+                                </div>
+                              </ListGroupItem>
+                            ))}
+                          </ListGroup>
+
+                          {selectedPendingUser && (
+                            <>
+                              <div className="mb-3">
+                                <strong>Selected User:</strong><br />
+                                {selectedPendingUser.name || "No name"}<br />
+                                <span className="text-muted">
+                                  {selectedPendingUser.email || selectedPendingUser.username}
+                                </span>
+                              </div>
+
+                              <Form.Group className="mb-3">
+                                <Form.Label>Assign Group</Form.Label>
+                                <Form.Select
+                                  value={selectedRole}
+                                  onChange={(e) => setSelectedRole(e.target.value)}
+                                >
+                                  <option value="Admin">Admin</option>
+                                  <option value="Driver">Driver</option>
+                                  <option value="Sponsor">Sponsor</option>
+                                </Form.Select>
+                              </Form.Group>
+
+                              <div className="d-flex gap-2">
+                                <Button onClick={handleAssignRole} disabled={assigningRole}>
+                                  {assigningRole ? "Assigning..." : "Assign Role"}
+                                </Button>
+
+                                <Button
+                                  variant="outline-secondary"
+                                  onClick={handleDismissUnassignedUser}
+                                >
+                                  Remove From List
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+
+                      <Button
+                        variant="outline-secondary"
+                        className="mt-3"
+                        onClick={loadUnassignedUsers}
+                        disabled={loadingPendingUsers}
+                      >
+                        Refresh
+                      </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+          </Tab>
+
           <Tab eventKey="audit" title="Logs/Reports">
             <Row>
             <Col md={4}>
