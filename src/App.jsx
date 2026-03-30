@@ -12,10 +12,8 @@ import { useEffect, useState, useRef } from 'react';
 
 import HomePage from './Home'
 import AboutPage from './About'
-import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import AdminAccountTakeover from './AdminAccountTakeover';
-import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import AccountManagement from './AccountManagement';
 import SponsorPage from './SponsorPage';
@@ -52,9 +50,7 @@ function App() {
   const hideNavs = {
     home: false,
     about: false,
-    profile: true,
     login: false,
-    creatPass: true
   }
 
   // after a successful login, redirects users to their dashboard based on their group role (admin, driver, or sponsor)
@@ -86,7 +82,7 @@ function App() {
 
   return (
     <div className="App">
-        <Navbar expand="lg" className="bg-body-tertiary">
+        <Navbar expand="lg" className="custom-navbar" variant="dark">
           <Container fluid>
               {!auth.isAuthenticated && (<Navbar.Brand href="#home">Safe Drive</Navbar.Brand>)}
               {auth.isAuthenticated && groups.includes("Admin") && (<Navbar.Brand href="#home">Safe Drive (Admin)</Navbar.Brand>)}
@@ -97,17 +93,16 @@ function App() {
               <Nav className="me-auto">
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>}
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
-                <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
-                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
-                {/* Headers for the notificatons no login required */}
-                <Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>
-                <Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>
-                <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
-                <Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>
+               
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
+
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>)}
+
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>Sign Up</Nav.Link>}
@@ -143,10 +138,8 @@ function App() {
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
           <Route path="/updateAbout" element={<UpdateAbout />}/>
-          <Route path="/profile" element={<ProfilePage />}/>
           <Route path="/AdminPage" element={<AdminPage />}/>
           <Route path="/admin/drivers/:driverId/edit" element={<AdminAccountTakeover />} />
-          <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
           <Route path="/AccountManagement" element={<AccountManagement />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>
