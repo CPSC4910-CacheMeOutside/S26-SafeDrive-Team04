@@ -178,8 +178,8 @@ function EditProfilePage({
 
   return (
     <Container className="mt-4">
-      <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
-        <h1><strong>Edit Profile</strong></h1>
+      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Edit Profile</h1>
 
         {adminView && (
           <Alert variant="warning">
@@ -191,7 +191,7 @@ function EditProfilePage({
           <div>Loading profile...</div>
         ) : (
           <Form onSubmit={handleSubmit}>
-            <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
+            <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
               <Form.Group as={Row} className="mb-3">
                 <Form.Label column sm={3}>Full Name:</Form.Label>
                 <Col sm={6}>

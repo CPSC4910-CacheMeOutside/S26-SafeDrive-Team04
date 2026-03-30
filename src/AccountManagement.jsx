@@ -37,8 +37,9 @@ export default function AccountManagement() {
 
   return (
     <Container className="mt-4">
-      <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
-      <h1><strong>Account Settings</strong></h1>
+      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+      <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Account Settings</h1>
+      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
 
       <Form className="mt-5">
           <Form.Group as={Row} className="mb-3 align-items-center">
@@ -69,6 +70,7 @@ export default function AccountManagement() {
             </Col>
           </Form.Group>
       </Form>
+      </div>
       </div>
     </Container>
   );

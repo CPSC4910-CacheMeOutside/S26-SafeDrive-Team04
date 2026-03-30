@@ -205,8 +205,8 @@ function AdminPage(){
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>Admin Dashboard</strong></h1>
-
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Admin Dashboard</h1>
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         <Tabs defaultActiveKey="manage" className="mb-4">
           <Tab eventKey="manage" title="Manage Drivers">
             <Row>
@@ -477,6 +477,7 @@ function AdminPage(){
       </Row>
     </Tab>
   </Tabs>
+  </div>
  </div>
 </Container>
   );  
