@@ -31,6 +31,7 @@ adminUserLambda.addToRolePolicy(
   new PolicyStatement({
     actions: [
       'cognito-idp:ListUsers',
+      'cognito-idp:ListUsersInGroup',
       'cognito-idp:AdminGetUser',
       'cognito-idp:AdminUpdateUserAttributes',
       'cognito-idp:AdminListGroupsForUser',
@@ -92,6 +93,14 @@ const usersPath = adminPath.addResource('users');
 const unassignedPath = usersPath.addResource('unassigned');
 
 unassignedPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const usersGroupPath = usersPath.addResource('group');
+const groupNamePath = usersGroupPath.addResource('{groupname}');
+
+groupNamePath.addMethod('GET', lambdaIntegration, {
   authorizationType: AuthorizationType.COGNITO,
   authorizer: cognitoAuth,
 });

@@ -11,6 +11,7 @@ import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
 import { ListGroupItem } from 'react-bootstrap';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
+import { fetchDriverUsers } from './adminUpdateDriverInfo-api';
 
 function AdminPage(){
 
@@ -21,6 +22,37 @@ function AdminPage(){
   const [assigningRole, setAssigningRole] = useState(false);
   const [roleCardMessage, setRoleCardMessage] = useState("");
   const [roleCardError, setRoleCardError] = useState("");
+
+  const [driverUsers, setDriverUsers] = useState([]);
+  const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
+  const [loadingDriverUsers, setLoadingDriverUsers] = useState(false);
+  const [driverUsersError, setDriverUsersError] = useState("");
+
+  const selectedDriverUser = useMemo(
+    () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
+    [driverUsers, selectedDriverUsername]
+  );
+
+  const loadDriverUsers = async () => {
+    try {
+      setLoadingDriverUsers(true);
+      setDriverUsersError("");
+
+      const data = await fetchDriverUsers();
+      const users = Array.isArray(data) ? data : [];
+
+      setDriverUsers(users);
+      setSelectedDriverUsername((prev) => {
+        if (prev && users.some((u) => u.username === prev)) return prev;
+        return users[0]?.username ?? "";
+      });
+    } catch (error) {
+      console.error(error);
+      setDriverUsersError("Failed to load drivers.");
+    } finally {
+      setLoadingDriverUsers(false);
+    }
+  };
 
   const selectedPendingUser = useMemo(() => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null, [unassignedUsers, selectedPendingUsername]);
   
@@ -46,7 +78,7 @@ function AdminPage(){
     }
   };
 
-  useEffect(() => {loadUnassignedUsers();}, []);
+  useEffect(() => {loadDriverUsers(); loadUnassignedUsers();}, []);
 
   const handleAssignRole = async () => {
     if (!selectedPendingUser) return;
@@ -236,51 +268,19 @@ function AdminPage(){
               <Col md={4}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>
-                      Drivers{" "}
-                      {selectedSponsUser ? (
-                        <span className='text-muted'>({selectedSponsUser.name})</span>
-                      ) : null}
-                    </Card.Title>
-                    <div className="mb-3 d-flex gap-2">
-                      <Button
-                        size="sm"
-                        variant={sortMode === "points" ? "primary" : "outline-primary"}
-                        onClick={() => setSortMode("points")}
-                      >
-                        Sort by Points
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant={sortMode === "id" ? "primary" : "outline-primary"}
-                        onClick={() => setSortMode("id")}
-                      >
-                        Sort by ID
-                      </Button>
-                    </div>
-                    <ListGroup>
-                      {sortedDrivers.map(driver => (
-
-                        <ListGroup.Item
-                          key={driver.id}
-                          action
-                          active={driver.id === validDriver}
-                          onClick={() => setSelectedDriverId(driver.id)}
-                        >
-                          <div className="d-flex justify-content-between">
-                            <span>{driver.name}</span>
-                            <span className="text-muted">{driver.points}</span>
-                          </div>
-                        </ListGroup.Item>
-                      ))}
-                    </ListGroup>
-
-                    {!SponsUserDrivers.length && (
-                      <div className="text-muted mt-3">
-                        No Drivers Assigned to this Sponsored User Yet
-                      </div>
-                    )}
+                    <Card.Title>Drivers</Card.Title>
+                      {loadingDriverUsers ? (<div className="text-muted">Loading drivers...</div>) : !driverUsers.length ? (<div className="text-muted">No drivers found.</div>) : (<>
+                      <ListGroup className="mb-3">
+                        {driverUsers.map((user) => (
+                          <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)}>
+                            <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
+                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
+                          </ListGroupItem>
+                        ))}
+                      </ListGroup>
+                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
+                      </>
+                      )}
                   </Card.Body>
                 </Card>
               </Col>
@@ -336,17 +336,15 @@ function AdminPage(){
                 <Card className="mt-4">
                   <Card.Body>
                     <Card.Title>Edit Driver Account</Card.Title>
-                    {!selectedDriver ? (
-                      <div className="text-muted">Select a driver to manage their account.</div>
-                    ) : (
-                      <>
-                      <p className="mb-3"> Manage account information for <strong>{selectedDriver.name}</strong>.</p>
-                      <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={handleAdminAccountTakeover}>Edit Account</Button>
-                      </>
-                    )}
+                      {!selectedDriverUser ? (
+                        <div className="text-muted">Select a driver to manage their account.</div>
+                        ) : (<>
+                          <p className="mb-3">Manage account information for{" "}<strong>{selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</strong>.</p>
+                          <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit Account</Button>
+                        </>
+                      )}
                   </Card.Body>
                 </Card>
-
               </Col>
             </Row>
           </Tab>

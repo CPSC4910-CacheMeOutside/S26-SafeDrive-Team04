@@ -2,6 +2,7 @@ import type { APIGatewayProxyHandler } from 'aws-lambda';
 import {
   CognitoIdentityProviderClient,
   ListUsersCommand,
+  ListUsersInGroupCommand,
   AdminListGroupsForUserCommand,
   AdminAddUserToGroupCommand,
   AdminRemoveUserFromGroupCommand,
@@ -81,13 +82,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     const path = event.path || '';
-    const username =
-      event.pathParameters?.username ||
-      event.pathParameters?.driverId;
+    const username = event.pathParameters?.username || event.pathParameters?.driverId;
+    const groupname = event.pathParameters?.groupname;
 
-    // --------------------------------------------------
-    // GET /admin/users/unassigned
-    // --------------------------------------------------
     if (event.httpMethod === 'GET' && path.endsWith('/admin/users/unassigned')) {
       const result = await cognito.send(
         new ListUsersCommand({
@@ -142,11 +139,32 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    // --------------------------------------------------
-    // PUT /admin/users/:username/group
-    // body: { groupName: "Admin" | "Driver" | "Sponsor" }
-    // --------------------------------------------------
-    if (event.httpMethod === 'PUT' && path.includes('/group')) {
+    if (event.httpMethod === 'GET' && path.includes('/admin/users/group/') && groupname) {
+        const result = await cognito.send(new ListUsersInGroupCommand({UserPoolId: userPoolId, GroupName: groupname, Limit: 60,}));
+        const users = (result.Users ?? []).map((user) => {
+          const attrs = getAttributesMap(user.Attributes);
+
+          return {
+            username: user.Username ?? '',
+            email: attrs.email ?? '',
+            name: attrs.name ?? '',
+            preferred_username: attrs.preferred_username ?? '',
+            nickname: attrs.nickname ?? '',
+            phone_number: attrs.phone_number ?? '',
+            enabled: user.Enabled ?? false,
+            status: user.UserStatus ?? '',
+            groups: [groupname],
+          };
+        });
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify(users),
+  };
+}
+
+    if (event.httpMethod === 'PUT' && path.endsWith('/group')) {
       if (!username) {
         return {
           statusCode: 400,
@@ -205,10 +223,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    // --------------------------------------------------
-    // GET /admin/drivers/:driverId
-    // existing profile read
-    // --------------------------------------------------
     if (event.httpMethod === 'GET' && username) {
       const result = await cognito.send(
         new AdminGetUserCommand({
@@ -231,10 +245,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    // --------------------------------------------------
-    // PUT /admin/drivers/:driverId
-    // existing profile update
-    // --------------------------------------------------
     if (event.httpMethod === 'PUT' && username) {
       const body = JSON.parse(event.body || '{}');
 
