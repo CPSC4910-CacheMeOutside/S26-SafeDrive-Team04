@@ -179,7 +179,7 @@ function EditProfilePage({
   return (
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Edit Driver Profile</h1>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{adminView ? "Edit Driver Account" : "Edit Profile"}</h1>
         <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         {adminView && (
           <Alert variant="warning">
@@ -270,8 +270,8 @@ function EditProfilePage({
                   )}
                 </Col>
               </Form.Group>
-              <Button variant="secondary" className="me-2" onClick={() => navigate("/AdminPage")}>Exit Without Saving</Button>
-              <Button type="submit">Save Changes</Button>
+              <Button style={{ width: "160px", height: "50px" }} variant="secondary" className="me-2" onClick={() => navigate("/AdminPage")}>Exit</Button>
+              <Button style={{ width: "160px", height: "50px" }} type="submit">Save Changes</Button>
             </div>
           </Form>
         )}
