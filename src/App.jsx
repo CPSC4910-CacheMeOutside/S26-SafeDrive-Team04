@@ -102,9 +102,9 @@ function App() {
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/CatalogBuilder">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-list" aria-label="Apply">Apply</Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Driver") || groups.includes("Admin")) && (
@@ -115,7 +115,6 @@ function App() {
                     className="d-flex align-items-center">
                       <HiOutlineEnvelope size={22}/>
                     </Nav.Link>)}
-                {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
