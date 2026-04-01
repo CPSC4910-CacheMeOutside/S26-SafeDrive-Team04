@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { getCurrentUser } from 'aws-amplify/auth';
 
 const fields = [
   { id: "firstName", label: "First Name", type: "text", required: true, placeholder: "John" },
@@ -90,6 +91,25 @@ export default function DriverApplicationForm() {
   const [done, setDone] = useState(false);
   const [view, setView] = useState("form");
   const [myApplications, setMyApplications] = useState(mockSubmittedApplications);
+  const [driverId, setDriverId] = useState(null);
+
+  useEffect(() => {
+    async function getUser() {
+      const { userId } = await getCurrentUser();
+      const { data: drivers } = await client.models.Driver.list({
+        filter: { userId: { eq: userId }}
+      });
+      const driver = drivers[0];
+      setDriverId(driver.driverId);
+    }
+    getUser();
+
+    async function fetchApplications() {
+      const { data } = await client.models.Application.list();
+      setMyApplications(data);
+    }
+    fetchApplications();
+  }, []);
 
   const errors = {};
   for (const f of fields) {
@@ -107,7 +127,7 @@ export default function DriverApplicationForm() {
     setTouched({ ...touched, [id]: true });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     const allTouched = fields.reduce((acc, f) => ({ ...acc, [f.id]: true }), {});
@@ -115,6 +135,18 @@ export default function DriverApplicationForm() {
     setSubmitted(true);
 
     if (!hasErrors) {
+      await client.models.Application.create({
+        first: values.firstName,
+        last: values.lastName,
+        email: values.email,
+        phone: values.phone,
+        licenseNo: values.licenseNumber,
+        state: values.licenseState,
+        expDate: values.licenseExpiry,
+        driverId: driverId,
+        sponsorId: "TBD",
+        status: 0,
+      });
       setDone(true);
     }
   }
