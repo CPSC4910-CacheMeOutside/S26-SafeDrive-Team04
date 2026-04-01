@@ -39,7 +39,8 @@ const SafeDriveSchema = a.schema({
     userId: a.id(),
     affiliation: a.string(),
 
-    drivers: a.hasMany("DriverSponsor", 'sponsorId')
+    drivers: a.hasMany("DriverSponsor", 'sponsorId'),
+    applications: a.hasMany('Application', 'sponsorId'),
   })
   .identifier(['sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
@@ -55,6 +56,34 @@ const SafeDriveSchema = a.schema({
     points: a.integer()
   }).identifier(['driverId', 'sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
+
+  Application: a.model({
+    appId: a.id().required(),
+    sponsorId: a.id().required(),
+    sponsor: a.belongsTo('Sponsor', 'sponsorId'),
+    driverId: a.id().required(),
+    driver: a.belongsTo('Driver', 'driverId'),
+    status: a.integer(),
+    first: a.string(),
+    last: a.string(),
+    email: a.string(),
+    phone: a.string(),
+    licenseNo: a.string(),
+    state: a.string(),
+    expDate: a.string(),
+    notes: a.string(),
+
+    logs: a.hasMany('ApplicationLog', 'appId'),
+  }).identifier(['appId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  ApplicationLog: a.model({
+    logId: a.id().required(),
+    date: a.string(),
+    appId: a.id().required(),
+    application: a.belongsTo('Application', 'appId'),
+  }).identifier(['logId'])
+  .authorization(allow => [allow.publicApiKey()]),
  
   // A driver class user
   Driver: a.model({
@@ -68,8 +97,8 @@ const SafeDriveSchema = a.schema({
     points: a.integer().default(0),
 
     sponsors: a.hasMany("DriverSponsor", "driverId"),
-    wishlist: a.hasOne('Wishlist', 'driverId')
-    
+    wishlist: a.hasOne('Wishlist', 'driverId'),
+    applications: a.hasMany('Application', 'driverId'),
   })
   .identifier(['driverId'])
   .authorization(allow => [
