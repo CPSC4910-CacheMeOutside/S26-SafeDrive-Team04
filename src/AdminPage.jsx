@@ -242,7 +242,7 @@ function AdminPage(){
         <Tabs defaultActiveKey="manage" className="mb-4">
           <Tab eventKey="manage" title="Manage Drivers">
             <Row>
-              <Col md={3}>
+              {/* <Col md={3}>
                 <Card>
                   <Card.Body>
                     <Card.Title>Sponsored Users</Card.Title>
@@ -263,7 +263,7 @@ function AdminPage(){
                     </ListGroup>
                   </Card.Body>
                 </Card>
-              </Col>
+              </Col> */}
 
               <Col md={4}>
                 <Card>
