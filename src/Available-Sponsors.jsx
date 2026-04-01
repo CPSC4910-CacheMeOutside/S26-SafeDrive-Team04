@@ -1,6 +1,7 @@
 import {Container, Col, Row, Card, Stack, Button, Image} from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import {useState} from 'react';
+import { useLanguage } from './LanguageContext';
 
 /* This array will serve as test input until data can be fed from the backend
 Note, attributes may not be named what they are in the backend  */
@@ -32,6 +33,7 @@ const sponsors = [
 export default function SponsorListings() {
 
     const [sponsorList, updateSponsorList] = useState(sponsors);
+    const { t } = useLanguage();
 
     function SponsorCard({usr}) {
     /* Data is fed from static object sponsors. References may need to be redone for the final version*/
@@ -46,7 +48,7 @@ export default function SponsorListings() {
                         <p>{usr.bio}</p>
                     </div>
                     
-                    <Button variant="primary" as={Link} to={`/application/${usr.first}`}>Apply Now!</Button>
+                    <Button variant="primary" as={Link} to={`/application/${usr.first}`}>{t('sponsorList.applyNow')}</Button>
                 </Col>
             </Stack>
         </Card>
@@ -56,10 +58,8 @@ export default function SponsorListings() {
     return (
         <Container style={{ marginTop: '30px' }}>
             <Col>
-                <h1>Available Sponsors</h1>
-                <p>Safe Drive connects responsible drivers with sponsors who reward safe driving habits. 
-                Explore a list of available sponsors, learn more about their incentive programs, 
-                and find the one that best fits your goals</p>
+                <h1>{t('sponsorList.title')}</h1>
+                <p>{t('sponsorList.description')}</p>
 
                 <Container className="border p-3" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                     {sponsorList.map((spnsr, idx) => (<SponsorCard usr={spnsr} key={idx}/>) )}

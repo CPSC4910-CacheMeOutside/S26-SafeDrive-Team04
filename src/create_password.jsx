@@ -1,8 +1,10 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import { useState } from 'react';
+import { useLanguage } from './LanguageContext';
 
 function CreatePassword() {
+    const { t } = useLanguage();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -19,16 +21,16 @@ function CreatePassword() {
         e.preventDefault();
 
         if (!username) {
-            setError('Please enter a username');
+            setError(t('createPassword.usernameRequired'));
             return;
         }
 
         if (!checkPassword(password)) {
-            setError('Password must be at least 12 characters with uppercase, lowercase, and a number');
+            setError(t('createPassword.passwordInvalid'));
             return;
         }
 
-        alert('Account created for ' + username);
+        alert(t('createPassword.accountCreated') + ' ' + username);
         setUsername('');
         setPassword('');
         setError('');
@@ -38,12 +40,12 @@ function CreatePassword() {
         <div className="container" style={{marginTop: '50px'}}>
             <div className="card" style={{maxWidth: '500px', margin: 'auto'}}>
                 <div className="card-body">
-                    <h3>Create Account</h3>
+                    <h3>{t('createPassword.title')}</h3>
                     <br />
 
                     <form onSubmit={handleSubmit}>
                         <div className="mb-3">
-                            <label>Username:</label>
+                            <label>{t('createPassword.username')}</label>
                             <input
                                 type="text"
                                 className="form-control"
@@ -53,20 +55,20 @@ function CreatePassword() {
                         </div>
 
                         <div className="mb-3">
-                            <label>Password:</label>
+                            <label>{t('createPassword.password')}</label>
                             <input
                                 type="password"
                                 className="form-control"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
-                            <small>Must be 12+ characters with uppercase, lowercase, and number</small>
+                            <small>{t('createPassword.passwordHint')}</small>
                         </div>
 
                         {error && <p style={{color: 'red'}}>{error}</p>}
 
                         <button type="submit" className="btn btn-primary">
-                            Create Account
+                            {t('createPassword.createButton')}
                         </button>
                     </form>
                 </div>

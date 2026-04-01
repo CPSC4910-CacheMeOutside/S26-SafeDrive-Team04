@@ -1,10 +1,12 @@
 import { Container, Card, Form, Button, Alert, ListGroup, Badge } from 'react-bootstrap';
 import { useState } from 'react';
 import { useNotifications } from './NotificationContext';
+import { useLanguage } from './LanguageContext';
 
 // Page for sponsors to compose and send notifications to drivers
 export default function SponsorNotificationsPage() {
   const { notifications, addNotification } = useNotifications();
+  const { t } = useLanguage();
 
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState('');
@@ -20,17 +22,17 @@ export default function SponsorNotificationsPage() {
     const trimmed = message.trim();
 
     if (!trimmed) {
-      setMessageError('Notification message cannot be empty.');
+      setMessageError(t('sponsorNotif.emptyError'));
       return;
     }
     if (trimmed.length < 3) {
-      setMessageError('Notification message must be at least 3 characters.');
+      setMessageError(t('sponsorNotif.minCharsError'));
       return;
     }
 
     addNotification(trimmed);
     setMessage('');
-    setMessageSuccess('Notification sent to drivers successfully!');
+    setMessageSuccess(t('sponsorNotif.sentSuccess'));
     setTimeout(() => setMessageSuccess(''), 3000);
   };
 
@@ -40,25 +42,25 @@ export default function SponsorNotificationsPage() {
 
   return (
     <Container className="py-4" style={{ maxWidth: 700 }}>
-      <h2 className="mb-1">Send Notifications</h2>
-      <p className="text-muted mb-4">Compose a message and send it to all drivers.</p>
+      <h2 className="mb-1">{t('sponsorNotif.title')}</h2>
+      <p className="text-muted mb-4">{t('sponsorNotif.subtitle')}</p>
 
       {/* Compose and send a new notification */}
       <Card className="mb-4" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <Card.Body>
-          <Card.Title>New Notification</Card.Title>
+          <Card.Title>{t('sponsorNotif.newNotification')}</Card.Title>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Message</Form.Label>
+              <Form.Label>{t('sponsorNotif.message')}</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={4}
                 value={message}
                 onChange={handleMessageChange}
                 isInvalid={!!messageError}
-                placeholder="Write your message to drivers here..."
+                placeholder={t('sponsorNotif.messagePlaceholder')}
               />
-              <Form.Text className="text-muted">Minimum 3 characters.</Form.Text>
+              <Form.Text className="text-muted">{t('sponsorNotif.minChars')}</Form.Text>
               {messageError && (
                 <Form.Control.Feedback type="invalid" style={{ display: 'block' }}>
                   {messageError}
@@ -69,7 +71,7 @@ export default function SponsorNotificationsPage() {
             {messageSuccess && <Alert variant="success">{messageSuccess}</Alert>}
 
             <Button variant="primary" onClick={handleSend} disabled={!!messageError}>
-              Send Notification
+              {t('sponsorNotif.sendNotification')}
             </Button>
           </Form>
         </Card.Body>
@@ -79,14 +81,14 @@ export default function SponsorNotificationsPage() {
       <Card style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <Card.Title className="mb-0">Sent Notifications</Card.Title>
+            <Card.Title className="mb-0">{t('sponsorNotif.sentNotifications')}</Card.Title>
             <span className="text-muted" style={{ fontSize: 14 }}>
               {activeCount} active / {totalCount} total
             </span>
           </div>
 
           {totalCount === 0 ? (
-            <p className="text-muted">No notifications sent yet.</p>
+            <p className="text-muted">{t('sponsorNotif.noSent')}</p>
           ) : (
             <ListGroup variant="flush">
               {/* Show most recent first */}
@@ -100,7 +102,7 @@ export default function SponsorNotificationsPage() {
                   </div>
                   {/* Show whether the driver has dismissed this notification */}
                   <Badge bg={n.closed ? 'secondary' : 'success'} className="ms-3 align-self-center">
-                    {n.closed ? 'Dismissed' : 'Active'}
+                    {n.closed ? t('sponsorNotif.dismissed') : t('sponsorNotif.active')}
                   </Badge>
                 </ListGroup.Item>
               ))}

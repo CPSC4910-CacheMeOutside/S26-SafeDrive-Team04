@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { generateClient } from 'aws-amplify/data';
 import { useEffect, useState } from "react";
+import { useLanguage } from './LanguageContext';
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -17,6 +18,7 @@ const client = generateClient();
 function SponsorPage() {
     const navigate = useNavigate;
     const auth = useAuth();
+    const { t } = useLanguage();
 
     const [drivers, setDrivers] = useState([]);
     const [selectedId, setSelectedId] = useState("");
@@ -93,7 +95,7 @@ function SponsorPage() {
 
         const newPoints = selectedDriver.points + delta;
         if(newPoints < 0){
-            alert("Driver points cannot go below zero");
+            alert(t('sponsor.cannotGoNegative'));
             return;
         }
         
@@ -116,7 +118,7 @@ function SponsorPage() {
 
             if(updateResult.errors){
                 console.error("Driver update error", updateResult.errors)
-                alert("Failed to update driver points.");
+                alert(t('sponsor.updateFailed'));
                 return
             }
 
@@ -134,14 +136,14 @@ function SponsorPage() {
 
             if(txResult.errors){
                 console.error("Transaction create error:", txResult.errors);
-                alert("Points updated, but log failed")
+                alert(t('sponsor.logFailed'))
             }
 
             setDescription("");
             await loadData();
         } catch(err){
             console.error("Point adj err", err);
-            alert("Something went wrong");
+            alert(t('sponsor.somethingWentWrong'));
         }
     };
 
@@ -176,22 +178,22 @@ function SponsorPage() {
     if(loading){
         return(
             <Container className="mt-4">
-                <h3>Loading sponsor dashboard</h3>
+                <h3>{t('sponsor.loading')}</h3>
             </Container>
         );
     }
     return (
         <Container className="mt-4">
             <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-                <h1><strong>Sponsor Dashboard</strong></h1>
+                <h1><strong>{t('sponsor.title')}</strong></h1>
 
                 <Tabs defaultActiveKey="manage" className="mb-4">
-                    <Tab eventKey="manage" title="Manage Drivers">
+                    <Tab eventKey="manage" title={t('sponsor.manageDrivers')}>
                         <Row>
                             <Col md={4}>
                                 <Card>
                                     <Card.Body>
-                                        <Card.Title>Drivers</Card.Title>
+                                        <Card.Title>{t('sponsor.drivers')}</Card.Title>
 
                                         <div className="mb-4 d-flex gap-2">
                                             <Button
@@ -199,7 +201,7 @@ function SponsorPage() {
                                                 variant={sortMode === "points" ? "primary" : "outline-primary"}
                                                 onClick={() => setSortMode("points")}
                                             >
-                                                Sort by Points
+                                                {t('sponsor.sortByPoints')}
                                             </Button>
 
                                             <Button
@@ -207,14 +209,14 @@ function SponsorPage() {
                                                 variant={sortMode === "id" ? "primary" : "outline-primary"}
                                                 onClick={() => setSortMode("id")}
                                             >
-                                                Sort by ID
+                                                {t('sponsor.sortById')}
                                             </Button>
                                         </div>
 
                                         <Form.Group className="mb-3">
                                             <Form.Control
                                                 type="text"
-                                                placeholder="Search drivers by name or ID..."
+                                                placeholder={t('sponsor.searchDriversPlaceholder')}
                                                 value={driverSearch}
                                                 onChange={(e) => setDriverSearch(e.target.value)}
                                             />
@@ -242,17 +244,17 @@ function SponsorPage() {
                             <Col md={8}>
                                 <Card>
                                     <Card.Body>
-                                        <Card.Title>Adjust Points</Card.Title>
+                                        <Card.Title>{t('sponsor.adjustPoints')}</Card.Title>
 
                                         {selectedDriver ? (
                                             <>
                                                 <p>
-                                                    Driver: <strong>{selectedDriver.name}</strong><br />
-                                                    Current Points: <strong>{selectedDriver.points}</strong>
+                                                    {t('sponsor.driverLabel')}: <strong>{selectedDriver.name}</strong><br />
+                                                    {t('sponsor.currentPoints')}: <strong>{selectedDriver.points}</strong>
                                                 </p>
 
                                                 <Form.Group className="mb-3">
-                                                    <Form.Label>Amount</Form.Label>
+                                                    <Form.Label>{t('sponsor.amount')}</Form.Label>
                                                     <Form.Control
                                                         type="number"
                                                         value={amount}
@@ -263,25 +265,25 @@ function SponsorPage() {
 
                                                 <div className="d-flex gap-2 mb-3">
                                                     <Button variant="success" onClick={() => pointAdjust(amount)}>
-                                                        + Add Points
+                                                        {t('sponsor.addPoints')}
                                                     </Button>
                                                     <Button variant="danger" onClick={() => pointAdjust(-amount)}>
-                                                        - Subtract Points
+                                                        {t('sponsor.subtractPoints')}
                                                     </Button>
                                                 </div>
 
                                                 <Form.Group className="mb-3">
-                                                    <Form.Label>Reason for Adjustment</Form.Label>
+                                                    <Form.Label>{t('sponsor.reasonForAdjustment')}</Form.Label>
                                                     <Form.Control
                                                         type="text"
-                                                        placeholder="Description for Point Change"
+                                                        placeholder={t('sponsor.descriptionPlaceholder')}
                                                         value={description}
                                                         onChange={(e) => setDescription(e.target.value)}
                                                     />
                                                 </Form.Group>
                                             </>
                                         ) : (
-                                            <p>No driver selected.</p>
+                                            <p>{t('sponsor.noDriverSelected')}</p>
                                         )}
                                     </Card.Body>
                                 </Card>
@@ -289,15 +291,15 @@ function SponsorPage() {
                         </Row>
                     </Tab>
 
-                    <Tab eventKey="audit" title="Logs/Reports">
+                    <Tab eventKey="audit" title={t('sponsor.logsReports')}>
                         <Card>
                             <Card.Body>
-                                <Card.Title>Adjustment History</Card.Title>
+                                <Card.Title>{t('sponsor.adjustmentHistory')}</Card.Title>
 
                                 <Form.Group className="mb-3">
                                     <Form.Control
                                         type="text"
-                                        placeholder="Search Transaction History"
+                                        placeholder={t('sponsor.searchTransactionPlaceholder')}
                                         value={logSearch}
                                         onChange={(e) => setLogSearch(e.target.value)}
                                     />
@@ -311,13 +313,13 @@ function SponsorPage() {
                                         return (
                                             <ListGroup.Item key={log.id}>
                                                 <strong>{driverName}</strong>{" "}
-                                                {log.change > 0 ? "gained" : "lost"}{" "}
-                                                <strong>{Math.abs(log.change)}</strong> points
+                                                {log.change > 0 ? t('sponsor.gained') : t('sponsor.lost')}{" "}
+                                                <strong>{Math.abs(log.change)}</strong> {t('sponsor.points')}
                                                 <br />
                                                 <small>
-                                                    Reason: {log.reason} | {log.time}
+                                                    {t('sponsor.reasonLabel')}: {log.reason} | {log.time}
                                                     {log.balanceAfter !== undefined && (
-                                                        <> | Balance After: {log.balanceAfter}</>
+                                                        <> | {t('sponsor.balanceAfter')}: {log.balanceAfter}</>
                                                     )}
                                                 </small>
                                             </ListGroup.Item>
@@ -328,9 +330,9 @@ function SponsorPage() {
                         </Card>
                     </Tab>
 
-                    <Tab eventKey="settings" title="Settings">
+                    <Tab eventKey="settings" title={t('sponsor.settings')}>
                         <Card>
-                            <Card.Body>Settings and Preferences Coming Soon</Card.Body>
+                            <Card.Body>{t('sponsor.settingsComingSoon')}</Card.Body>
                         </Card>
                     </Tab>
                 </Tabs>

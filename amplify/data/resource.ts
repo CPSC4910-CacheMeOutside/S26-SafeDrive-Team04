@@ -138,7 +138,6 @@ const SafeDriveSchema = a.schema({
   }).identifier(['wishId', 'pId'])
   .authorization(allow => [allow.publicApiKey()]),
  
-  // A product designed for 
   Product: a.model({
     pId: a.id().required(),
     title: a.string(),
@@ -149,7 +148,24 @@ const SafeDriveSchema = a.schema({
     available: a.boolean(),
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
- 
+
+  Notification: a.model({
+    nId: a.id().required(),
+    content: a.string(),
+
+    userNotifications: a.hasMany('UserNotification', 'nId'),
+  }).identifier(['nId'])
+  .authorization(allow => [allow.publicApiKey()]),
+  
+  UserNotification: a.model({
+    sendId: a.id().required(),
+    recipId: a.id().required(),
+    nId: a.id().required(),
+
+    notification: a.belongsTo('Notification', 'nId'),
+  }).identifier(['sendId', 'recipId', 'nId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
 });
  
 // Used for code completion / highlighting when making requests from frontend

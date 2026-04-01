@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Container, Card, Button, ListGroup } from 'react-bootstrap';
 import { useNotifications } from './NotificationContext';
+import { useLanguage } from './LanguageContext';
 
 export default function DriverNotificationsPage() {
   const { getActiveNotifications, closeNotification, toggleStar, togglePin } = useNotifications();
+  const { t } = useLanguage();
 
   const activeNotifications = getActiveNotifications();
 
@@ -121,16 +123,16 @@ export default function DriverNotificationsPage() {
         className="ms-3 align-self-center"
         onClick={() => closeNotification(n.id)}
       >
-        Dismiss
+        {t('driverNotif.dismiss')}
       </Button>
     </ListGroup.Item>
   );
 
   return (
     <Container className="py-4" style={{ maxWidth: 700 }}>
-      <h2 className="mb-1">Your Notifications</h2>
+      <h2 className="mb-1">{t('driverNotif.title')}</h2>
       <p className="text-muted mb-4">
-        Messages from your sponsor. You can dismiss a notification once you have read it.
+        {t('driverNotif.subtitle')}
       </p>
 
       <Card style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -138,7 +140,7 @@ export default function DriverNotificationsPage() {
           {hasNoNotifications ? (
             // Empty state shown when all notifications have been dismissed
             <div className="text-center py-4 text-muted">
-              <p className="mb-0">You have no new notifications.</p>
+              <p className="mb-0">{t('driverNotif.noNotifications')}</p>
             </div>
           ) : (
             <ListGroup variant="flush">
@@ -146,7 +148,7 @@ export default function DriverNotificationsPage() {
               {pinnedNotification && (
                 <>
                   <ListGroup.Item className="py-1 px-3" style={{ backgroundColor: '#fffbea', borderBottom: 'none' }}>
-                    <small className="text-muted fw-semibold">📌 Pinned</small>
+                    <small className="text-muted fw-semibold">📌 {t('driverNotif.pinned')}</small>
                   </ListGroup.Item>
                   {renderItem(pinnedNotification, { bgColor: '#fffbea' })}
                 </>
@@ -156,7 +158,7 @@ export default function DriverNotificationsPage() {
 
               {regularNotifications.length > 0 && orderedStarred.length > 0 && (
                 <ListGroup.Item className="py-1 px-3" style={{ borderBottom: 'none' }}>
-                  <small className="text-muted fw-semibold">Recent</small>
+                  <small className="text-muted fw-semibold">{t('driverNotif.recent')}</small>
                 </ListGroup.Item>
               )}
               {regularNotifications.map(n => renderItem(n))}

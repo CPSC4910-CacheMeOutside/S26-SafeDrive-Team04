@@ -2,11 +2,12 @@ import { Container, Row, Col, Stack, Card } from 'react-bootstrap';
 import { generateClient } from 'aws-amplify/data';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from './LanguageContext';
 
 const currentSprint = 5;
 
 export default function AboutPage () {
-
+    const { t } = useLanguage();
     const client = generateClient();
 
     var [data, setData] = useState({
@@ -51,16 +52,16 @@ export default function AboutPage () {
 
     return (
     <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
-    <h1>Hello! We are <strong>{data.teamName}</strong></h1>
+    <h1>{t('about.greeting')} <strong>{data.teamName}</strong></h1>
 
     <Container fluid>
-        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}> 
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
             <Row>
                 <Col>
                     <Card style={{ width: '18rem' }}>
                         <Card.Img variant="top" src="./truckIco.jpg" alt="Truck icon representing the SafeDrive product"/>
                         <Card.Body>
-                            <Card.Title>Introducing {data.productName}</Card.Title>
+                            <Card.Title>{t('about.introducing')} {data.productName}</Card.Title>
                             <Card.Text>{data.desc}</Card.Text>
                         </Card.Body>
                     </Card>
@@ -69,7 +70,7 @@ export default function AboutPage () {
                     <Card style={{ width: '18rem' }}>
                         <Card.Img variant="top" src="./sprintIco.png" alt="Sprint icon indicating the current development sprint"/>
                         <Card.Body>
-                            <Card.Title>Current Sprint</Card.Title>
+                            <Card.Title>{t('about.currentSprint')}</Card.Title>
                             <Card.Text>{data.sprintNo}</Card.Text>
                         </Card.Body>
                     </Card>
@@ -78,7 +79,7 @@ export default function AboutPage () {
                     <Card style={{ width: '18rem' }}>
                         <Card.Img variant="top" src="./calendarIco.png" alt="Calendar icon representing the next scheduled release date"/>
                         <Card.Body>
-                            <Card.Title>Next Release Date</Card.Title>
+                            <Card.Title>{t('about.nextRelease')}</Card.Title>
                             <Card.Text>{data.releaseDate}</Card.Text>
                         </Card.Body>
                     </Card>
