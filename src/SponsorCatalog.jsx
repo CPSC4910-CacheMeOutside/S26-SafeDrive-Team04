@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 // Import the front-end star rating widget for catalog items
 import StarRating from "./StarRating";
+import { useLanguage } from './LanguageContext';
 
 // move to separate API file when set up
 const BASE_URL = "http://localhost:3000";
@@ -51,6 +52,7 @@ const FAKE_DRIVERS = [
 ];
 
 export default function SponsorCatalog({ sponsorId = 1 }) {
+    const { t } = useLanguage();
     const [items, setItems] = useState([]);
     const [drivers, setDrivers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -109,7 +111,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
 
     async function handleBuy() {
         if (!selectedDriver) {
-            alert("Please pick a driver");
+            alert(t('sponsorCatalog.pleasePickDriver'));
             return;
         }
         console.log("placing order:", { sponsorId, item: selectedItem.id, driver: selectedDriver, quantity });
@@ -161,7 +163,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
     async function handleSavePrice() {
         const parsed = parseInt(newPriceInput);
         if (isNaN(parsed) || parsed < 0) {
-            alert("Invalid price");
+            alert(t('sponsorCatalog.invalidPrice'));
             return;
         }
         setItems((prev) =>
@@ -170,14 +172,14 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
         setShowPriceModal(false);
     }
 
-    if (loading) return <p>Loading...</p>;
+    if (loading) return <p>{t('sponsorCatalog.loading')}</p>;
 
     const filteredItems = getFilteredItems();
 
     return (
         <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <h2 style={{ margin: 0 }}>Sponsor Catalog</h2>
+                <h2 style={{ margin: 0 }}>{t('sponsorCatalog.title')}</h2>
 
                 <div style={{ display: "flex", gap: "8px" }}>
                     <div style={{ position: "relative", display: "inline-block" }}>
@@ -193,7 +195,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 cursor: "pointer",
                             }}
                         >
-                            Wishlist
+                            {t('sponsorCatalog.wishlist')}
                         </button>
                         {wishlistItems.length > 0 && (
                             <span
@@ -232,7 +234,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 cursor: "pointer",
                             }}
                         >
-                            Cart
+                            {t('sponsorCatalog.cart')}
                         </button>
                         {getCartCount() > 0 && (
                             <span
@@ -261,9 +263,9 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
             </div>
 
             <div style={{ marginBottom: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
-                <span>Filter by price (pts):</span>
+                <span>{t('sponsorCatalog.filterByPrice')}</span>
                 <label>
-                    Min:
+                    {t('sponsorCatalog.min')}
                     <input
                         type="number"
                         value={minPrice}
@@ -272,7 +274,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                     />
                 </label>
                 <label>
-                    Max:
+                    {t('sponsorCatalog.max')}
                     <input
                         type="number"
                         value={maxPrice}
@@ -280,10 +282,10 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                         style={{ width: "70px", marginLeft: "4px" }}
                     />
                 </label>
-                <button onClick={() => { setMinPrice(""); setMaxPrice(""); }}>Clear</button>
+                <button onClick={() => { setMinPrice(""); setMaxPrice(""); }}>{t('sponsorCatalog.clear')}</button>
             </div>
 
-            {filteredItems.length === 0 && <p>No items found.</p>}
+            {filteredItems.length === 0 && <p>{t('sponsorCatalog.noItemsFound')}</p>}
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
                 {filteredItems.map((item) => (
@@ -313,18 +315,18 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
 
                         <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
                             <button onClick={() => openEditModal(item)} style={{ fontSize: "0.75rem" }}>
-                                Edit Price
+                                {t('sponsorCatalog.editPrice')}
                             </button>
                             <button
                                 onClick={() => openBuyModal(item)}
                                 style={{ fontSize: "0.75rem", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}>
-                                Buy for Driver
+                                {t('sponsorCatalog.buyForDriver')}
                             </button>
                             <button
                                 onClick={() => addToCart(item)}
                                 style={{ fontSize: "0.75rem", backgroundColor: "#2196F3", color: "white", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer" }}
                             >
-                                Add to Cart
+                                {t('sponsorCatalog.addToCart')}
                             </button>
                             <button
                                 onClick={() => addToWishlist(item)}
@@ -339,7 +341,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                     cursor: isInWishlist(item.id) ? "not-allowed" : "pointer",
                                 }}
                             >
-                                {isInWishlist(item.id) ? "Wishlisted" : "Add to Wishlist"}
+                                {isInWishlist(item.id) ? t('sponsorCatalog.wishlisted') : t('sponsorCatalog.addToWishlist')}
                             </button>
                         </div>
                     </div>
@@ -357,22 +359,22 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                     <div style={{ background: "white", padding: "24px", borderRadius: "8px", minWdith: "320px" }}>
                         {orderSuccess ? (
                             <div>
-                                <h3>Order placed!</h3>
+                                <h3>{t('sponsorCatalog.orderPlaced')}</h3>
                                 <p>
-                                    Ordered {quantity}x {selectedItem.name} for{" "}
+                                    {t('sponsorCatalog.ordered')} {quantity}x {selectedItem.name} {t('sponsorCatalog.for')}{" "}
                                     {drivers.find((d) => d.id == selectedDriver)?.name}
                                 </p>
-                                <button onClick={() => setShowBuyModal(false)}>Close</button>
+                                <button onClick={() => setShowBuyModal(false)}>{t('sponsorCatalog.close')}</button>
                             </div>
                         ) : (
                         <div>
-                            <h3>Buy for Driver</h3>
+                            <h3>{t('sponsorCatalog.buyForDriverTitle')}</h3>
                             <p>{selectedItem.name} - {selectedItem.sponsorPrice} pts each</p>
 
                             <div style={{ marginBottom: "12px" }}>
-                                <label>Driver: </label>
+                                <label>{t('sponsorCatalog.driverLabel')} </label>
                                 <select value={selectedDriver} onChange={(e) => setSelectedDriver(e.target.value)}>
-                                    <option value="">Select a driver</option>
+                                    <option value="">{t('sponsorCatalog.selectADriver')}</option>
                                     {drivers.map((d) => (
                                         <option key={d.id} value={d.id}>{d.name}</option>
                                     ))}
@@ -380,7 +382,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                             </div>
 
                             <div style={{ marginBottom: "12px" }}>
-                                <label>Quantity: </label>
+                                <label>{t('sponsorCatalog.quantity')} </label>
                                 <input
                                     type="number"
                                     min="1"
@@ -390,13 +392,13 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                                 />
                             </div>
 
-                            <p>Total: {selectedItem.sponsorPrice * quantity} pts</p>
+                            <p>{t('sponsorCatalog.total')} {selectedItem.sponsorPrice * quantity} pts</p>
 
                             <div style={{ display: "flex", gap: "8px" }}>
                                 <button onClick={handleBuy} style={{ backgroundColor: "#4CAF50", color: "white", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer" }}>
-                                    Confirm
+                                    {t('sponsorCatalog.confirm')}
                                 </button>
-                                <button onClick={() => setShowBuyModal(false)}>Cancel</button>
+                                <button onClick={() => setShowBuyModal(false)}>{t('sponsorCatalog.cancel')}</button>
                             </div>
                         </div>
                 )}
@@ -429,7 +431,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                             alignItems: "center",
                         }}
                     >
-                        <h3 style={{ margin: 0 }}>Cart</h3>
+                        <h3 style={{ margin: 0 }}>{t('sponsorCatalog.cartTitle')}</h3>
                         <button
                             onClick={() => setShowCart(false)}
                             style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", lineHeight: 1 }}
@@ -440,7 +442,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
 
                     <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
                         {cartItems.length === 0 && (
-                            <p style={{ color: "gray", textAlign: "center", marginTop: "32px" }}>Your cart is empty.</p>
+                            <p style={{ color: "gray", textAlign: "center", marginTop: "32px" }}>{t('sponsorCatalog.cartEmpty')}</p>
                         )}
 
                         {cartItems.map((cartItem) => (
@@ -522,7 +524,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                             alignItems: "center",
                         }}
                     >
-                        <h3 style={{ margin: 0 }}>Wishlist</h3>
+                        <h3 style={{ margin: 0 }}>{t('sponsorCatalog.wishlistTitle')}</h3>
                         <button
                             onClick={() => setShowWishlist(false)}
                             style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", lineHeight: 1 }}
@@ -533,7 +535,7 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
 
                     <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
                         {wishlistItems.length === 0 && (
-                            <p style={{ color: "gray", textAlign: "center", marginTop: "32px" }}>Your wishlist is empty.</p>
+                            <p style={{ color: "gray", textAlign: "center", marginTop: "32px" }}>{t('sponsorCatalog.wishlistEmpty')}</p>
                         )}
 
                         {wishlistItems.map((wItem) => (
@@ -583,12 +585,12 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
                     }}
                 >
                     <div style={{ background: "white", padding: "24px", borderRadius: "8px", minWidth: "280px" }}>
-                        <h3>Edit Price</h3>
+                        <h3>{t('sponsorCatalog.editPriceTitle')}</h3>
                         <p>{editItem.name}</p>
-                        <p style={{ color: "gray", fontSize: "0.8125rem" }}>Original price: {editItem.basePrice} pts</p>
+                        <p style={{ color: "gray", fontSize: "0.8125rem" }}>{t('sponsorCatalog.originalPrice')} {editItem.basePrice} pts</p>
 
                         <div style={{ marginBottom: "16px" }}>
-                            <label>New Price (pts): </label>
+                            <label>{t('sponsorCatalog.newPrice')} </label>
                             <input
                                 type="number"
                                 step="1"
@@ -600,9 +602,9 @@ export default function SponsorCatalog({ sponsorId = 1 }) {
 
                         <div style={{ display: "flex", gap: "8px" }}>
                             <button onClick={handleSavePrice} style={{ backgroundColor: "#2196F3", color: "white", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer" }}>
-                                Save
+                                {t('sponsorCatalog.save')}
                             </button>
-                            <button onClick={() => setShowPriceModal(false)}>Cancel</button>
+                            <button onClick={() => setShowPriceModal(false)}>{t('sponsorCatalog.cancel')}</button>
                         </div>
                     </div>
                 </div>

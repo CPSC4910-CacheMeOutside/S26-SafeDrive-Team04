@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Button, Form, Container, Stack, Row, Alert} from 'react-bootstrap';
 import { generateClient } from 'aws-amplify/data'
+import { useLanguage } from './LanguageContext';
 
 export default function UpdateAbout() {
+    const { t } = useLanguage();
     var [formStatus, setStatus] = useState(0);
 
     // About data container
@@ -47,14 +49,12 @@ export default function UpdateAbout() {
     return (
         <Container>
             <Row>
-                <h1>Update About Info</h1>
-                <p>This page allows for the updating of the About page. Fill out the 
-                below information, the click 'Submit' to push new changes. New info
-                with a previos sprint number is not allowed.</p>
+                <h1>{t('about.title')}</h1>
+                <p>{t('about.instructions')}</p>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group>
-                        <Form.Label>Team Name #</Form.Label>
-                        <Form.Control placeholder='Team XX' 
+                        <Form.Label>{t('about.teamName')}</Form.Label>
+                        <Form.Control placeholder={t('about.teamPlaceholder')}
                             type="text"
                             onChange={(event) => {setTeam(event.target.value)} }>
 
@@ -62,23 +62,23 @@ export default function UpdateAbout() {
                     </Form.Group>
                     <Stack direction="horizontal" gap={3}>
                         <Form.Group className='p-2'>
-                            <Form.Label>Current Sprint</Form.Label>
-                            <Form.Control placeholder='1-10' 
+                            <Form.Label>{t('about.sprintLabel')}</Form.Label>
+                            <Form.Control placeholder={t('about.sprintPlaceholder')}
                                 type="number"
                                 onChange={(event) => {setSprint(event.target.value)} }>
 
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className='p-2'>
-                            <Form.Label>Release Date</Form.Label>
-                            <Form.Control placeholder='MM-DD-YYYY' 
+                            <Form.Label>{t('about.releaseDateLabel')}</Form.Label>
+                            <Form.Control placeholder={t('about.datePlaceholder')}
                                 type="text"
                                 onChange={(event) => {setDate(event.target.value)} }>
 
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className='p-2 w-100'>
-                            <Form.Label>Product Name</Form.Label>
+                            <Form.Label>{t('about.productName')}</Form.Label>
                             <Form.Control type="text"
                                 onChange={(event) => {setName(event.target.value)} }>
 
@@ -86,16 +86,16 @@ export default function UpdateAbout() {
                         </Form.Group>
                     </Stack>
                     <Form.Group>
-                        <Form.Label>Product Description</Form.Label>
+                        <Form.Label>{t('about.productDesc')}</Form.Label>
                         <Form.Control type="text" as="textarea" style={{ height: '100px' }}
                             onChange={(event) => {setDesc(event.target.value)} }>
 
                         </Form.Control>
                     </Form.Group>
                     <br></br>
-                    <Button className="top-0 start-0" variant='primary' type="submit">Submit</Button>
-                    <Alert hidden={formStatus !== 1} variant='success'> Success! Sent {team}, {sprint}, {date}, {name}, {desc} to about database </Alert>
-                    <Alert hidden={formStatus !== 2} variant='danger'> There was a problem with your submission </Alert>
+                    <Button className="top-0 start-0" variant='primary' type="submit">{t('about.submit')}</Button>
+                    <Alert hidden={formStatus !== 1} variant='success'>{t('about.successAlert')}</Alert>
+                    <Alert hidden={formStatus !== 2} variant='danger'>{t('about.errorAlert')}</Alert>
                 </Form>
             </Row>
         </Container>

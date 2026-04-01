@@ -3,6 +3,7 @@ import useAmplifyAuth from "./UseAmplifyAuth";
 import { Form, Button, Container, Row, Col, Image, Alert } from "react-bootstrap";
 import { get, put } from "aws-amplify/api";
 import { updateUserAttributes, fetchUserAttributes } from "aws-amplify/auth";
+import { useLanguage } from './LanguageContext';
 
 function EditProfilePage({
   profilePic,
@@ -12,6 +13,7 @@ function EditProfilePage({
 }) {
   console.log("EditProfilePage rendered", { adminView, targetDriverId });
   const auth = useAmplifyAuth();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     authName: "",
@@ -81,7 +83,7 @@ function EditProfilePage({
         }
       } catch (error) {
         console.error(error);
-        alert("Error loading driver profile.");
+        alert(t('editProfile.errorLoadingProfile'));
       } finally {
         setLoading(false);
       }
@@ -121,7 +123,7 @@ function EditProfilePage({
     e.preventDefault();
 
     if (formData.authPhoneNum && !/^\+\d{10,15}$/.test(formData.authPhoneNum)) {
-      alert("Phone number must be in format like +15551234567");
+      alert(t('editProfile.phoneFormatError'));
       return;
     }
 
@@ -145,7 +147,7 @@ function EditProfilePage({
           authEmail: latest.email || ""
         });
 
-        alert("Successfully saved changes!");
+        alert(t('editProfile.successSaved'));
         return;
       }
 
@@ -167,7 +169,7 @@ function EditProfilePage({
       });
 
       await restOperation.response;
-      alert("Driver profile updated successfully!");
+      alert(t('editProfile.driverProfileUpdated'));
     } catch (error) {
       console.error("Save error:", error);
       console.error("Save error response:", error?.response);
@@ -179,21 +181,21 @@ function EditProfilePage({
   return (
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
-        <h1><strong>Edit Profile</strong></h1>
+        <h1><strong>{t('editProfile.title')}</strong></h1>
 
         {adminView && (
           <Alert variant="warning">
-            Admin View: You are editing driver account {targetDriverId}
+            {t('editProfile.adminViewAlert')} {targetDriverId}
           </Alert>
         )}
 
         {loading ? (
-          <div>Loading profile...</div>
+          <div>{t('editProfile.loadingProfile')}</div>
         ) : (
           <Form onSubmit={handleSubmit}>
             <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>Full Name:</Form.Label>
+                <Form.Label column sm={3}>{t('editProfile.fullName')}</Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authName"
@@ -205,7 +207,7 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>Preferred Name:</Form.Label>
+                <Form.Label column sm={3}>{t('editProfile.preferredName')}</Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authNickname"
@@ -216,7 +218,7 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>Phone Number:</Form.Label>
+                <Form.Label column sm={3}>{t('editProfile.phoneNumber')}</Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authPhoneNum"
@@ -227,7 +229,7 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>Email:</Form.Label>
+                <Form.Label column sm={3}>{t('editProfile.email')}</Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authEmail"
@@ -239,14 +241,14 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>Role:</Form.Label>
+                <Form.Label column sm={3}>{t('editProfile.role')}</Form.Label>
                 <Col sm={6} className="d-flex align-items-start">
-                  {authRole.length > 0 ? authRole.join(", ") : <span>N/A</span>}
+                  {authRole.length > 0 ? authRole.join(", ") : <span>{t('common.na')}</span>}
                 </Col>
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3 align-items-center">
-                <Form.Label column sm={3}>Profile Picture:</Form.Label>
+                <Form.Label column sm={3}>{t('editProfile.profilePicture')}</Form.Label>
                 <Col sm={6}>
                   <div className="d-flex align-items-center">
                     <Form.Control
@@ -271,7 +273,7 @@ function EditProfilePage({
                 </Col>
               </Form.Group>
 
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit">{t('editProfile.saveChanges')}</Button>
             </div>
           </Form>
         )}

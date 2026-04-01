@@ -4,10 +4,13 @@ import { getProducts, PalatziQueryStruct } from './catalog/store-api';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
+import { useLanguage } from './LanguageContext';
 
 const testSponsorId = 7;
 
 export default function CatalogBuilder({view}) {
+
+    const { t } = useLanguage();
 
     // Client used to add products to the backend catalog
     const client = generateClient();
@@ -118,32 +121,32 @@ export default function CatalogBuilder({view}) {
         return (
             <Modal show={showFilter} onHide={closeFilter}>
                 <Modal.Header>
-                    <Modal.Title>Filter</Modal.Title>
+                    <Modal.Title>{t('catalog.filterTitle')}</Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>
                 {/* The filter form */}
                     <Form>
                         <Form.Group controlId='productCategory'>
-                            <Form.Label>Category</Form.Label>
+                            <Form.Label>{t('catalog.category')}</Form.Label>
                             <Form.Select onChange={e => setCategory(String(e.target.value))}
                                 defaultValue={filter.categorySlug}>
-                                <option value="">All</option>
-                                <option value="clothes">Clothing</option>
-                                <option value="furniture">Furniture</option>
-                                <option value="shoes">Shoes</option>
-                                <option value="technology">Technology</option>
+                                <option value="">{t('catalog.all')}</option>
+                                <option value="clothes">{t('catalog.clothing')}</option>
+                                <option value="furniture">{t('catalog.furniture')}</option>
+                                <option value="shoes">{t('catalog.shoes')}</option>
+                                <option value="technology">{t('catalog.technology')}</option>
                             </Form.Select>
                         </Form.Group>
                         <Form.Group controlId='priceRange'>
-                            <Form.Label>Price Range</Form.Label>
-                            <Form.Text>From</Form.Text>
+                            <Form.Label>{t('catalog.priceRange')}</Form.Label>
+                            <Form.Text>{t('catalog.from')}</Form.Text>
                             <Form.Control 
                                 onChange={e => setMin(Number(e.target.value))}
                                 defaultValue={filter.price_min}
                                 type='text' 
                                 placeholder='0 - ...'/>
-                            <Form.Text>To</Form.Text>
+                            <Form.Text>{t('catalog.to')}</Form.Text>
                             <Form.Control
                                 onChange={e => setMax(Number(e.target.value))}
                                 defaultValue={filter.price_max}
@@ -154,15 +157,15 @@ export default function CatalogBuilder({view}) {
                 </Modal.Body>
 
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowFilter(false)} >Cancel</Button>
+                    <Button variant="secondary" onClick={() => setShowFilter(false)} >{t('catalog.cancel')}</Button>
                     <Button variant="secondary" onClick={() => {
                         clearFilter();
                         setShowFilter(false);
-                        }} >Clear</Button>
+                        }} >{t('catalog.clear')}</Button>
                     <Button variant="primary" onClick={() => {
                         applyExtraFilter();
                         setShowFilter(false);
-                    }}>Apply</Button>
+                    }}>{t('catalog.apply')}</Button>
                 </Modal.Footer>
             </Modal>
         );
@@ -190,12 +193,12 @@ export default function CatalogBuilder({view}) {
                         </Row>
                         <Row>
                             <Col>
-                                <h3><strong>Price:</strong> {product.price} PTs</h3>
+                                <h3><strong>{t('catalog.price')}</strong> {product.price} PTs</h3>
                                 <Stack direction='horizontal' gap={1}>
-                                    <div><p><strong>Rating:</strong></p></div>
+                                    <div><p><strong>{t('catalog.rating')}</strong></p></div>
                                     <div><StarRating itemKey={String(product.pId)} /></div>
                                 </Stack>
-                                <p><strong>Description: </strong>{product.desc}</p>
+                                <p><strong>{t('catalog.description')} </strong>{product.desc}</p>
                                 <UpdateCatalogButton product={product}/>
                             </Col>
                         </Row>
@@ -229,11 +232,11 @@ export default function CatalogBuilder({view}) {
     function UpdateCatalogButton({product}) {
 
         if (product.inCatalog) {
-            return (<span onClick={ () => {removeProduct(product.pId);        
-            }} className="btn btn-danger">Remove</span>);
+            return (<span onClick={ () => {removeProduct(product.pId);
+            }} className="btn btn-danger">{t('catalog.remove')}</span>);
         } else {
-            return (<span onClick={ () => {addProduct(product.pId); 
-            }} className="btn btn-primary">Add To Catalog</span>);
+            return (<span onClick={ () => {addProduct(product.pId);
+            }} className="btn btn-primary">{t('catalog.addToCatalog')}</span>);
         }
     } 
 
@@ -249,8 +252,8 @@ export default function CatalogBuilder({view}) {
                             <Form.Control
                                 onChange={e => updatePName(e.target.value)}
                                 defaultValue={''}
-                                type='text' 
-                                placeholder='Search by name...'
+                                type='text'
+                                placeholder={t('catalog.searchPlaceholder')}
                                 style={{ width: '18rem' }}/>
                         </Col>
                         <Col>
@@ -264,7 +267,7 @@ export default function CatalogBuilder({view}) {
                             </Form.Select>
                         </Col>
                         <Col>
-                            <Button variant='primary' onClick={() => applyPName()}>Search</Button>
+                            <Button variant='primary' onClick={() => applyPName()}>{t('catalog.search')}</Button>
                         </Col>
                     </Form>
                 </Col>
@@ -288,13 +291,13 @@ export default function CatalogBuilder({view}) {
                                 )}
                                 {/* Display nothing if the filter doesn't retrieve anything */}
                                 {catalog.length === 0 && (
-                                    <ListGroup.Item key={'noSearch'} likeid={'noSearch'} className="text-muted mt-3">No items match your search.</ListGroup.Item>
+                                    <ListGroup.Item key={'noSearch'} likeid={'noSearch'} className="text-muted mt-3">{t('catalog.noItemsMatch')}</ListGroup.Item>
                                 )}
                             </ListGroup>
                             <ButtonGroup className="sm">
                                 <Form>
                                     <Form.Group className="mb-3">
-                                        <Form.Label>Page:</Form.Label>
+                                        <Form.Label>{t('catalog.page')}</Form.Label>
                                         <Form.Control type="text" onChange={(e) => {applyOffset(e.target.value)}} value={filter.offset}/>
                                     </Form.Group>
                                 </Form>
@@ -313,10 +316,10 @@ export default function CatalogBuilder({view}) {
                     </Col>
                     <Col sm={6}>
                         <Tab.Content style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                            <Tab.Pane eventKey={"defaultChoice"}> 
+                            <Tab.Pane eventKey={"defaultChoice"}>
                                 <Card>
-                                    <Card.Title> Welcome </Card.Title>
-                                    <Card.Text> Click an item to view it.</Card.Text>
+                                    <Card.Title>{t('catalog.welcome')}</Card.Title>
+                                    <Card.Text>{t('catalog.clickToView')}</Card.Text>
                                 </Card>
                             </Tab.Pane>
                             {
@@ -327,7 +330,7 @@ export default function CatalogBuilder({view}) {
                             )}
                             {catalog.length === 0 && (
                                 <Card>
-                                    <h1>No items match your search</h1>
+                                    <h1>{t('catalog.noItemsMatch')}</h1>
                                 </Card>
                             )}
                         </Tab.Content>

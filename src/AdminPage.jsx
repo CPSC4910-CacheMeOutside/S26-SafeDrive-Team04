@@ -1,6 +1,7 @@
 import useAmplifyAuth from './UseAmplifyAuth';
 import { useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { useLanguage } from './LanguageContext';
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -13,7 +14,8 @@ import Tab from"react-bootstrap/Tab"
 import { CardBody, ListGroupItem } from 'react-bootstrap';
 
 function AdminPage(){
-  
+  const { t } = useLanguage();
+
   const [SponsoredUsers, setSponsUser] = useState([
     {id: "SPUser1", name: "SPUser1", 
       drivers: [
@@ -142,15 +144,15 @@ function AdminPage(){
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>Admin Dashboard</strong></h1>
+        <h1><strong>{t('admin.title')}</strong></h1>
 
         <Tabs defaultActiveKey="manage" className="mb-4">
-          <Tab eventKey="manage" title="Manage Drivers">
+          <Tab eventKey="manage" title={t('admin.manageDrivers')}>
             <Row>
               <Col md={3}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Sponsored Users</Card.Title>
+                    <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
                     <ListGroup>
                       {SponsoredUsers.map((c) => (
                         <ListGroupItem
@@ -174,7 +176,7 @@ function AdminPage(){
             <Card>
               <Card.Body>
                 <Card.Title>
-                  Drivers{" "}
+                  {t('admin.drivers')}{" "}
                   {selectedSponsUser ? (
                     <span className='text-muted'>({selectedSponsUser.name})</span>
                   ) : null}
@@ -185,7 +187,7 @@ function AdminPage(){
                         variant={sortMode === "points" ? "primary" : "outline-primary"}
                         onClick={() => setSortMode("points")}
                       >
-                        Sort by Points
+                        {t('admin.sortByPoints')}
                       </Button>
 
                       <Button
@@ -193,7 +195,7 @@ function AdminPage(){
                         variant={sortMode === "id" ? "primary" : "outline-primary"}
                         onClick={() => setSortMode("id")}
                       >
-                        Sort by ID
+                        {t('admin.sortById')}
                       </Button>
                     </div>
                     <ListGroup>
@@ -215,7 +217,7 @@ function AdminPage(){
 
                     {!SponsUserDrivers.length && (
                       <div className="text-muted mt-3">
-                        No Drivers Assigned to this Sponsored User Yet
+                        {t('admin.noDriversAssigned')}
                       </div>
                     )}
                   </Card.Body>
@@ -225,22 +227,22 @@ function AdminPage(){
               <Col md={5}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Adjust Points</Card.Title>
+                    <Card.Title>{t('admin.adjustPoints')}</Card.Title>
 
                     {!selectedDriver ? (
-                      <div className="text-muted">Select a driver to adjust points.</div>
+                      <div className="text-muted">{t('admin.selectDriverToAdjust')}</div>
                     ) : (
                       <>
                       <p>
-                        Sponsored User: <strong>{selectedSponsUser?.name}</strong>
+                        {t('admin.sponsoredUser')}: <strong>{selectedSponsUser?.name}</strong>
                         <br />
-                        Driver: <strong>{selectedDriver.name}</strong>
+                        {t('admin.driver')}: <strong>{selectedDriver.name}</strong>
                         <br />
-                        Current Points: <strong>{selectedDriver.points}</strong>
+                        {t('admin.currentPoints')}: <strong>{selectedDriver.points}</strong>
                       </p>
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Amount</Form.Label>
+                      <Form.Label>{t('admin.amount')}</Form.Label>
                       <Form.Control
                         type="number"
                         value={amount}
@@ -249,23 +251,23 @@ function AdminPage(){
                       />
                     </Form.Group>
                       <Form.Group className="mb-3">
-                        <Form.Label> Reason for Adjustment</Form.Label>
+                        <Form.Label>{t('admin.reasonForAdjustment')}</Form.Label>
                         <Form.Control
                           type="text"
-                          placeholder="Description for Point Change"
+                          placeholder={t('admin.descriptionPlaceholder')}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                       />
                     </Form.Group>
                     <div className="d-flex gap-2">
                       <Button variant="success" onClick={() => pointAdjust(amount)}>
-                        + Add Points
+                        {t('admin.addPoints')}
                       </Button>
                       <Button variant="danger" onClick={() => pointAdjust(-amount)}>
-                        - Subtract Points
+                        {t('admin.subtractPoints')}
                       </Button>
                       <Button variant="secondary" onClick={handleAdminAccountTakeover}>
-                        Manage Account
+                        {t('admin.manageAccount')}
                       </Button>
                     </div>
                   </>
@@ -275,13 +277,13 @@ function AdminPage(){
           
                 <Card className="mt-4">
                   <Card.Body>
-                    <Card.Title>Edit Driver Profile</Card.Title>
+                    <Card.Title>{t('admin.editDriverProfile')}</Card.Title>
                     {!selectedDriver ? (
-                      <div className="text-muted">Select a driver to manage their account.</div>
+                      <div className="text-muted">{t('admin.selectDriverToManage')}</div>
                     ) : (
                       <>
-                      <p className="mb-3"> Update account information for <strong>{selectedDriver.name}</strong>.</p>
-                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>View Account</Button>
+                      <p className="mb-3">{t('admin.updateAccountInfo')} <strong>{selectedDriver.name}</strong>.</p>
+                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>{t('admin.viewAccount')}</Button>
                       </>
                     )}
                   </Card.Body>
@@ -290,12 +292,12 @@ function AdminPage(){
               </Col>
             </Row>
           </Tab>
-          <Tab eventKey="audit" title="Logs/Reports">
+          <Tab eventKey="audit" title={t('admin.logsReports')}>
             <Row>
             <Col md={4}>
             <Card>
               <Card.Body>
-                <Card.Title>Sponsored Users</Card.Title>
+                <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
                 <ListGroup>
                   {SponsoredUsers.map((c) => (
                     <ListGroup.Item
@@ -320,10 +322,10 @@ function AdminPage(){
             <Card>
               <Card.Body>
                 <Card.Title>
-                  Logs {selectedSponsUser ? `(${selectedSponsUser.name})` :""}
+                  {t('admin.logs')} {selectedSponsUser ? `(${selectedSponsUser.name})` :""}
                   </Card.Title>
                   {!SponsUserLogs.length ? (
-                    <div className="text-muted mt-3"> No adjustments logged yet.</div>
+                    <div className="text-muted mt-3">{t('admin.noAdjustmentsLogged')}</div>
                 ) : (
                   <ListGroup>
                     {SponsUserLogs.map((log,index) => (
@@ -332,12 +334,12 @@ function AdminPage(){
                           <strong>{log.driver}</strong>
                         </div>
                         <div>
-                          Change:{" "}
+                          {t('admin.change')}:{" "}
                           <span className={log.change >= 0 ? "text-success" : "text-danger"}>
                             {log.change >= 0 ? `+${log.change}` : log.change}
                           </span>
                         </div>
-                          <div>Reason: {log.reason}</div>
+                          <div>{t('admin.reason')}: {log.reason}</div>
                           <div className="text-muted" style={{ fontSize: "0.9rem"}}>
                             {log.time}
                           </div>

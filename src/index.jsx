@@ -8,6 +8,7 @@ import  NotificationProvider from './NotificationContext';
 import ConversionRatioProvider from './ConversionRatioContext';
 import PointsProvider from './PointsContext';
 import { FontSizeProvider } from './FontSizeContext';
+import { LanguageProvider } from './LanguageContext';
 
 /* Add the backend */
 import { Amplify } from 'aws-amplify';
@@ -32,6 +33,7 @@ root.render(
     <BrowserRouter>
         {/* makes the notification additions available throughout the entire app */}
         <FontSizeProvider>
+          <LanguageProvider>
           <NotificationProvider>
             <ConversionRatioProvider>
               <PointsProvider>
@@ -39,6 +41,7 @@ root.render(
               </PointsProvider>
             </ConversionRatioProvider>
           </NotificationProvider>
+          </LanguageProvider>
         </FontSizeProvider>
     </BrowserRouter>
   </React.StrictMode>

@@ -7,6 +7,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
 import { Button, NavDropdown } from 'react-bootstrap';
 import { useFontSize } from './FontSizeContext';
+import { useLanguage, LANGUAGE_NAMES } from './LanguageContext';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAmplifyAuth from './UseAmplifyAuth';
 import { useEffect, useState, useRef } from 'react';
@@ -40,6 +41,7 @@ function App() {
 
   /* Nav config */
   const { fontSize, cycleFontSize } = useFontSize();
+  const { language, setLanguage, t } = useLanguage();
   const auth = useAmplifyAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,21 +96,21 @@ function App() {
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
               <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="me-auto">
-                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>}
-                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
-                <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">Profile</Nav.Link>
-                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
+                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">{t('navbar.home')}</Nav.Link>}
+                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">{t('navbar.about')}</Nav.Link>}
+                <Nav.Link hidden={hideNavs.profile} as={Link} to="/profile">{t('navbar.profile')}</Nav.Link>
+                <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">{t('navbar.createAccount')}</Nav.Link>
                 {/* Headers for the notificatons no login required */}
-                <Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>
-                <Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>
-                <Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>
-                <Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>
-                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
+                <Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">{t('navbar.sponsorNotif')}</Nav.Link>
+                <Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">{t('navbar.driverNotif')}</Nav.Link>
+                <Nav.Link as={Link} to="/sponsor-catalog">{t('navbar.sponsorCatalog')}</Nav.Link>
+                <Nav.Link as={Link} to="/sponsor-application">{t('navbar.sponsorApplication')}</Nav.Link>
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">{t('navbar.myDashboard')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">{t('navbar.catalog')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">{t('navbar.myDashboard')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-catalog">{t('navbar.catalog')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">{t('navbar.myDashboard')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/Catalog">{t('navbar.catalog')}</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 <Button
@@ -120,7 +122,23 @@ function App() {
                 >
                   A {fontSize}%
                 </Button>
-                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
+                <NavDropdown
+                  title={LANGUAGE_NAMES[language]}
+                  id="language-dropdown"
+                  className="me-2"
+                  aria-label={t('navbar.language')}
+                >
+                  {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                    <NavDropdown.Item
+                      key={code}
+                      onClick={() => setLanguage(code)}
+                      active={language === code}
+                    >
+                      {name}
+                    </NavDropdown.Item>
+                  ))}
+                </NavDropdown>
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>{t('navbar.login')}</Nav.Link>}
                 {auth.isAuthenticated &&
                   <div className="d-flex align-items-center">
                     <span className="me-2">{auth.profile?.email}</span>
@@ -135,11 +153,11 @@ function App() {
                       id="profile-dropdown"
                       align="end"
                     >
-                      <NavDropdown.Item as={Link} to="/edit_profile">Edit Profile</NavDropdown.Item>
+                      <NavDropdown.Item as={Link} to="/edit_profile">{t('navbar.editProfile')}</NavDropdown.Item>
                       <NavDropdown.Divider />
-                      <NavDropdown.Item as={Link} to="/AccountManagement">Account Settings</NavDropdown.Item>
+                      <NavDropdown.Item as={Link} to="/AccountManagement">{t('navbar.accountSettings')}</NavDropdown.Item>
                       <NavDropdown.Divider />
-                      <NavDropdown.Item onClick={() => auth.signoutRedirect()}>Logout</NavDropdown.Item>
+                      <NavDropdown.Item onClick={() => auth.signoutRedirect()}>{t('navbar.logout')}</NavDropdown.Item>
                     </NavDropdown>
                   </div>
                 }
@@ -168,7 +186,7 @@ function App() {
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
           <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
-          <Route path="/callback" element={<div>Logging in...</div>} />
+          <Route path="/callback" element={<div>{t('common.loading')}</div>} />
           <Route path="/sponsor-list" element={<SponsorListings />} />
             {
             /* These imbeded routes are a proof of concept. Future versions will autopoulate these sub routes with 
