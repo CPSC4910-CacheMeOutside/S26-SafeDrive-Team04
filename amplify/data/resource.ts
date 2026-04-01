@@ -1,6 +1,4 @@
 import { a, defineData, type ClientSchema} from '@aws-amplify/backend';
-import { Product } from 'aws-cdk-lib/aws-servicecatalog';
-import { id } from 'aws-sdk/clients/datapipeline';
  
 // Create our About Table
 const SafeDriveSchema = a.schema({
