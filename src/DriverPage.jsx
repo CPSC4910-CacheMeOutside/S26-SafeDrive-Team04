@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect} from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchAuthSession, getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -12,8 +13,12 @@ import Badge from "react-bootstrap/Badge";
 function DriverPage() {
   const [driver, setDriver] = useState({
     id: 1,
-    name: "Gabe Hillesheim",
-    email: "gabehillesheim@outlook.com",
+    subId: "",
+    username: "",
+    name: "",
+    email: "",
+    phoneNumber: "",
+    groups: [],
     points: 200,
     sponsors: [
       {
@@ -46,6 +51,44 @@ function DriverPage() {
       }
     ]
   });
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const [session, currentUser, attributes] = await Promise.all([
+          fetchAuthSession(),
+          getCurrentUser(),
+          fetchUserAttributes()
+        ]);
+
+        const idPayload = session.tokens?.idToken?.payload ?? {};
+        const accessPayload = session.tokens?.accessToken?.payload ?? {};
+
+        const groups =
+          idPayload["cognito:groups"] ||
+          accessPayload["cognito:groups"] ||
+          [];
+
+        setDriver((prev) => ({
+          ...prev,
+          subId: idPayload.sub ?? "",
+          username: currentUser.username ?? "",
+          name:
+            attributes.name ||
+            attributes.given_name && attributes.family_name
+              ? `${attributes.given_name ?? ""} ${attributes.family_name ?? ""}`.trim()
+              : "",
+          email: attributes.email ?? "",
+          phoneNumber: attributes.phone_number ?? "",
+          groups
+        }));
+      } catch (error) {
+        console.error("Failed to load Cognito user info:", error);
+      }
+    }
+
+    loadUser();
+  }, []);
 
   const applicationsByStatus = useMemo(() => {
     return {
@@ -85,8 +128,11 @@ function DriverPage() {
             <Card>
               <Card.Body>
                 <Card.Title>My Profile</Card.Title>
-                <p className="mb-2"><strong>Name:</strong> {driver.name}</p>
-                <p className="mb-2"><strong>Email:</strong> {driver.email}</p>
+                <p className="mb-2"><strong>Name:</strong> {driver.name || "Unknown User"}</p>
+                <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
+                <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
+                <p className="mb-2"><strong>Sub ID:</strong> {driver.subId || "Not loaded"}</p>
+                <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
                 <p className="mb-0"><strong>Points:</strong> {driver.points}</p>
               </Card.Body>
             </Card>
@@ -132,7 +178,6 @@ function DriverPage() {
             <Card className="mt-3">
               <Card.Body>
                 <Card.Title>Associated Sponsors</Card.Title>
-
                 {!driver.sponsors.length ? (
                   <div className="text-muted">No sponsors associated yet.</div>
                 ) : (

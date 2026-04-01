@@ -100,7 +100,7 @@ function App() {
                 <Nav.Link hidden={hideNavs.creatPass} as={Link} to="/create_password">Create Account</Nav.Link>
                 {/* Headers for the notificatons no login required */}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
-                <Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>
+                {auth.isAuthenticated && (groups.includes("Driver") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
