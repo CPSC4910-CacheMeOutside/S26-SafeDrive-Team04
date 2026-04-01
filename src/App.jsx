@@ -1,6 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
- 
+import { HiOutlineEnvelope } from "react-icons/hi2"
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
@@ -107,7 +107,14 @@ function App() {
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-list" aria-label="Apply">Apply</Nav.Link>)}
-                {auth.isAuthenticated && (groups.includes("Driver") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>)}
+                {auth.isAuthenticated && (groups.includes("Driver") || groups.includes("Admin")) && (
+                  <Nav.Link 
+                    as={Link} 
+                    to="/driver-notifications" 
+                    aria-label="Driver Notifications"
+                    className="d-flex align-items-center">
+                      <HiOutlineEnvelope size={22}/>
+                    </Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-catalog">Sponsor Catalog</Nav.Link>)}
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
               </Nav>
