@@ -30,23 +30,23 @@ function DriverPage() {
       {
         id: "SPUser3",
         name: "DriversCo",
-        status: "pending",
+        status: "active",
         joinedDate: "2026-03-20"
       }
     ],
     applications: [
       {
         id: "APP1",
-        sponsorId: "SPUser4",
-        sponsorName: "Acme Trucking",
-        status: "pending",
+        sponsorId: "SPUser2",
+        sponsorName: "Get Your Kicks on Rt 66",
+        status: "rejected",
         submittedAt: "2026-03-30"
       },
       {
         id: "APP2",
-        sponsorId: "SPUser5",
-        sponsorName: "Blue Ridge Haul",
-        status: "approved",
+        sponsorId: "SPUser4",
+        sponsorName: "Convoy Boys",
+        status: "pending",
         submittedAt: "2026-03-25"
       }
     ]
@@ -64,6 +64,11 @@ function DriverPage() {
         const idPayload = session.tokens?.idToken?.payload ?? {};
         const accessPayload = session.tokens?.accessToken?.payload ?? {};
 
+        const fullName =
+        attributes.name ||
+        [attributes.given_name, attributes.family_name].filter(Boolean).join(" ") ||
+        "";
+
         const groups =
           idPayload["cognito:groups"] ||
           accessPayload["cognito:groups"] ||
@@ -71,13 +76,8 @@ function DriverPage() {
 
         setDriver((prev) => ({
           ...prev,
-          subId: idPayload.sub ?? "",
           username: currentUser.username ?? "",
-          name:
-            attributes.name ||
-            attributes.given_name && attributes.family_name
-              ? `${attributes.given_name ?? ""} ${attributes.family_name ?? ""}`.trim()
-              : "",
+          fullName,
           email: attributes.email ?? "",
           phoneNumber: attributes.phone_number ?? "",
           groups
@@ -111,13 +111,6 @@ function DriverPage() {
     }
   };
 
-  const withdrawApplication = (applicationId) => {
-    setDriver((prev) => ({
-      ...prev,
-      applications: prev.applications.filter((app) => app.id !== applicationId)
-    }));
-  };
-
   return (
     <Container className="mt-4">
       <div style={{ minHeight: "100vh", padding: "40px" }}>
@@ -128,10 +121,9 @@ function DriverPage() {
             <Card>
               <Card.Body>
                 <Card.Title>My Profile</Card.Title>
-                <p className="mb-2"><strong>Name:</strong> {driver.name || "Unknown User"}</p>
+                <p className="mb-2"><strong>Name:</strong> {driver.fullName || "Unknown User"}</p>
                 <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
                 <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
-                <p className="mb-2"><strong>Sub ID:</strong> {driver.subId || "Not loaded"}</p>
                 <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
                 <p className="mb-0"><strong>Points:</strong> {driver.points}</p>
               </Card.Body>
@@ -232,15 +224,6 @@ function DriverPage() {
                               {app.status}
                             </Badge>
 
-                            {app.status === "pending" && (
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => withdrawApplication(app.id)}
-                              >
-                                Withdraw
-                              </Button>
-                            )}
                           </div>
                         </div>
                       </ListGroup.Item>
