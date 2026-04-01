@@ -13,6 +13,8 @@ import { FontSizeProvider } from './FontSizeContext';
 import { Amplify } from 'aws-amplify';
 import { parseAmplifyConfig } from 'aws-amplify/utils';
 import 'aws-amplify/auth/enable-oauth-listener';
+import { fetchAuthSession } from 'aws-amplify/auth';
+import 'aws-amplify/auth/enable-oauth-listener';
 import outputs from '../amplify_outputs.json';
 
 const amplifyConfig = parseAmplifyConfig(outputs);
@@ -23,14 +25,29 @@ Amplify.configure({
     ...amplifyConfig.API,
     REST: outputs.custom?.API ?? {},
   },
-});
+},
+{
+  API: {
+      REST: {
+        headers: async () => {
+          const session = await fetchAuthSession();
+          const token = session.tokens?.idToken?.toString();
+          return token ? { Authorization: token } : {};
+        },
+      },
+    },
+  }
+);
+
+console.log("REST config:", outputs.custom?.API);
  
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+console.log(outputs);
  
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-        {/* makes the notification additions available throughout the entire app */}
         <FontSizeProvider>
           <NotificationProvider>
             <ConversionRatioProvider>
@@ -44,8 +61,4 @@ root.render(
   </React.StrictMode>
 );
  
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

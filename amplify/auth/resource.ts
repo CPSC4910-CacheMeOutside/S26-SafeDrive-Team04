@@ -1,4 +1,5 @@
 import { defineAuth } from '@aws-amplify/backend';
+import { adminUsersFunction } from '../functions/adminManagementFeat/resource';
 
 export const auth = defineAuth({
   loginWith: {
@@ -22,5 +23,15 @@ export const auth = defineAuth({
     fullname: { required: true, mutable: true },
     phoneNumber: { required: true, mutable: true },
   },
-  groups: ["Admin", "Sponsor", "Driver"],
+  groups: ['Admin', 'Sponsor', 'Driver'],
+  access: (allow) => [
+    allow.resource(adminUsersFunction).to([
+      'listUsers',
+      'getUser',
+      'updateUserAttributes',
+      'listGroupsForUser',
+      'addUserToGroup',
+      'removeUserFromGroup',
+    ]),
+  ],
 });

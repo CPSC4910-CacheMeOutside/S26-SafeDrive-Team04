@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import useAmplifyAuth from "./UseAmplifyAuth";
-import { Form, Button, Container, Row, Col, Image, Alert } from "react-bootstrap";
-import { get, put } from "aws-amplify/api";
-import { updateUserAttributes, fetchUserAttributes } from "aws-amplify/auth";
+import { useState, useEffect } from 'react';
+import useAmplifyAuth from './UseAmplifyAuth';
+import { Form, Button, Container, Row, Col, Image, Alert } from 'react-bootstrap';
+import { get, put } from 'aws-amplify/api';
+import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
+import { useNavigate } from 'react-router-dom';
 
 function EditProfilePage({
   profilePic,
@@ -12,6 +13,7 @@ function EditProfilePage({
 }) {
   console.log("EditProfilePage rendered", { adminView, targetDriverId });
   const auth = useAmplifyAuth();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     authName: "",
@@ -55,12 +57,10 @@ function EditProfilePage({
         console.log("token issuer:", auth.profile?.iss);
 
         const restOperation = get({
-          apiName: "adminApi",
+          apiName: "SafeDriveAPI",
           path: `/admin/drivers/${encodeURIComponent(targetDriverId)}`,
           options: {
-            headers: {
-              Authorization: auth.idToken
-            }
+            headers: {Authorization: auth.idToken}
           }
         });
 
@@ -150,7 +150,7 @@ function EditProfilePage({
       }
 
       const restOperation = put({
-        apiName: "adminApi",
+        apiName: "SafeDriveAPI",
         path: `/admin/drivers/${encodeURIComponent(targetDriverId)}`,
         options: {
           headers: {
@@ -178,9 +178,9 @@ function EditProfilePage({
 
   return (
     <Container className="mt-4">
-      <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
-        <h1><strong>Edit Profile</strong></h1>
-
+      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{adminView ? "Edit Driver Account" : "Edit Profile"}</h1>
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         {adminView && (
           <Alert variant="warning">
             Admin View: You are editing driver account {targetDriverId}
@@ -191,7 +191,7 @@ function EditProfilePage({
           <div>Loading profile...</div>
         ) : (
           <Form onSubmit={handleSubmit}>
-            <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
+            <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
               <Form.Group as={Row} className="mb-3">
                 <Form.Label column sm={3}>Full Name:</Form.Label>
                 <Col sm={6}>
@@ -270,11 +270,12 @@ function EditProfilePage({
                   )}
                 </Col>
               </Form.Group>
-
-              <Button type="submit">Save Changes</Button>
+              <Button style={{ width: "160px", height: "50px" }} variant="secondary" className="me-2" onClick={() => navigate("/AdminPage")}>Exit</Button>
+              <Button style={{ width: "160px", height: "50px" }} type="submit">Save Changes</Button>
             </div>
           </Form>
         )}
+        </div>
       </div>
     </Container>
   );

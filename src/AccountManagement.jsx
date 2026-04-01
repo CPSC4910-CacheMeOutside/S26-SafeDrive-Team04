@@ -1,8 +1,10 @@
 import { CognitoIdentityProviderClient, DeleteUserCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { fetchAuthSession, signOut } from 'aws-amplify/auth';
 import { Container, Form, Row, Col, Button } from 'react-bootstrap';
+import { useFontSize } from './FontSizeContext';
 
 export default function AccountManagement() {
+  const { fontSize, cycleFontSize } = useFontSize();
   const deleteUser = async ({ region, accessToken }) => {
     const client = new CognitoIdentityProviderClient({ region });
     return client.send(new DeleteUserCommand({ AccessToken: accessToken }));
@@ -35,24 +37,40 @@ export default function AccountManagement() {
 
   return (
     <Container className="mt-4">
-      <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
-      <h1><strong>Account Settings</strong></h1>
+      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+      <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Account Settings</h1>
+      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
 
       <Form className="mt-5">
-        <div style={{ position: "relative", minHeight: "100vh", padding: "30px" }}>
           <Form.Group as={Row} className="mb-3 align-items-center">
+            <Form.Label column sm={3}>
+              Adjust Text Size:
+            </Form.Label>
+            <Col sm={6}>
+              <Button
+                style={{ width: "180px", height: "50px" }}
+                variant="outline-secondary"
+                size="sm"
+                onClick={cycleFontSize}
+                aria-label={`Text size ${fontSize}%. Click to increase.`}
+                className="me-2">
+                  A {fontSize}%
+              </Button>
+            </Col>
+          </Form.Group>
+
+          <Form.Group as={Row} className="mt-5 align-items-center">
             <Form.Label column sm={3}>
               Delete Account:
             </Form.Label>
-
             <Col sm={6}>
-              <Button variant="danger" onClick={handleDeleteAccount}>
+              <Button style={{ padding: "10px 16px", fontSize: "inherit" }} variant="danger" onClick={handleDeleteAccount}>
                 DELETE MY ACCOUNT
               </Button>
             </Col>
           </Form.Group>
-        </div>
       </Form>
+      </div>
       </div>
     </Container>
   );
