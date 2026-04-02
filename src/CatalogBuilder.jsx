@@ -1,19 +1,23 @@
 import { use, useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
+import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import { getProducts, PalatziQueryStruct } from './catalog/store-api';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 import { useLanguage } from './LanguageContext';
+import useAmplifyAuth from './UseAmplifyAuth';
 
-const testSponsorId = 7;
-
-export default function CatalogBuilder({view}) {
+export default function CatalogBuilder(sponsorId) {
 
     const { t } = useLanguage();
 
     // Client used to add products to the backend catalog
     const client = generateClient();
+    const auth = useAmplifyAuth();
+
+    // The sponsor's user data pulled upon first opening the page
+    const [sponsorUser, setSponsorUser] = useState(NULL);
 
     // Modal to display filtering options
     const[showFilter, setShowFilter] = useState(false);
@@ -28,6 +32,28 @@ export default function CatalogBuilder({view}) {
     
     // Load in the page. Contact the store api first
     useEffect(() => {
+
+        function getAmpData() {
+            
+        }
+
+        function loadSponsorData() {
+            // Confirm user is logged in and is sponsor
+            if (auth.isLoading) return;
+            if (!auth.isAuthenticated) return;
+            if (auth.groups != "Sponsor") return;
+
+            const cogAttr = fetchUserAttributes();
+            setSponsorUser({
+                first: str.split(cogAttr.name)[0],
+                last: str.split(cogAttr.name)[1],
+                subId: cogAttr.sub
+
+            })
+
+
+        }
+
         loadProducts();
         console.log("Filters have been updated to: ", filter);
     }, [filter]);
