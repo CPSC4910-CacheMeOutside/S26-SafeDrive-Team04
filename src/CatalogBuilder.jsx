@@ -41,13 +41,14 @@ export default function CatalogBuilder(sponsorId) {
                 return;
             }
 
+            console.log(`Sponsor Data Retrieved from Database: `, sponsor)
             return sponsor;
         }
 
         async function getCog() {
             try {
                 const cogAttr = await fetchUserAttributes(); 
-                console.log(`Sponsor Data Retrieved: `, cogAttr);
+                console.log(`Sponsor Data Retrieved from Cognito: `, cogAttr);
                 return cogAttr;
             } catch(err) {
                 console.log(`Error: Failed to retrive sponsor id:${sponsorId} from Cognito: `, err);
