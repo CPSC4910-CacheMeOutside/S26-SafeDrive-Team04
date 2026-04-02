@@ -1,12 +1,12 @@
 import { use, useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
+import useAmplifyAuth from './UseAmplifyAuth';
 import { getProducts, PalatziQueryStruct } from './catalog/store-api';
+import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 import { useLanguage } from './LanguageContext';
-
-const testSponsorId = 7;
 
 export default function CatalogBuilder(sponsorId) {
 
@@ -14,8 +14,10 @@ export default function CatalogBuilder(sponsorId) {
 
     // Client used to add products to the backend catalog
     const client = generateClient();
+    // Client use to contact Cognito
+    const auth = useAmplifyAuth();
     // The sponsor's data
-    const [sponsoredUser, setSponsoredUser] = useState(NULL);
+    const [sponsoredUser, setSponsoredUser] = useState(null);
 
     // Modal to display filtering options
     const[showFilter, setShowFilter] = useState(false);
