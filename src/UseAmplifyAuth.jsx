@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getAmplifyAuthState, signInWithRedirect, signOut } from './AmplifyAuth';
+import { getAmplifyAuthState, signInWithRedirect, signupRedirect, signOut } from './AmplifyAuth';
 
 export default function useAmplifyAuth() {
   const [auth, setAuth] = useState({
@@ -25,7 +25,8 @@ export default function useAmplifyAuth() {
   return {
     ...auth,
     refreshAuth,
-    signinRedirect: () => signInWithRedirect(),
+    signinRedirect: (options = {}) => signInWithRedirect(options),
+    signupRedirect: () => signupRedirect(),
     signoutRedirect: () => signOut(),
   };
 }

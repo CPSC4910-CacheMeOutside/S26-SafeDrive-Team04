@@ -6,17 +6,14 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
 import { Button, NavDropdown } from 'react-bootstrap';
-import { useFontSize } from './FontSizeContext';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAmplifyAuth from './UseAmplifyAuth';
 import { useEffect, useState, useRef } from 'react';
 
 import HomePage from './Home'
 import AboutPage from './About'
-import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
 import AdminAccountTakeover from './AdminAccountTakeover';
-import CreatePassword from './create_password';
 import LoginPage from './LoginPage';
 import AccountManagement from './AccountManagement';
 import SponsorPage from './SponsorPage';
@@ -39,7 +36,6 @@ import UpdateAbout from './UpdateAbout';
 function App() {
 
   /* Nav config */
-  const { fontSize, cycleFontSize } = useFontSize();
   const auth = useAmplifyAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,9 +50,7 @@ function App() {
   const hideNavs = {
     home: false,
     about: false,
-    profile: true,
     login: false,
-    creatPass: true
   }
 
   // after a successful login, redirects users to their dashboard based on their group role (admin, driver, or sponsor)
@@ -88,9 +82,12 @@ function App() {
 
   return (
     <div className="App">
-        <Navbar expand="lg" className="bg-body-tertiary">
-          <Container>
-              <Navbar.Brand href="#home">Safe Drive</Navbar.Brand>
+        <Navbar expand="lg" className="custom-navbar" variant="dark">
+          <Container fluid>
+              {!auth.isAuthenticated && (<Navbar.Brand href="#home">Safe Drive</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Admin") && (<Navbar.Brand href="#home">Safe Drive (Admin)</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Driver") && (<Navbar.Brand href="#home">Safe Drive (Driver)</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Sponsor") && (<Navbar.Brand href="#home">Safe Drive (Sponsor)</Navbar.Brand>)}
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
               <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="me-auto">
@@ -118,19 +115,11 @@ function App() {
                 {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
               </Nav>
               <Nav className="ms-auto align-items-center">
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={cycleFontSize}
-                  aria-label={`Text size ${fontSize}%. Click to increase.`}
-                  className="me-2"
-                >
-                  A {fontSize}%
-                </Button>
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>Sign Up</Nav.Link>}
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
                 {auth.isAuthenticated &&
-                  <div className="d-flex align-items-center">
-                    <span className="me-2">{auth.profile?.email}</span>
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="me-2" style={{ fontSize: "18px", color: "#d1d5db" }}>{auth.profile?.email}</span>
                     <NavDropdown
                       title={
                         <Image
@@ -159,10 +148,8 @@ function App() {
           <Route path="/" element={<HomePage />}/>
           <Route path="/about" element={<AboutPage />}/>
           <Route path="/updateAbout" element={<UpdateAbout />}/>
-          <Route path="/profile" element={<ProfilePage />}/>
           <Route path="/AdminPage" element={<AdminPage />}/>
           <Route path="/admin/drivers/:driverId/edit" element={<AdminAccountTakeover />} />
-          <Route path="/create_password" element={<CreatePassword />}/>
           <Route path="/login" element={<LoginPage />}/>
           <Route path="/AccountManagement" element={<AccountManagement />}/>
           <Route path="/SponsorPage" element={<SponsorPage />}/>

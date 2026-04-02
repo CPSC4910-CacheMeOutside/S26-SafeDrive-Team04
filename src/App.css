@@ -1,7 +1,10 @@
+html, body, #root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
   text-align: center;
 }
 
@@ -47,9 +50,95 @@
   left: 0;
   width: 100%;
   z-index: 1000;
-  min-height: 60px;
-  height: auto;
+  min-height: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 15px 20px;
 }
+
+.custom-navbar {
+  background-color: #1f2937;
+}
+
+.custom-navbar .navbar-brand {
+  color: white;
+}
+
+.custom-navbar .nav-link {
+  color: #d1d5db;
+}
+
+.custom-navbar .nav-link:hover {
+  color: #3b82f6;
+}
+
+.navbar img {
+  height: 50px;
+  width: 50px;
+  object-fit: cover;
+}
+
+.navbar-nav {
+  flex-wrap: nowrap;
+}
+
+.navbar .nav-link,
+.navbar {
+    line-height: 1;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.navbar .nav-link {
+    font-size: 18px;
+}
+
+.navbar .dropdown-item {
+  font-size: 18px;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.truckAnim2 {
+  position: absolute;
+  bottom: 598px;
+  left: -300px;
+  width: 260px;
+  animation: drive 22s ease-in-out infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@keyframes drive {
+  0% { left: -270px; }
+  36.36% { left: 25%; }
+  63.63% { left: 25%; }
+  100% { left: 100%; }
+}
+
+.glow-button {
+  box-shadow: none;
+  animation: glowSync 22s ease-in-out infinite;
+  animation-delay: 0;
+}
+
+.glow-button:hover {
+  box-shadow: 0 0 35px rgba(16, 185, 129, 1);
+}
+
+@keyframes glowSync {
+  0%, 36% {box-shadow: none;}
+  36.36% {box-shadow: 0 0 5px rgba(16, 185, 129, 0.4);}
+  42% {box-shadow: 0 0 25px rgba(16, 185, 129, 1);}
+  47% {box-shadow: 0 0 5px rgba(16, 185, 129, 0.4);}
+  52% {box-shadow: 0 0 25px rgba(16, 185, 129, 1);}
+  57% {box-shadow: 0 0 5px rgba(16, 185, 129, 0.4);}
+  60% {box-shadow: 0 0 25px rgba(16, 185, 129, 1);}
+  63.63% {box-shadow: 0 0 5px rgba(16, 185, 129, 0.4);}
+  63.64%, 100% {box-shadow: none;}
+}
+

@@ -1,17 +1,57 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import {
   CognitoIdentityProviderClient,
+  ListUsersCommand,
+  ListUsersInGroupCommand,
+  AdminListGroupsForUserCommand,
+  AdminAddUserToGroupCommand,
+  AdminRemoveUserFromGroupCommand,
   AdminGetUserCommand,
   AdminUpdateUserAttributesCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 
 const cognito = new CognitoIdentityProviderClient({});
 
+const APP_GROUPS = ['Admin', 'Driver', 'Sponsor'] as const;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': '*',
   'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
 };
+
+function getClaims(event: any) {
+  return (
+    (event.requestContext as any)?.authorizer?.claims ??
+    (event.requestContext as any)?.authorizer?.jwt?.claims ??
+    {}
+  );
+}
+
+function getUserGroupsFromClaims(event: any): string[] {
+  const claims = getClaims(event);
+  const rawGroups = claims['cognito:groups'];
+
+  if (Array.isArray(rawGroups)) return rawGroups;
+  if (typeof rawGroups === 'string') {
+    return rawGroups
+      .split(',')
+      .map((g: string) => g.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function isAdmin(event: any): boolean {
+  return getUserGroupsFromClaims(event).includes('Admin');
+}
+
+function getAttributesMap(attributes?: { Name?: string; Value?: string }[]) {
+  return Object.fromEntries(
+    (attributes ?? []).map((a) => [a.Name ?? '', a.Value ?? ''])
+  );
+}
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
@@ -23,11 +63,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const claims = (event.requestContext as any)?.authorizer?.claims ?? (event.requestContext as any)?.authorizer?.jwt?.claims ?? {};
-    const rawGroups = claims['cognito:groups'];
-    const groups = Array.isArray(rawGroups) ? rawGroups : typeof rawGroups === 'string' ? rawGroups.split(',').map((g: string) => g.trim()).filter(Boolean) : [];
-
-    if (!groups.includes('Admin')) {
+    if (!isAdmin(event)) {
       return {
         statusCode: 403,
         headers: corsHeaders,
@@ -36,27 +72,166 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     const userPoolId = process.env.USER_POOL_ID;
-    const driverId = event.pathParameters?.driverId;
 
-    if (!userPoolId || !driverId) {
+    if (!userPoolId) {
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ message: 'Missing USER_POOL_ID or driverId' }),
+        body: JSON.stringify({ message: 'Missing USER_POOL_ID' }),
       };
     }
 
-    if (event.httpMethod === 'GET') {
+    const path = event.path || '';
+    const username = event.pathParameters?.username || event.pathParameters?.driverId;
+    const groupname = event.pathParameters?.groupname;
+
+    if (event.httpMethod === 'GET' && path.endsWith('/admin/users/unassigned')) {
       const result = await cognito.send(
-        new AdminGetUserCommand({
+        new ListUsersCommand({
           UserPoolId: userPoolId,
-          Username: driverId,
+          Limit: 60,
         })
       );
 
-      const attrs = Object.fromEntries(
-        (result.UserAttributes ?? []).map((a) => [a.Name!, a.Value ?? ''])
+      const users = result.Users ?? [];
+
+      const enrichedUsers = await Promise.all(
+        users.map(async (user) => {
+          const cognitoUsername = user.Username ?? '';
+
+          const groupsResult = await cognito.send(
+            new AdminListGroupsForUserCommand({
+              UserPoolId: userPoolId,
+              Username: cognitoUsername,
+            })
+          );
+
+          const groupNames = (groupsResult.Groups ?? [])
+            .map((g) => g.GroupName)
+            .filter(Boolean) as string[];
+
+          const appGroups = groupNames.filter((g) =>
+            APP_GROUPS.includes(g as (typeof APP_GROUPS)[number])
+          );
+
+          const attrs = getAttributesMap(user.Attributes);
+
+          return {
+            username: cognitoUsername,
+            email: attrs.email ?? '',
+            name: attrs.name ?? '',
+            preferred_username: attrs.preferred_username ?? '',
+            nickname: attrs.nickname ?? '',
+            phone_number: attrs.phone_number ?? '',
+            status: user.UserStatus ?? '',
+            enabled: user.Enabled ?? false,
+            groups: appGroups,
+          };
+        })
       );
+
+      const unassignedUsers = enrichedUsers.filter((user) => user.groups.length === 0);
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify(unassignedUsers),
+      };
+    }
+
+    if (event.httpMethod === 'GET' && path.includes('/admin/users/group/') && groupname) {
+        const result = await cognito.send(new ListUsersInGroupCommand({UserPoolId: userPoolId, GroupName: groupname, Limit: 60,}));
+        const users = (result.Users ?? []).map((user) => {
+          const attrs = getAttributesMap(user.Attributes);
+
+          return {
+            username: user.Username ?? '',
+            email: attrs.email ?? '',
+            name: attrs.name ?? '',
+            preferred_username: attrs.preferred_username ?? '',
+            nickname: attrs.nickname ?? '',
+            phone_number: attrs.phone_number ?? '',
+            enabled: user.Enabled ?? false,
+            status: user.UserStatus ?? '',
+            groups: [groupname],
+          };
+        });
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify(users),
+  };
+}
+
+    if (event.httpMethod === 'PUT' && path.endsWith('/group')) {
+      if (!username) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing username' }),
+        };
+      }
+
+      const body = JSON.parse(event.body || '{}');
+      const groupName = body.groupName;
+
+      if (!groupName || !APP_GROUPS.includes(groupName)) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            message: 'groupName must be one of Admin, Driver, Sponsor',
+          }),
+        };
+      }
+
+      const existingGroups = await cognito.send(
+        new AdminListGroupsForUserCommand({
+          UserPoolId: userPoolId,
+          Username: username,
+        })
+      );
+
+      for (const group of existingGroups.Groups ?? []) {
+        const existingGroupName = group.GroupName;
+        if (existingGroupName && APP_GROUPS.includes(existingGroupName as any)) {
+          await cognito.send(
+            new AdminRemoveUserFromGroupCommand({
+              UserPoolId: userPoolId,
+              Username: username,
+              GroupName: existingGroupName,
+            })
+          );
+        }
+      }
+
+      await cognito.send(
+        new AdminAddUserToGroupCommand({
+          UserPoolId: userPoolId,
+          Username: username,
+          GroupName: groupName,
+        })
+      );
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: `${username} assigned to ${groupName}`,
+        }),
+      };
+    }
+
+    if (event.httpMethod === 'GET' && username) {
+      const result = await cognito.send(
+        new AdminGetUserCommand({
+          UserPoolId: userPoolId,
+          Username: username,
+        })
+      );
+
+      const attrs = getAttributesMap(result.UserAttributes);
 
       return {
         statusCode: 200,
@@ -70,7 +245,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    if (event.httpMethod === 'PUT') {
+    if (event.httpMethod === 'PUT' && username) {
       const body = JSON.parse(event.body || '{}');
 
       const updates = [
@@ -93,7 +268,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       await cognito.send(
         new AdminUpdateUserAttributesCommand({
           UserPoolId: userPoolId,
-          Username: driverId,
+          Username: username,
           UserAttributes: updates,
         })
       );
@@ -101,7 +276,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ message: 'Driver updated successfully' }),
+        body: JSON.stringify({ message: 'User updated successfully' }),
       };
     }
 
