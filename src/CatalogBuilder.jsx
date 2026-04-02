@@ -1,12 +1,12 @@
 import { use, useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
-import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import { getProducts, PalatziQueryStruct } from './catalog/store-api';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
     Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
 import { useLanguage } from './LanguageContext';
-import useAmplifyAuth from './UseAmplifyAuth';
+
+const testSponsorId = 7;
 
 export default function CatalogBuilder(sponsorId) {
 
@@ -14,10 +14,8 @@ export default function CatalogBuilder(sponsorId) {
 
     // Client used to add products to the backend catalog
     const client = generateClient();
-    const auth = useAmplifyAuth();
-
-    // The sponsor's user data pulled upon first opening the page
-    const [sponsorUser, setSponsorUser] = useState(NULL);
+    // The sponsor's data
+    const [sponsoredUser, setSponsoredUser] = useState(NULL);
 
     // Modal to display filtering options
     const[showFilter, setShowFilter] = useState(false);
@@ -30,30 +28,51 @@ export default function CatalogBuilder(sponsorId) {
     const [pName, updatePName] = useState('');
     const [perPage, updatePerPage] = useState(10);
     
-    // Load in the page. Contact the store api first
+    // Load in the page. Contact the store api first and load the sponsor's data
     useEffect(() => {
 
-        function getAmpData() {
-            
+        async function getAmpData() {
+            const { data: sponsor, errors } = await client.models.Sponsor.get({
+                sponsorId: sponsorId
+            });
+
+            if (errors) {
+                console.log(`Error: Failed to retrieve sponsor id:${sponsorId} from Amplify Data: `, err);
+                return;
+            }
+
+            return sponsor;
         }
 
-        function loadSponsorData() {
+        async function getCog() {
+            try {
+                const cogAttr = await fetchUserAttributes(); 
+                console.log(`Sponsor Data Retrieved: `, cogAttr);
+                return cogAttr;
+            } catch(err) {
+                console.log(`Error: Failed to retrive sponsor id:${sponsorId} from Cognito: `, err);
+                return;
+            }
+        }
+
+        async function loadSponsorData() {
             // Confirm user is logged in and is sponsor
             if (auth.isLoading) return;
             if (!auth.isAuthenticated) return;
             if (auth.groups != "Sponsor") return;
 
-            const cogAttr = fetchUserAttributes();
-            setSponsorUser({
-                first: str.split(cogAttr.name)[0],
-                last: str.split(cogAttr.name)[1],
-                subId: cogAttr.sub
+            // Get the sponsored user's data
+            const cogData = await getCog();
+            const dbData = await getAmpData();
 
+            // Populate the sponsor data into the 
+            setSponsoredUser({
+                first: str.split(cogData.name)[0],
+                last: str.split(cogData.name)[1]
             })
-
-
         }
 
+        loadSponsorData();
         loadProducts();
         console.log("Filters have been updated to: ", filter);
     }, [filter]);
