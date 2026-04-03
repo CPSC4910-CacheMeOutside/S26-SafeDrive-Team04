@@ -60,9 +60,18 @@ export default function CatalogBuilder(sponsorId) {
 
         async function loadSponsorData() {
             // Confirm user is logged in and is sponsor
-            if (auth.isLoading) return;
-            if (!auth.isAuthenticated) return;
-            if (!auth.groups?.includes("Sponsor")) return;
+            if (auth.isLoading) {
+                console.log("Error: Aborting user load. Auth is still loading");
+                return;
+            }
+            if (!auth.isAuthenticated) {
+                console.log("Error: Aborting user load. User is not authenticated");
+                return;
+            }
+            if (!auth.groups?.includes("Sponsor")) {
+                console.log("Error: Aborting user load. User is not a sponsor");
+                return;
+            };
 
             // Get the sponsored user's data
             const cogData = await getCog();
