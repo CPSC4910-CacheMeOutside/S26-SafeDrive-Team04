@@ -12,12 +12,10 @@ import Form from "react-bootstrap/Form";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 
-const client = generateClient();
-
-
 function SponsorPage() {
     const navigate = useNavigate;
     const auth = useAuth();
+    const client = generateClient();
     const { t } = useLanguage();
 
     const [drivers, setDrivers] = useState([]);
