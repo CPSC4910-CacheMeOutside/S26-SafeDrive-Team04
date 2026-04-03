@@ -14,7 +14,7 @@ export default function CatalogBuilder(sponsorId) {
 
     // Client used to add products to the backend catalog
     const client = generateClient();
-    // Client use to contact Cognito
+
     const auth = useAmplifyAuth();
     // The sponsor's data
     const [sponsoredUser, setSponsoredUser] = useState(null);
@@ -31,7 +31,7 @@ export default function CatalogBuilder(sponsorId) {
     const [perPage, updatePerPage] = useState(10);
     
     // Load in the page. Contact the store api first and load the sponsor's data
-    useEffect(() => {
+    useEffect(() => {        
 
         async function getAmpData() {
             const { data: sponsor, errors } = await client.models.Sponsor.get({
@@ -39,7 +39,7 @@ export default function CatalogBuilder(sponsorId) {
             });
 
             if (errors) {
-                console.log(`Error: Failed to retrieve sponsor id:${sponsorId} from Amplify Data: `, err);
+                console.log(`Error: Failed to retrieve sponsor id:${sponsorId} from Amplify Data: `, errors);
                 return;
             }
 
@@ -62,7 +62,7 @@ export default function CatalogBuilder(sponsorId) {
             // Confirm user is logged in and is sponsor
             if (auth.isLoading) return;
             if (!auth.isAuthenticated) return;
-            if (auth.groups != "Sponsor") return;
+            if (!auth.groups?.includes("Sponsor")) return;
 
             // Get the sponsored user's data
             const cogData = await getCog();
@@ -70,15 +70,15 @@ export default function CatalogBuilder(sponsorId) {
 
             // Populate the sponsor data into the 
             setSponsoredUser({
-                first: str.split(cogData.name)[0],
-                last: str.split(cogData.name)[1]
+                first: cogData.name.split(" ")[0],
+                last: cogData.name.split(" ")[1]
             })
         }
 
         loadSponsorData();
         loadProducts();
         console.log("Filters have been updated to: ", filter);
-    }, [filter]);
+    }, [filter, auth.isLoading, auth.isAuthenticated, auth.groups]);
 
     // Applies the staged title change
     function applyPName () {
