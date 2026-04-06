@@ -182,6 +182,26 @@ const SafeDriveSchema = a.schema({
     product: a.belongsTo("Product", "pId")
   }).identifier(['wishId', 'pId'])
   .authorization(allow => [allow.publicApiKey()]),
+
+  Order : a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    time: a.string().required(),
+    status: a.integer().required(),
+
+    products: a.hasMany("OrderProduct", ['driverId', 'sponsorId'])
+
+  }).identifier(["sponsorId", "driverId"])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  OrderProduct : a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    order: a.belongsTo("Order", ["driverId", "sponsorId"]),
+    pId: a.id().required(),
+    product: a.belongsTo("Product", "pId")
+  }).identifier(['driverId', 'sponsorId', 'pId'])
+  .authorization(allow => [allow.publicApiKey()]),
  
   Product: a.model({
     pId: a.id().required(),
@@ -194,7 +214,8 @@ const SafeDriveSchema = a.schema({
 
     carts: a.hasMany("CartProduct", "pId"),
     wishlists: a.hasMany("WishlistProduct", "pId"),
-    catalogs: a.hasMany("CatalogProduct", "pId")
+    catalogs: a.hasMany("CatalogProduct", "pId"),
+    orders: a.hasMany("OrderProduct", "pId")
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
 
