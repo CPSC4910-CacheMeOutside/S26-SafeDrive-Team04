@@ -33,13 +33,16 @@ export default function CatalogBuilder(sponsorId) {
     // Load in the page. Contact the store api first and load the sponsor's data
     useEffect(() => {        
 
-        async function getAmpData() {
+        async function getAmpData(sId) {
             const { data: sponsor, errors } = await client.models.Sponsor.get({
-                sponsorId: sponsorId
+                sponsorId: sId
             });
 
             if (errors) {
-                console.log(`Error: Failed to retrieve sponsor id:${sponsorId} from Amplify Data: `, errors);
+                console.log(`Error: Failed to retrieve sponsor id:${sId} from Amplify Data: `, errors);
+                return;
+            } else if (sponsor === null) {
+                console.log(`Error: No sponsor of id:${sId} found in database`);
                 return;
             }
 
@@ -75,12 +78,13 @@ export default function CatalogBuilder(sponsorId) {
 
             // Get the sponsored user's data
             const cogData = await getCog();
-            const dbData = await getAmpData();
+            const dbData = await getAmpData(cogData.sub);
 
             // Populate the sponsor data into the 
             setSponsoredUser({
                 first: cogData.name.split(" ")[0],
-                last: cogData.name.split(" ")[1]
+                last: cogData.name.split(" ")[1],
+                
             })
         }
 
