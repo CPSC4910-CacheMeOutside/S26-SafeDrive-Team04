@@ -51,7 +51,7 @@ const adminApi = new RestApi(apiStack, 'AdminRestApi', {
     stageName: 'dev',
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: ['http://localhost:5173', 'https://dev.d2jawpaet8g6c9.amplifyapp.com/', 'https://newUsers.d2jawpaet8g6c9.amplifyapp.com/'],
+    allowOrigins: ['http://localhost:5173', 'https://dev.d2jawpaet8g6c9.amplifyapp.com/', 'https://newusers.d2jawpaet8g6c9.amplifyapp.com/'],
     allowMethods: Cors.ALL_METHODS,
     allowHeaders: [
       'Content-Type',
@@ -67,7 +67,7 @@ new GatewayResponse(apiStack, 'Default4xxGatewayResponse', {
   restApi: adminApi,
   type: ResponseType.DEFAULT_4XX,
   responseHeaders: {
-    'Access-Control-Allow-Origin': "'http://localhost:5173', 'https://dev.d2jawpaet8g6c9.amplifyapp.com/', 'https://newUsers.d2jawpaet8g6c9.amplifyapp.com/'",
+    'Access-Control-Allow-Origin': "'http://localhost:5173', 'https://dev.d2jawpaet8g6c9.amplifyapp.com/', 'https://newusers.d2jawpaet8g6c9.amplifyapp.com/'",
     'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
     'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
   },
@@ -77,7 +77,7 @@ new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
   restApi: adminApi,
   type: ResponseType.DEFAULT_5XX,
   responseHeaders: {
-    'Access-Control-Allow-Origin': "'http://localhost:5173', 'https://dev.d2jawpaet8g6c9.amplifyapp.com/', 'https://newUsers.d2jawpaet8g6c9.amplifyapp.com/'",
+    'Access-Control-Allow-Origin': "'http://localhost:5173', 'https://dev.d2jawpaet8g6c9.amplifyapp.com/', 'https://newusers.d2jawpaet8g6c9.amplifyapp.com/'",
     'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
     'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
   },
