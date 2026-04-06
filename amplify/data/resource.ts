@@ -12,23 +12,10 @@ const SafeDriveSchema = a.schema({
     desc: a.string()
   }).identifier(['sprintNo'])
   .authorization(allow => [allow.publicApiKey()]),
-
-  // A user in the SafeDrive application
-  User: a.model({
-    userId: a.id(),
-    // An id to the user's corrosponding entry in Cognito
-    subId: a.id(),
-    first: a.string(),
-    last: a.string(),
-    email: a.string(),
-    phone: a.string()
-  }).identifier(['userId'])
-  .authorization(allow => [allow.publicApiKey()]),
  
   // A admin class user
   Admin: a.model({
     adminId: a.id().required(),
-    userId: a.id()
   }).identifier(['adminId'])
   .authorization(allow => [
     allow.groups(['Admin'])
@@ -37,7 +24,6 @@ const SafeDriveSchema = a.schema({
   // A sponsor class user
   Sponsor: a.model({
     sponsorId: a.id().required(),
-    userId: a.id(),
     affiliation: a.string(),
 
     drivers: a.hasMany("DriverSponsor", 'sponsorId'),
@@ -90,7 +76,6 @@ const SafeDriveSchema = a.schema({
   // A driver class user
   Driver: a.model({
     driverId: a.id().required(),
-    userId: a.id(),
     licenseNo: a.string(),
     state: a.string(),
     expDate: a.string(),
