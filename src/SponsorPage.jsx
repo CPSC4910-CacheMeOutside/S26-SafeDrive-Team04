@@ -6,6 +6,7 @@ import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
+import useAmplifyAuth from './UseAmplifyAuth';
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
@@ -14,7 +15,7 @@ import Tab from "react-bootstrap/Tab";
 
 function SponsorPage() {
     const navigate = useNavigate;
-    const auth = useAuth();
+    const auth = useAmplifyAuth();
     const client = generateClient();
     const { t } = useLanguage();
 
