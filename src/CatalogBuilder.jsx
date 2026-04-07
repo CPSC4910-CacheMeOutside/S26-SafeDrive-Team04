@@ -80,12 +80,13 @@ export default function CatalogBuilder(sponsorId) {
             const cogData = await getCog();
             const dbData = await getAmpData(cogData.sub);
 
-            // Populate the sponsor data into the 
-            setSponsoredUser({
-                first: cogData.name.split(" ")[0],
-                last: cogData.name.split(" ")[1],
-                
-            })
+            // Populate the sponsor data into the state
+            const userData = {
+                id: cogData.sponsorId,
+                drivers: await dbData.drivers()
+            }
+
+            setSponsoredUser(userData)
         }
 
         loadSponsorData();

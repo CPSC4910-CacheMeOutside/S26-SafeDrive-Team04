@@ -93,7 +93,8 @@ const SafeDriveSchema = a.schema({
   .authorization(allow => [
     allow.groups(['Admin']),
     allow.groups(['Sponsor']),
-    allow.groups(['Driver'])
+    allow.groups(['Driver']),
+    allow.publicApiKey()
   ]),
 
   Catalog: a.model({
