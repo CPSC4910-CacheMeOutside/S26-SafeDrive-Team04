@@ -344,6 +344,10 @@ export default function CatalogBuilder(sponsorId) {
 
     function UpdateCatalogButton({product}) {
 
+        useEffect(() => {
+            
+        })
+
         if (product.inCatalog) {
             return (<span onClick={ () => {removeProduct(product.pId);
             }} className="btn btn-danger">{t('catalog.remove')}</span>);
