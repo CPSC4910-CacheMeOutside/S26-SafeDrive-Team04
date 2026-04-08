@@ -90,6 +90,7 @@ export default function CatalogBuilder(sponsorId) {
         }
 
         loadSponsorData();
+        console.log("Sponsor has been update to the following object: ", sponsoredUser);
         loadProducts();
         console.log("Filters have been updated to: ", filter);
     }, [filter, auth.isLoading, auth.isAuthenticated, auth.groups]);
@@ -127,13 +128,63 @@ export default function CatalogBuilder(sponsorId) {
     }
 
     // Add the product to the sponsor's catalog
-    async function addProduct(prodId) {
-        
+    async function addProduct(product) {
+        // Add product to catalog
+        const { data: dbProduct, pErrors } = await client.models.Product.create({
+            pId: product.pId,
+            title: product.title,
+            imgs: product.imgs,
+            synop: product.synop,
+            catagory: product.catagory,
+            price: product.price,
+            available: true,
+        })
+
+        if (pErrors) {
+            console.log("Error: Failed to create product: ", pErrors);
+            return;
+        } else if (dbProduct === null) {
+            console.log("Error: Failed to create product: Null was created");
+            return;
+        }
+        // Create the catalog assignment
+        for (const dr of sponsoredUser.drivers) {
+            const { data: assignment, aErrors } = await client.models.CatalogProduct.create({
+                pId: dbProduct.pId,
+                sponsorId: sponsoredUser.sponsorId,
+                driverId: dr.driverId
+            });
+
+            if (aErrors) {
+                console.log(`Error: Could not assign product:${product.pId} to driver:${dr.driverId}: "`, aErrors);
+                return;
+            } else if (assignment === null) {
+                console.log(`Error: Could not assign product:${product.pId} to driver:${dr.driverId}: Created null"`);
+                return;
+            }
+        };
+        console.log(`Added product:${dbProduct.pId} to sponsor:${sponsoredUser.sponsorId} catalog`);
     }
 
     // Remove an item from the catalog
-    async function removeProduct(prodId) {
-        
+    async function removeProduct(product) {
+        for (const dr of sponsoredUser.drivers) {
+            const { data: deletedAssignment, aErrors } = await client.models.CatalogProduct.delete({
+                pId: product.pId,
+                sponsorId: sponsoredUser.sponsorId,
+                driverId: dr.driverId
+            });
+
+            if (aErrors) {
+                console.log("Error: Could not delete assignment: ", aErrors);
+                return;
+            } else if (deletedAssignment === null) {
+                console.log("Error: Could not delete assignment: attempted to delete null");
+                return;
+            }
+            
+        };
+        console.log(`removed product:${product.pId} from sponsor:${sponsoredUser.sponsorId} catalog`);
     }
 
     // Contact the external store API and retrieve all product information
