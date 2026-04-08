@@ -1,4 +1,5 @@
 import type { Handler } from 'aws-lambda';
+import type { EventBridgeHandler } from "aws-lambda";
 import type { AboutSchema } from '../../../amplify/data/resource';
 import { generateClient } from 'aws-amplify/data';
 
@@ -14,7 +15,7 @@ type tProduct = {
     price: number;
 };
 
-export const handler: Handler = async (event, context) => {
+export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async (event) => {
 
     // Generate client
     const client = generateClient<AboutSchema>();

@@ -15,11 +15,13 @@ import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { adminUsersFunction } from './functions/adminManagementFeat/resource';
+import { updateStorefront } from './functions/updateStorefront/resource';
 
 const backend = defineBackend({
   auth,
   data,
   adminUsersFunction,
+  updateStorefront
 });
 
 const userPool = backend.auth.resources.userPool;
