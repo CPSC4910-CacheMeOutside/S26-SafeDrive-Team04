@@ -11,18 +11,6 @@ const SafeDriveSchema = a.schema({
     desc: a.string()
   }).identifier(['sprintNo'])
   .authorization(allow => [allow.publicApiKey()]),
-
-  // A user in the SafeDrive application
-  User: a.model({
-    userId: a.id(),
-    // An id to the user's corrosponding entry in Cognito
-    subId: a.id(),
-    first: a.string(),
-    last: a.string(),
-    email: a.string(),
-    phone: a.string()
-  }).identifier(['userId'])
-  .authorization(allow => [allow.publicApiKey()]),
  
   // A admin class user
   Admin: a.model({
@@ -112,24 +100,6 @@ const SafeDriveSchema = a.schema({
     driverId: a.id().required(),
     driver: a.belongsTo('Driver', 'driverId')
   }).identifier(['wishId'])
-  .authorization(allow => [allow.publicApiKey()]),
-
-  // TODO: Model is slated for deprication. Ensure all references are handled before removing
-  SponsorTransaction: a.model({
-    transactionId: a.id().required(),
-    // TODO: Re-add relationship link to sponsor
-    sponsorId: a.id().required(),
-    // TODO: Re-add relationship link to driver
-    driverId: a.id().required(),
-    
-    amount: a.integer().required(),
-    type: a.string().required(),
-    reason: a.string(),
-    note: a.string(),
-    receiptUrl: a.string(),
-    balanceAfter: a.integer(),
-  })
-  .identifier(['transactionId'])
   .authorization(allow => [allow.publicApiKey()]), 
 
   WishlistProduct: a.model({
@@ -146,6 +116,8 @@ const SafeDriveSchema = a.schema({
     catagory: a.string(),
     price: a.float(),
     available: a.boolean(),
+
+    
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
 
@@ -164,6 +136,34 @@ const SafeDriveSchema = a.schema({
 
     notification: a.belongsTo('Notification', 'nId'),
   }).identifier(['sendId', 'recipId', 'nId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Order: a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+
+    time: a.string().required(),
+    status: a.integer().required()
+
+  }).identifier(["driverId", "sponsorId"])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  OrderLog: a.model({
+    logId: a.id().required(),
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    time: a.string().required(),
+    status: a.integer().required()
+  }).identifier(["logId"])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  OrderProduct: a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    order: a.belongsTo("Order", ["driverId", "sponsorId"]),
+    pId: a.id().required(),
+    product: a.belongsTo("Product", "pId")
+  }).identifier(["driverId", "sponsorId", "pId"])
   .authorization(allow => [allow.publicApiKey()]),
 
 });
