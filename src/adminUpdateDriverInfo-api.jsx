@@ -9,3 +9,13 @@ export async function fetchDriverUsers() {
   const { body } = await restOperation.response;
   return await body.json();
 }
+
+export async function fetchSponsorUsers() {
+  const restOperation = get({
+    apiName: "SafeDriveAPI",
+    path: "/admin/users/group/Sponsor",
+  });
+
+  const { body } = await restOperation.response;
+  return await body.json();
+}
