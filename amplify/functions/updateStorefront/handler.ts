@@ -23,7 +23,13 @@ export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async 
 
     // Generate client
     const { resourceConfig, libraryOptions } =
-        await getAmplifyDataClientConfig(process.env as any);
+        await getAmplifyDataClientConfig(process.env as unknown as {
+            AWS_ACCESS_KEY_ID: string;
+            AWS_SECRET_ACCESS_KEY: string;
+            AWS_SESSION_TOKEN: string;
+            AWS_REGION: string;
+            AMPLIFY_DATA_DEFAULT_NAME: string;
+        });
 
     Amplify.configure(resourceConfig, libraryOptions);
     const client = generateClient<AboutSchema>();
