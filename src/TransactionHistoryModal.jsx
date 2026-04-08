@@ -2,10 +2,12 @@ import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { usePoints } from '../PointsContext';
 import { useConversionRatio } from '../ConversionRatioContext';
+import { useLanguage } from './LanguageContext';
 
 export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
   const { getDriverPoints, getDriverTransactions } = usePoints();
   const { convertPointsToDollars } = useConversionRatio();
+  const { t } = useLanguage();
 
   const currentPoints = getDriverPoints(driverAlias);
   const transactions = getDriverTransactions(driverAlias);
@@ -16,7 +18,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
   return (
     <Modal show={show} onHide={onHide} size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Your Transaction History</Modal.Title>
+        <Modal.Title>{t('transactionHistory.title')}</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
@@ -28,7 +30,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
           marginBottom: 20,
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>Current Points</div>
+          <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>{t('transactionHistory.currentPoints')}</div>
           <div style={{ fontSize: '2.5rem', fontWeight: 700 }}>{currentPoints}</div>
           <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>
             ≈ ${convertPointsToDollars(currentPoints).toFixed(2)}
@@ -36,7 +38,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
         </div>
 
         {/* Transactions List */}
-        <h5 className="mb-3">Transaction History</h5>
+        <h5 className="mb-3">{t('transactionHistory.history')}</h5>
         {sortedTransactions.length === 0 ? (
           <div style={{
             padding: 20,
@@ -45,7 +47,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
             textAlign: 'center',
             opacity: 0.7
           }}>
-            No transactions yet
+            {t('transactionHistory.noTransactions')}
           </div>
         ) : (
           sortedTransactions.map(transaction => (
@@ -72,7 +74,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
 
                   {/* Performed By */}
                   <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>
-                    by {transaction.performedBy}
+                    {t('transactionHistory.by')} {transaction.performedBy}
                   </div>
                 </div>
 
@@ -93,7 +95,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
 
                   {/* New balance */}
                   <div style={{ fontSize: '0.875rem', marginTop: 8, opacity: 0.7 }}>
-                    Balance: {transaction.balance}
+                    {t('transactionHistory.balance')} {transaction.balance}
                   </div>
                 </div>
               </div>
@@ -104,7 +106,7 @@ export default function TransactionHistoryModal({ show, onHide, driverAlias }) {
 
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
-          Close
+          {t('transactionHistory.close')}
         </Button>
       </Modal.Footer>
     </Modal>

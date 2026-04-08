@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAuthSession, getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
+import { useLanguage } from "./LanguageContext";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -11,6 +12,7 @@ import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
 
 function DriverPage() {
+  const { t } = useLanguage();
   const [driver, setDriver] = useState({
     id: 1,
     subId: "",
@@ -114,18 +116,18 @@ function DriverPage() {
   return (
     <Container className="mt-4">
       <div style={{ minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>Driver Dashboard</strong></h1>
+        <h1><strong>{t('driver.dashboard')}</strong></h1>
 
         <Row className="mb-4">
           <Col md={4}>
             <Card>
               <Card.Body>
-                <Card.Title>My Profile</Card.Title>
-                <p className="mb-2"><strong>Name:</strong> {driver.fullName || "Unknown User"}</p>
-                <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
-                <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
-                <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
-                <p className="mb-0"><strong>Points:</strong> {driver.points}</p>
+                <Card.Title>{t('driver.myProfile')}</Card.Title>
+                <p className="mb-2"><strong>{t('driver.name')}</strong> {driver.fullName || t('driver.unknownUser')}</p>
+                <p className="mb-2"><strong>{t('driver.email')}</strong> {driver.email || t('driver.noEmail')}</p>
+                <p className="mb-2"><strong>{t('driver.phone')}</strong> {driver.phoneNumber || t('driver.noPhone')}</p>
+                <p className="mb-2"><strong>{t('driver.groups')}</strong> {driver.groups.join(", ") || t('driver.none')}</p>
+                <p className="mb-0"><strong>{t('driver.points')}</strong> {driver.points}</p>
               </Card.Body>
             </Card>
           </Col>
@@ -133,13 +135,13 @@ function DriverPage() {
           <Col md={8}>
             <Card>
               <Card.Body>
-                <Card.Title>Overview</Card.Title>
+                <Card.Title>{t('driver.overview')}</Card.Title>
                 <Row>
                   <Col sm={4}>
                     <Card className="text-center">
                       <Card.Body>
                         <h4>{driver.sponsors.length}</h4>
-                        <div className="text-muted">Sponsors</div>
+                        <div className="text-muted">{t('driver.sponsors')}</div>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -147,7 +149,7 @@ function DriverPage() {
                     <Card className="text-center">
                       <Card.Body>
                         <h4>{applicationsByStatus.pending.length}</h4>
-                        <div className="text-muted">Pending Apps</div>
+                        <div className="text-muted">{t('driver.pendingApps')}</div>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -155,7 +157,7 @@ function DriverPage() {
                     <Card className="text-center">
                       <Card.Body>
                         <h4>{driver.applications.length}</h4>
-                        <div className="text-muted">Total Applications</div>
+                        <div className="text-muted">{t('driver.totalApplications')}</div>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -166,12 +168,12 @@ function DriverPage() {
         </Row>
 
         <Tabs defaultActiveKey="sponsors" className="mb-4">
-          <Tab eventKey="sponsors" title="My Sponsors">
+          <Tab eventKey="sponsors" title={t('driver.mySponsors')}>
             <Card className="mt-3">
               <Card.Body>
-                <Card.Title>Associated Sponsors</Card.Title>
+                <Card.Title>{t('driver.associatedSponsors')}</Card.Title>
                 {!driver.sponsors.length ? (
-                  <div className="text-muted">No sponsors associated yet.</div>
+                  <div className="text-muted">{t('driver.noSponsors')}</div>
                 ) : (
                   <ListGroup>
                     {driver.sponsors.map((sponsor) => (
@@ -180,7 +182,7 @@ function DriverPage() {
                           <div>
                             <strong>{sponsor.name}</strong>
                             <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                              Joined: {sponsor.joinedDate}
+                              {t('driver.joined')} {sponsor.joinedDate}
                             </div>
                           </div>
                           <Badge bg={getBadgeVariant(sponsor.status)}>
@@ -195,18 +197,18 @@ function DriverPage() {
             </Card>
           </Tab>
 
-          <Tab eventKey="applications" title="Applications">
+          <Tab eventKey="applications" title={t('driver.applications')}>
             <Card className="mt-3">
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <Card.Title className="mb-0">My Applications</Card.Title>
+                  <Card.Title className="mb-0">{t('driver.myApplications')}</Card.Title>
                   <Button variant="primary" size="sm">
-                    Browse Sponsors
+                    {t('driver.browseSponsors')}
                   </Button>
                 </div>
 
                 {!driver.applications.length ? (
-                  <div className="text-muted">No applications submitted yet.</div>
+                  <div className="text-muted">{t('driver.noApplications')}</div>
                 ) : (
                   <ListGroup>
                     {driver.applications.map((app) => (
@@ -215,7 +217,7 @@ function DriverPage() {
                           <div>
                             <strong>{app.sponsorName}</strong>
                             <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                              Submitted: {app.submittedAt}
+                              {t('driver.submitted')} {app.submittedAt}
                             </div>
                           </div>
 

@@ -2,10 +2,12 @@ import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useState } from 'react';
 import { useConversionRatio } from './ConversionRatioContext';
 import { useNotifications } from './NotificationContext';
+import { useLanguage } from './LanguageContext';
 
 export default function SponsorSettingsPage() {
   const { ratio, setRatio, defaultRatio, convertPointsToDollars } = useConversionRatio();
   const { addNotification } = useNotifications();
+  const { t } = useLanguage();
 
   const [inputValue, setInputValue] = useState(ratio.toString());
   const [error, setError] = useState('');
@@ -23,11 +25,11 @@ export default function SponsorSettingsPage() {
 
     const num = parseFloat(value);
     if (isNaN(num)) {
-      setError('Please enter a valid number');
+      setError(t('sponsorSettings.errInvalidNum'));
     } else if (num < 0.001) {
-      setError('Ratio must be at least 0.001');
+      setError(t('sponsorSettings.errMinRatio'));
     } else if (num > 1.0) {
-      setError('Ratio must not exceed 1.0');
+      setError(t('sponsorSettings.errMaxRatio'));
     }
   };
 
@@ -36,7 +38,7 @@ export default function SponsorSettingsPage() {
     if (isNaN(num) || num < 0.001 || num > 1.0) return;
 
     setRatio(num);
-    setSuccess('Conversion ratio updated successfully!');
+    setSuccess(t('sponsorSettings.successRatio'));
     setTimeout(() => setSuccess(''), 3000);
   };
 
@@ -44,7 +46,7 @@ export default function SponsorSettingsPage() {
     setInputValue(defaultRatio.toString());
     setRatio(defaultRatio);
     setError('');
-    setSuccess('Reset to default ratio');
+    setSuccess(t('sponsorSettings.successReset'));
     setTimeout(() => setSuccess(''), 3000);
   };
 
@@ -59,34 +61,34 @@ export default function SponsorSettingsPage() {
     const message = notificationMessage.trim();
 
     if (!message) {
-      setNotificationError('Notification message cannot be empty');
+      setNotificationError(t('sponsorSettings.errEmpty'));
       return;
     }
 
     if (message.length < 3) {
-      setNotificationError('Notification message must be at least 3 characters');
+      setNotificationError(t('sponsorSettings.errMinChars'));
       return;
     }
 
     addNotification(message);
     setNotificationMessage('');
-    setNotificationSuccess('Notification sent to all drivers successfully!');
+    setNotificationSuccess(t('sponsorSettings.successNotif'));
     setTimeout(() => setNotificationSuccess(''), 3000);
   };
 
   return (
     <Container className="py-4" style={{ maxWidth: 800 }}>
-      <h2 className="mb-3">Sponsor Settings</h2>
+      <h2 className="mb-3">{t('sponsorSettings.title')}</h2>
 
       <Card style={{ padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-        <h5>Point to Dollar Conversion Ratio</h5>
+        <h5>{t('sponsorSettings.conversionTitle')}</h5>
         <p style={{ fontSize: 14, opacity: 0.7 }}>
-          Set how many dollars each point is worth for drivers.
+          {t('sponsorSettings.conversionDesc')}
         </p>
 
         <Form>
           <Form.Group className="mb-3">
-            <Form.Label>Dollars per Point</Form.Label>
+            <Form.Label>{t('sponsorSettings.dollarsPerPoint')}</Form.Label>
             <Form.Control
               type="number"
               step="0.001"
@@ -95,10 +97,10 @@ export default function SponsorSettingsPage() {
               value={inputValue}
               onChange={handleInputChange}
               isInvalid={!!error}
-              placeholder="Enter value between 0.001 and 1.0"
+              placeholder={t('sponsorSettings.valuePlaceholder')}
             />
             <Form.Text className="text-muted">
-              Enter value between 0.001 and 1.0 (e.g., 0.10 means 10 points = $1)
+              {t('sponsorSettings.valueHint')}
             </Form.Text>
             {error && <Form.Control.Feedback type="invalid" style={{ display: 'block' }}>{error}</Form.Control.Feedback>}
           </Form.Group>
@@ -106,7 +108,7 @@ export default function SponsorSettingsPage() {
           {success && <Alert variant="success">{success}</Alert>}
 
           <div className="mb-3" style={{ padding: 10, backgroundColor: '#f8f9fa', borderRadius: 5 }}>
-            <strong>Preview:</strong>
+            <strong>{t('sponsorSettings.preview')}</strong>
             <ul style={{ marginTop: 10, marginBottom: 0 }}>
               <li>100 points = ${convertPointsToDollars(100).toFixed(2)}</li>
               <li>1000 points = ${convertPointsToDollars(1000).toFixed(2)}</li>
@@ -120,36 +122,36 @@ export default function SponsorSettingsPage() {
             disabled={!!error}
             className="me-2"
           >
-            Save Changes
+            {t('sponsorSettings.saveChanges')}
           </Button>
           <Button
             variant="secondary"
             onClick={handleReset}
           >
-            Reset to Default
+            {t('sponsorSettings.resetToDefault')}
           </Button>
         </Form>
       </Card>
 
       <Card className="mt-4" style={{ padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-        <h5>Send Notification to Drivers</h5>
+        <h5>{t('sponsorSettings.notifTitle')}</h5>
         <p style={{ fontSize: 14, opacity: 0.7 }}>
-          Send important messages and announcements to all drivers.
+          {t('sponsorSettings.notifDesc')}
         </p>
 
         <Form>
           <Form.Group className="mb-3">
-            <Form.Label>Notification Message</Form.Label>
+            <Form.Label>{t('sponsorSettings.notifMessage')}</Form.Label>
             <Form.Control
               as="textarea"
               rows={4}
               value={notificationMessage}
               onChange={handleNotificationChange}
               isInvalid={!!notificationError}
-              placeholder="Enter a message to send to all drivers..."
+              placeholder={t('sponsorSettings.notifPlaceholder')}
             />
             <Form.Text className="text-muted">
-              Enter a message with at least 3 characters
+              {t('sponsorSettings.notifHint')}
             </Form.Text>
             {notificationError && (
               <Form.Control.Feedback type="invalid" style={{ display: 'block' }}>
@@ -165,7 +167,7 @@ export default function SponsorSettingsPage() {
             onClick={handleSendNotification}
             disabled={!!notificationError}
           >
-            Send Notification
+            {t('sponsorSettings.sendButton')}
           </Button>
         </Form>
       </Card>
