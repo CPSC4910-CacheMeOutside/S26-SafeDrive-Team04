@@ -1,8 +1,10 @@
 import type { EventBridgeHandler } from "aws-lambda";
+import { getAmplifyDataClientConfig } from "@aws-amplify/backend/function/runtime";
 import { Amplify } from "aws-amplify";
 import outputs from "../../../amplify_outputs.json";
 import type { AboutSchema } from '../../../amplify/data/resource';
 import { generateClient } from 'aws-amplify/data';
+import context from "react-bootstrap/esm/AccordionContext";
 
 type tProduct = {
     id: number;
@@ -21,7 +23,10 @@ export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async 
     console.log("Event:", JSON.stringify(event));
 
     // Generate client
-    Amplify.configure(outputs);
+    const { resourceConfig, libraryOptions } =
+        await getAmplifyDataClientConfig(process.env as any);
+
+    Amplify.configure(resourceConfig, libraryOptions);
     const client = generateClient<AboutSchema>();
     // Contact the store api
     const apiStr = "https://api.escuelajs.co/api/v1/products";
