@@ -1,4 +1,6 @@
 import type { EventBridgeHandler } from "aws-lambda";
+import { Amplify } from "aws-amplify";
+import outputs from "../../../amplify_outputs.json";
 import type { AboutSchema } from '../../../amplify/data/resource';
 import { generateClient } from 'aws-amplify/data';
 
@@ -19,6 +21,7 @@ export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async 
     console.log("Event:", JSON.stringify(event));
 
     // Generate client
+    Amplify.configure(outputs);
     const client = generateClient<AboutSchema>();
     // Contact the store api
     const apiStr = "https://api.escuelajs.co/api/v1/products";
