@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from './LanguageContext';
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -118,6 +119,7 @@ function AdminPage(){
     setRoleCardError("");
   };
 
+  const { t } = useLanguage();
 
   const [SponsoredUsers, setSponsUser] = useState([
     {id: "SPUser1", name: "SPUser1", 
@@ -237,15 +239,15 @@ function AdminPage(){
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Admin Dashboard</h1>
-        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+        <h1><strong>{t('admin.title')}</strong></h1>
+
         <Tabs defaultActiveKey="manage" className="mb-4">
-          <Tab eventKey="manage" title="Manage Drivers">
+          <Tab eventKey="manage" title={t('admin.manageDrivers')}>
             <Row>
               {/* <Col md={3}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Sponsored Users</Card.Title>
+                    <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
                     <ListGroup>
                       {SponsoredUsers.map((c) => (
                         <ListGroupItem
@@ -288,22 +290,22 @@ function AdminPage(){
               <Col md={5}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Adjust Points</Card.Title>
+                    <Card.Title>{t('admin.adjustPoints')}</Card.Title>
 
                     {!selectedDriver ? (
-                      <div className="text-muted">Select a driver to adjust points.</div>
+                      <div className="text-muted">{t('admin.selectDriverToAdjust')}</div>
                     ) : (
                       <>
                       <p>
-                        Sponsored User: <strong>{selectedSponsUser?.name}</strong>
+                        {t('admin.sponsoredUser')}: <strong>{selectedSponsUser?.name}</strong>
                         <br />
-                        Driver: <strong>{selectedDriver.name}</strong>
+                        {t('admin.driver')}: <strong>{selectedDriver.name}</strong>
                         <br />
-                        Current Points: <strong>{selectedDriver.points}</strong>
+                        {t('admin.currentPoints')}: <strong>{selectedDriver.points}</strong>
                       </p>
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Amount</Form.Label>
+                      <Form.Label>{t('admin.amount')}</Form.Label>
                       <Form.Control
                         type="number"
                         value={amount}
@@ -312,20 +314,23 @@ function AdminPage(){
                       />
                     </Form.Group>
                       <Form.Group className="mb-3">
-                        <Form.Label> Reason for Adjustment</Form.Label>
+                        <Form.Label>{t('admin.reasonForAdjustment')}</Form.Label>
                         <Form.Control
                           type="text"
-                          placeholder="Description for Point Change"
+                          placeholder={t('admin.descriptionPlaceholder')}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                       />
                     </Form.Group>
-                    <div className="d-flex justify-content-center gap-4">
-                      <Button style={{ width: "160px", height: "50px" }} variant="success" onClick={() => pointAdjust(amount)}>
-                        + Add Points
+                    <div className="d-flex gap-2">
+                      <Button variant="success" onClick={() => pointAdjust(amount)}>
+                        {t('admin.addPoints')}
                       </Button>
-                      <Button style={{ width: "160px", height: "50px" }} variant="danger" onClick={() => pointAdjust(-amount)}>
-                        - Subtract Points
+                      <Button variant="danger" onClick={() => pointAdjust(-amount)}>
+                        {t('admin.subtractPoints')}
+                      </Button>
+                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>
+                        {t('admin.manageAccount')}
                       </Button>
                     </div>
                   </>
@@ -414,12 +419,12 @@ function AdminPage(){
               </Col>
           </Tab>
 
-          <Tab eventKey="audit" title="Logs/Reports">
+          <Tab eventKey="audit" title={t('admin.logsReports')}>
             <Row>
             <Col md={4}>
             <Card>
               <Card.Body>
-                <Card.Title>Sponsored Users</Card.Title>
+                <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
                 <ListGroup>
                   {SponsoredUsers.map((c) => (
                     <ListGroup.Item
@@ -444,10 +449,10 @@ function AdminPage(){
             <Card>
               <Card.Body>
                 <Card.Title>
-                  Logs {selectedSponsUser ? `(${selectedSponsUser.name})` :""}
+                  {t('admin.logs')} {selectedSponsUser ? `(${selectedSponsUser.name})` :""}
                   </Card.Title>
                   {!SponsUserLogs.length ? (
-                    <div className="text-muted mt-3"> No adjustments logged yet.</div>
+                    <div className="text-muted mt-3">{t('admin.noAdjustmentsLogged')}</div>
                 ) : (
                   <ListGroup>
                     {SponsUserLogs.map((log,index) => (
@@ -456,12 +461,12 @@ function AdminPage(){
                           <strong>{log.driver}</strong>
                         </div>
                         <div>
-                          Change:{" "}
+                          {t('admin.change')}:{" "}
                           <span className={log.change >= 0 ? "text-success" : "text-danger"}>
                             {log.change >= 0 ? `+${log.change}` : log.change}
                           </span>
                         </div>
-                          <div>Reason: {log.reason}</div>
+                          <div>{t('admin.reason')}: {log.reason}</div>
                           <div className="text-muted" style={{ fontSize: "0.9rem"}}>
                             {log.time}
                           </div>
@@ -475,7 +480,6 @@ function AdminPage(){
       </Row>
     </Tab>
   </Tabs>
-  </div>
  </div>
 </Container>
   );  

@@ -6,6 +6,8 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Image from 'react-bootstrap/Image';
 import { Button, NavDropdown } from 'react-bootstrap';
+import { useFontSize } from './FontSizeContext';
+import { useLanguage, LANGUAGE_NAMES } from './LanguageContext';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAmplifyAuth from './UseAmplifyAuth';
 import { useEffect, useState, useRef } from 'react';
@@ -36,6 +38,8 @@ import UpdateAbout from './UpdateAbout';
 function App() {
 
   /* Nav config */
+  const { fontSize, cycleFontSize } = useFontSize();
+  const { language, setLanguage, t } = useLanguage();
   const auth = useAmplifyAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,24 +97,35 @@ function App() {
               <Nav className="me-auto">
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>}
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
-                {/* Headers for the notificatons no login required */}
+               
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/Catalog">Catalog</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/CatalogBuilder">Catalog</Nav.Link>)}
+
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
-                {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-list" aria-label="Apply">Apply</Nav.Link>)}
-                {auth.isAuthenticated && (groups.includes("Driver") || groups.includes("Admin")) && (
-                  <Nav.Link 
-                    as={Link} 
-                    to="/driver-notifications" 
-                    aria-label="Driver Notifications"
-                    className="d-flex align-items-center">
-                      <HiOutlineEnvelope size={22}/>
-                    </Nav.Link>)}
-                {auth.isAuthenticated && (groups.includes("Sponsor") || groups.includes("Admin")) && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>)}
+
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/CatalogBuilder">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
+                <NavDropdown
+                  title={LANGUAGE_NAMES[language]}
+                  id="language-dropdown"
+                  className="me-2"
+                  aria-label={t('navbar.language')}
+                >
+                  {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                    <NavDropdown.Item
+                      key={code}
+                      onClick={() => setLanguage(code)}
+                      active={language === code}
+                    >
+                      {name}
+                    </NavDropdown.Item>
+                  ))}
+                </NavDropdown>
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>{t('navbar.login')}</Nav.Link>}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>Sign Up</Nav.Link>}
@@ -129,11 +144,11 @@ function App() {
                       id="profile-dropdown"
                       align="end"
                     >
-                      <NavDropdown.Item as={Link} to="/edit_profile">Edit Profile</NavDropdown.Item>
+                      <NavDropdown.Item as={Link} to="/edit_profile">{t('navbar.editProfile')}</NavDropdown.Item>
                       <NavDropdown.Divider />
-                      <NavDropdown.Item as={Link} to="/AccountManagement">Account Settings</NavDropdown.Item>
+                      <NavDropdown.Item as={Link} to="/AccountManagement">{t('navbar.accountSettings')}</NavDropdown.Item>
                       <NavDropdown.Divider />
-                      <NavDropdown.Item onClick={() => auth.signoutRedirect()}>Logout</NavDropdown.Item>
+                      <NavDropdown.Item onClick={() => auth.signoutRedirect()}>{t('navbar.logout')}</NavDropdown.Item>
                     </NavDropdown>
                   </div>
                 }
@@ -160,7 +175,7 @@ function App() {
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
           <Route path="/PointsContext" element={<PointsProvider />}/>
           <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1}/>}/>
-          <Route path="/callback" element={<div>Logging in...</div>} />
+          <Route path="/callback" element={<div>{t('common.loading')}</div>} />
           <Route path="/sponsor-list" element={<SponsorListings />} />
             {
             /* These imbeded routes are a proof of concept. Future versions will autopoulate these sub routes with 

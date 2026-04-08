@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLanguage } from './LanguageContext';
 
 const mockApplications = [
   {
@@ -76,6 +77,7 @@ const mockApplications = [
 const PAGE_SIZE_OPTIONS = [3, 5, 10, 25];
 
 export default function SponsorApplicationsPage() {
+  const { t } = useLanguage();
   const [applications, setApplications] = useState(mockApplications);
   const [filterDate, setFilterDate] = useState("");
   const [selectedApp, setSelectedApp] = useState(null);
@@ -157,27 +159,27 @@ export default function SponsorApplicationsPage() {
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 4 }}>Driver Applications</h1>
-      <p style={{ color: "#666", marginBottom: 20 }}>Review and manage incoming driver applications</p>
+      <h1 style={{ marginBottom: 4 }}>{t('sponsorApp.title')}</h1>
+      <p style={{ color: "#666", marginBottom: 20 }}>{t('sponsorApp.subtitle')}</p>
 
       <div style={{ display: "flex", gap: 16, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
 
         <div>
           <label style={{ fontSize: 13, fontWeight: "bold", display: "block", marginBottom: 4 }}>
-            Search by Name
+            {t('sponsorApp.searchByName')}
           </label>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            placeholder="e.g. Taylor Swift"
+            placeholder={t('sponsorApp.searchPlaceholder')}
             style={{ padding: "6px 10px", border: "1px solid #ccc", borderRadius: 4, fontSize: 14 }}
           />
         </div>
 
         <div>
           <label style={{ fontSize: 13, fontWeight: "bold", display: "block", marginBottom: 4 }}>
-            Filter by submitted date (from)
+            {t('sponsorApp.filterByDate')}
           </label>
           <input
             type="date"
@@ -189,24 +191,24 @@ export default function SponsorApplicationsPage() {
 
         <div>
           <label style={{ fontSize: 13, fontWeight: "bold", display: "block", marginBottom: 4 }}>
-            Status
+            {t('sponsorApp.status')}
           </label>
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
             style={{ padding: "6px 10px", border: "1px solid #ccc", borderRadius: 4, fontSize: 14 }}
           >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="accepted">Accepted</option>
-            <option value="denied">Denied</option>
-            <option value="completed">Completed (Driver Responded)</option>
+            <option value="all">{t('sponsorApp.statusAll')}</option>
+            <option value="pending">{t('sponsorApp.statusPending')}</option>
+            <option value="accepted">{t('sponsorApp.statusAccepted')}</option>
+            <option value="denied">{t('sponsorApp.statusDenied')}</option>
+            <option value="completed">{t('sponsorApp.statusCompleted')}</option>
           </select>
         </div>
 
         <div>
           <label style={{ fontSize: 13, fontWeight: "bold", display: "block", marginBottom: 4 }}>
-            Per Page
+            {t('sponsorApp.perPage')}
           </label>
           <select
             value={pageSize}
@@ -222,19 +224,19 @@ export default function SponsorApplicationsPage() {
             onClick={() => setFilterDate("")}
             style={{ marginTop: 18, padding: "6px 12px", background: "#eee", border: "1px solid #ccc", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
           >
-            Clear filter
+            {t('sponsorApp.clearFilter')}
           </button>
         )}
       </div>
 
       {selectedIds.size > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 4, padding: "10px 16px", marginBottom: 12 }}>
-          <span style={{ fontSize: 13, fontWeight: "bold" }}>{selectedIds.size} selected</span>
+          <span style={{ fontSize: 13, fontWeight: "bold" }}>{selectedIds.size} {t('sponsorApp.selected')}</span>
           <button onClick={handleDeleteSelected} style={{ ...btnBase, background: "#dc3545", color: "#fff" }}>
-            🗑 Delete Selected
+            {t('sponsorApp.deleteSelected')}
           </button>
           <button onClick={() => setSelectedIds(new Set())} style={{ ...btnBase, background: "#6c757d", color: "#fff" }}>
-            Deselect All
+            {t('sponsorApp.deselectAll')}
           </button>
         </div>
       )}
@@ -250,12 +252,12 @@ export default function SponsorApplicationsPage() {
                 onChange={() => toggleSelectAll(visibleIds)}
                 style={{ cursor: "pointer" }}
               />
-              <span style={{ fontSize: 13, color: "#555" }}>Select all on this page</span>
+              <span style={{ fontSize: 13, color: "#555" }}>{t('sponsorApp.selectAllOnPage')}</span>
             </div>
           )}
 
           {paginated.length === 0 && (
-            <p style={{ color: "#999" }}>No applications match the current filter.</p>
+            <p style={{ color: "#999" }}>{t('sponsorApp.noApplications')}</p>
           )}
 
           {paginated.map((app) => (
@@ -288,12 +290,12 @@ export default function SponsorApplicationsPage() {
                 </div>
                 <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>{app.email}</div>
                 <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
-                  Submitted: {app.submittedDate}
+                  {t('sponsorApp.submitted')} {app.submittedDate}
                 </div>
 
                 {app.status === "denied" && app.denialReason && (
                   <div style={{ fontSize: 12, color: "#721c24", background: "#f8d7da", padding: "4px 8px", borderRadius: 4, marginTop: 6 }}>
-                    Reason: {app.denialReason}
+                    {t('sponsorApp.reason')} {app.denialReason}
                   </div>
                 )}
 
@@ -303,13 +305,13 @@ export default function SponsorApplicationsPage() {
                       onClick={(e) => { e.stopPropagation(); handleAccept(app.id); }}
                       style={{ ...btnBase, background: "#28a745", color: "#fff" }}
                     >
-                      Accept
+                      {t('sponsorApp.accept')}
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); openDenyModal(app.id); }}
                       style={{ ...btnBase, background: "#dc3545", color: "#fff" }}
                     >
-                      Deny
+                      {t('sponsorApp.deny')}
                     </button>
                   </div>
                 )}
@@ -319,15 +321,15 @@ export default function SponsorApplicationsPage() {
 
           {totalPages > 1 && (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 16 }}>
-              <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} style={pageBtnStyle(safePage === 1)}>‹ Prev</button>
+              <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} style={pageBtnStyle(safePage === 1)}>{t('sponsorApp.prev')}</button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                 <button key={p} onClick={() => goToPage(p)} style={pageBtnStyle(false, p === safePage)}>{p}</button>
               ))}
-              <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} style={pageBtnStyle(safePage === totalPages)}>Next ›</button>
+              <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} style={pageBtnStyle(safePage === totalPages)}>{t('sponsorApp.next')}</button>
             </div>
           )}
           <div style={{ textAlign: "center", color: "#999", fontSize: 12, marginTop: 6 }}>
-            Page {safePage} of {totalPages} — {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+            {t('sponsorApp.page')} {safePage} {t('sponsorApp.of')} {totalPages} — {filtered.length} {filtered.length !== 1 ? t('sponsorApp.results') : t('sponsorApp.result')}
           </div>
         </div>
 
@@ -339,23 +341,23 @@ export default function SponsorApplicationsPage() {
                 <StatusBadge status={selectedApp.status} />
               </div>
 
-              <DetailRow label="Email" value={selectedApp.email} />
-              <DetailRow label="Phone" value={selectedApp.phone} />
-              <DetailRow label="License #" value={selectedApp.licenseNumber} />
-              <DetailRow label="License State" value={selectedApp.licenseState} />
-              <DetailRow label="License Expiry" value={selectedApp.licenseExpiry} />
-              <DetailRow label="Applying to" value={selectedApp.sponsorName} />
-              <DetailRow label="Submitted" value={selectedApp.submittedDate} />
+              <DetailRow label={t('sponsorApp.email')} value={selectedApp.email} />
+              <DetailRow label={t('sponsorApp.phone')} value={selectedApp.phone} />
+              <DetailRow label={t('sponsorApp.licenseNum')} value={selectedApp.licenseNumber} />
+              <DetailRow label={t('sponsorApp.licenseState')} value={selectedApp.licenseState} />
+              <DetailRow label={t('sponsorApp.licenseExpiry')} value={selectedApp.licenseExpiry} />
+              <DetailRow label={t('sponsorApp.applyingTo')} value={selectedApp.sponsorName} />
+              <DetailRow label={t('sponsorApp.submittedLabel')} value={selectedApp.submittedDate} />
 
               {selectedApp.status === "denied" && selectedApp.denialReason && (
                 <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: "#721c24", marginTop: 8 }}>
-                  <strong>Denial Reason:</strong> {selectedApp.denialReason}
+                  <strong>{t('sponsorApp.denialReason')}:</strong> {selectedApp.denialReason}
                 </div>
               )}
 
               {selectedApp.driverAction && (
                 <div style={{ background: selectedApp.driverAction === "accepted" ? "#d4edda" : "#e2e3e5", border: "1px solid #c3e6cb", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: selectedApp.driverAction === "accepted" ? "#155724" : "#383d41", marginTop: 8 }}>
-                  <strong>Driver Response:</strong> {selectedApp.driverAction === "accepted" ? "✅ Accepted your offer" : "✕ Declined the offer"}
+                  <strong>{t('sponsorApp.driverResponse')}:</strong> {selectedApp.driverAction === "accepted" ? t('sponsorApp.acceptedOffer') : t('sponsorApp.declinedOffer')}
                 </div>
               )}
 
@@ -365,20 +367,20 @@ export default function SponsorApplicationsPage() {
                     onClick={() => handleAccept(selectedApp.id)}
                     style={{ ...btnBase, flex: 1, background: "#28a745", color: "#fff" }}
                   >
-                    Accept
+                    {t('sponsorApp.accept')}
                   </button>
                   <button
                     onClick={() => openDenyModal(selectedApp.id)}
                     style={{ ...btnBase, flex: 1, background: "#dc3545", color: "#fff" }}
                   >
-                    Deny
+                    {t('sponsorApp.deny')}
                   </button>
                 </div>
               )}
             </div>
           ) : (
             <div style={{ border: "1px dashed #ccc", borderRadius: 6, padding: 20, color: "#999", textAlign: "center" }}>
-              Select an application to view details
+              {t('sponsorApp.selectAppToView')}
             </div>
           )}
         </div>
@@ -387,23 +389,23 @@ export default function SponsorApplicationsPage() {
       {denyTargetId !== null && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
           <div style={{ background: "#fff", borderRadius: 6, padding: 28, maxWidth: 420, width: "100%", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
-            <h3 style={{ marginTop: 0, color: "#dc3545" }}>Deny Application</h3>
+            <h3 style={{ marginTop: 0, color: "#dc3545" }}>{t('sponsorApp.denyApplication')}</h3>
             <p style={{ fontSize: 14, color: "#555" }}>
-              Optionally provide a reason so the driver understands why they weren't accepted.
+              {t('sponsorApp.denyMessage')}
             </p>
             <textarea
               value={denialReasonDraft}
               onChange={(e) => setDenialReasonDraft(e.target.value)}
-              placeholder="e.g. License state not supported in our region..."
+              placeholder={t('sponsorApp.denyPlaceholder')}
               rows={3}
               style={{ width: "100%", padding: 10, fontSize: 14, border: "1px solid #ccc", borderRadius: 4, boxSizing: "border-box", resize: "vertical" }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
               <button onClick={confirmDeny} style={{ ...btnBase, flex: 1, background: "#dc3545", color: "#fff" }}>
-                Confirm Deny
+                {t('sponsorApp.confirmDeny')}
               </button>
               <button onClick={() => setDenyTargetId(null)} style={{ ...btnBase, flex: 1, background: "#6c757d", color: "#fff" }}>
-                Cancel
+                {t('sponsorApp.cancel')}
               </button>
             </div>
           </div>
