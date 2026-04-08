@@ -17,7 +17,7 @@ const APP_GROUPS = ['Admin', 'Driver', 'Sponsor'] as const;
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
 };
 
 function getClaims(event: any) {
@@ -84,6 +84,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const path = event.path || '';
     const username = event.pathParameters?.username || event.pathParameters?.driverId;
     const groupname = event.pathParameters?.groupname;
+    const sponsorUsername = event.pathParameters?.sponsorUsername;
+    const driverUsername = event.pathParameters?.driverUsername;
+
 
     if (event.httpMethod === 'GET' && path.endsWith('/admin/users/unassigned')) {
       const result = await cognito.send(
@@ -222,6 +225,85 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         }),
       };
     }
+
+
+    if (
+      event.httpMethod === 'POST' &&
+      path.includes('/admin/sponsors/') &&
+      path.includes('/drivers/') &&
+      sponsorUsername &&
+      driverUsername &&
+      !path.endsWith('/points')
+    ) {     
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: `Assigned ${driverUsername} to sponsor ${sponsorUsername}`,
+        }),
+      };
+    }
+
+    if (
+      event.httpMethod === 'DELETE' &&
+      path.includes('/admin/sponsors/') &&
+      path.includes('/drivers/') &&
+      sponsorUsername &&
+      driverUsername &&
+      !path.endsWith('/points')
+    ) {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: `Removed ${driverUsername} from sponsor ${sponsorUsername}`,
+        }),
+      };
+    }
+
+    if (
+      event.httpMethod === 'GET' &&
+      path.includes('/admin/sponsors/') &&
+      path.endsWith('/drivers') &&
+      sponsorUsername
+    ) {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify([
+          {
+            username: 'driver1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            points: 120,
+          },
+        ]),
+      };
+    }
+
+
+    // ===== ADJUST POINTS =====
+    if (
+      event.httpMethod === 'POST' &&
+      path.includes('/admin/sponsors/') &&
+      path.includes('/drivers/') &&
+      path.endsWith('/points') &&
+      sponsorUsername &&
+      driverUsername
+    ) {
+      const body = JSON.parse(event.body || '{}');
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: `Adjusted ${body.amount} points for ${driverUsername}`,
+          reason: body.reason ?? 'No Reason Provided',
+        }),
+      };
+    }
+
+
 
     if (event.httpMethod === 'GET' && username) {
       const result = await cognito.send(

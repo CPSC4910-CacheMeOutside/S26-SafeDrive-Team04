@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { useLanguage } from './LanguageContext';
+import { useLanguage } from "./LanguageContext";
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -10,10 +10,15 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
-import { ListGroupItem } from 'react-bootstrap';
-import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
-import { fetchDriverUsers } from './adminUpdateDriverInfo-api';
-import { fetchSponsorUsers } from './adminUpdateDriverInfo-api';
+import { ListGroupItem } from "react-bootstrap";
+
+import { fetchUnassignedUsers, assignUserGroup } from "./adminAssignRoles-api";
+import { fetchDriverUsers, fetchSponsorUsers } from "./adminUpdateDriverInfo-api";
+import {
+  fetchDriversForSponsor,
+  adjustDriverPoints,
+  fetchSponsorAdjustmentLogs,
+} from "./adminSponsorDrivers-api";
 
 function AdminPage() {
   const { t } = useLanguage();
@@ -37,6 +42,21 @@ function AdminPage() {
   const [loadingSponsorUsers, setLoadingSponsorUsers] = useState(false);
   const [sponsorUsersError, setSponsorUsersError] = useState("");
 
+  const [sponsorDrivers, setSponsorDrivers] = useState([]);
+  const [selectedSponsorDriverUsername, setSelectedSponsorDriverUsername] = useState("");
+  const [loadingSponsorDrivers, setLoadingSponsorDrivers] = useState(false);
+  const [sponsorDriversError, setSponsorDriversError] = useState("");
+
+  const [sponsorAdjustmentLogs, setSponsorAdjustmentLogs] = useState([]);
+  const [loadingSponsorLogs, setLoadingSponsorLogs] = useState(false);
+  const [sponsorLogsError, setSponsorLogsError] = useState("");
+
+  const [amount, setAmount] = useState(10);
+  const [description, setDescription] = useState("");
+  const [adjustingPoints, setAdjustingPoints] = useState(false);
+  const [adjustPointsMessage, setAdjustPointsMessage] = useState("");
+  const [adjustPointsError, setAdjustPointsError] = useState("");
+
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
     [driverUsers, selectedDriverUsername]
@@ -45,6 +65,17 @@ function AdminPage() {
   const selectedSponsorUser = useMemo(
     () => sponsorUsers.find((u) => u.username === selectedSponsorUsername) ?? null,
     [sponsorUsers, selectedSponsorUsername]
+  );
+
+  const selectedSponsorDriver = useMemo(
+    () =>
+      sponsorDrivers.find((u) => u.username === selectedSponsorDriverUsername) ?? null,
+    [sponsorDrivers, selectedSponsorDriverUsername]
+  );
+
+  const selectedPendingUser = useMemo(
+    () => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null,
+    [unassignedUsers, selectedPendingUsername]
   );
 
   const loadDriverUsers = async () => {
@@ -89,11 +120,6 @@ function AdminPage() {
     }
   };
 
-  const selectedPendingUser = useMemo(
-    () => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null,
-    [unassignedUsers, selectedPendingUsername]
-  );
-
   const loadUnassignedUsers = async () => {
     try {
       setLoadingPendingUsers(true);
@@ -116,11 +142,83 @@ function AdminPage() {
     }
   };
 
+  const loadSponsorDrivers = async (sponsorUsername) => {
+    if (!sponsorUsername) {
+      setSponsorDrivers([]);
+      setSelectedSponsorDriverUsername("");
+      return;
+    }
+
+    try {
+      setLoadingSponsorDrivers(true);
+      setSponsorDriversError("");
+
+      const data = await fetchDriversForSponsor(sponsorUsername);
+      const users = Array.isArray(data) ? data : [];
+
+      setSponsorDrivers(users);
+      setSelectedSponsorDriverUsername((prev) => {
+        if (prev && users.some((u) => u.username === prev)) return prev;
+        return users[0]?.username ?? "";
+      });
+    } catch (error) {
+      console.error(error);
+      setSponsorDriversError("Failed to load sponsor drivers.");
+      setSponsorDrivers([]);
+      setSelectedSponsorDriverUsername("");
+    } finally {
+      setLoadingSponsorDrivers(false);
+    }
+  };
+
+  const loadSponsorLogs = async (sponsorUsername) => {
+    if (!sponsorUsername) {
+      setSponsorAdjustmentLogs([]);
+      return;
+    }
+
+    try {
+      setLoadingSponsorLogs(true);
+      setSponsorLogsError("");
+
+      const data = await fetchSponsorAdjustmentLogs(sponsorUsername);
+      setSponsorAdjustmentLogs(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setSponsorLogsError("Failed to load sponsor logs.");
+      setSponsorAdjustmentLogs([]);
+    } finally {
+      setLoadingSponsorLogs(false);
+    }
+  };
+
   useEffect(() => {
-    loadDriverUsers();
-    loadSponsorUsers();
-    loadUnassignedUsers();
+    const initializePage = async () => {
+      try {
+        await Promise.all([
+          loadDriverUsers(),
+          loadSponsorUsers(),
+          loadUnassignedUsers(),
+        ]);
+      } catch (error) {
+        console.error("Failed to initialize admin page:", error);
+      }
+    };
+
+    initializePage();
   }, []);
+
+  useEffect(() => {
+    if (!selectedSponsorUsername) {
+      setSponsorDrivers([]);
+      setSelectedSponsorDriverUsername("");
+      setSponsorAdjustmentLogs([]);
+      return;
+    }
+
+    loadSponsorDrivers(selectedSponsorUsername);
+    loadSponsorLogs(selectedSponsorUsername);
+  }, [selectedSponsorUsername]);
 
   const handleAssignRole = async () => {
     if (!selectedPendingUser) return;
@@ -167,95 +265,41 @@ function AdminPage() {
     setRoleCardError("");
   };
 
-  const [SponsoredUsers, setSponsUser] = useState([
-    {
-      id: "SPUser1",
-      name: "SPUser1",
-      drivers: [
-        { id: 5, name: "Jerry Reed", points: 300 },
-        { id: 4, name: "Burt Reynolds", points: 330 }
-      ],
-      logs: [],
-    },
-    {
-      id: "SPUser2",
-      name: "SPUser2",
-      drivers: [
-        { id: 1, name: "Bo Darvilel", points: 200 },
-        { id: 2, name: "Cledus Snow", points: 156 },
-        { id: 3, name: "Hot-Pants Hillard", points: 186 }
-      ],
-      logs: [],
-    },
-    {
-      id: "SPUser3",
-      name: "SPUser3",
-      drivers: [
-        { id: 6, name: "Johnny Cash", points: 400 },
-        { id: 7, name: "Willie Nelson", points: 450 },
-        { id: 8, name: "Waylon Jennings", points: 500 },
-        { id: 9, name: "Kris Kristofferson", points: 400 }
-      ],
-      logs: [],
-    },
-  ]);
+  const pointAdjust = async (value) => {
+    if (!selectedSponsorUser || !selectedSponsorDriver) return;
 
-  const [selectedSponsUserId, setSelectedSponsUserId] = useState(SponsoredUsers[0]?.id ?? "");
-  const [selectedDriverId, setSelectedDriverId] = useState(null);
-  const [amount, setAmount] = useState(10);
-  const [sortMode, setSortMode] = useState("id");
-  const [description, setDescription] = useState("");
-
-  const selectedSponsUser = useMemo(
-    () => SponsoredUsers.find((c) => c.id === selectedSponsUserId),
-    [SponsoredUsers, selectedSponsUserId]
-  );
-
-  const SponsUserDrivers = selectedSponsUser?.drivers ?? [];
-  const SponsUserLogs = selectedSponsUser?.logs ?? [];
-
-  const validDriver = useMemo(() => {
-    if (!SponsUserDrivers.length) return null;
-    if (selectedDriverId == null) return SponsUserDrivers[0].id;
-    const driverLoc = SponsUserDrivers.some((d) => d.id === selectedDriverId);
-    return driverLoc ? selectedDriverId : SponsUserDrivers[0].id;
-  }, [SponsUserDrivers, selectedDriverId]);
-
-  const selectedDriver = useMemo(
-    () => SponsUserDrivers.find((d) => d.id === validDriver) ?? null,
-    [SponsUserDrivers, validDriver]
-  );
-
-  const pointAdjust = (value) => {
-    if (!selectedSponsUser || !selectedDriver) return;
-    const timestamp = new Date().toLocaleString();
     const reason = description?.trim() ? description.trim() : "No Reason Provided";
 
-    setSponsUser(prev =>
-      prev.map((SponsUser) => {
-        if (SponsUser.id !== selectedSponsUserId) return SponsUser;
+    try {
+      setAdjustingPoints(true);
+      setAdjustPointsError("");
+      setAdjustPointsMessage("");
 
-        const updatedDrivers = SponsUser.drivers.map((d) =>
-          d.id === selectedDriver.id ? { ...d, points: d.points + value } : d
-        );
+      await adjustDriverPoints({
+        sponsorUsername: selectedSponsorUser.username,
+        driverUsername: selectedSponsorDriver.username,
+        amount: value,
+        reason,
+      });
 
-        const newLog = {
-          driverId: selectedDriver.id,
-          driver: selectedDriver.name,
-          change: value,
-          reason,
-          time: timestamp,
-        };
+      setAdjustPointsMessage(
+        `Updated points for ${
+          selectedSponsorDriver.name ||
+          selectedSponsorDriver.preferred_username ||
+          selectedSponsorDriver.email ||
+          selectedSponsorDriver.username
+        }.`
+      );
 
-        return {
-          ...SponsUser,
-          drivers: updatedDrivers,
-          logs: [newLog, ...SponsUser.logs],
-        };
-      })
-    );
-
-    setDescription("");
+      await loadSponsorDrivers(selectedSponsorUser.username);
+      await loadSponsorLogs(selectedSponsorUser.username);
+      setDescription("");
+    } catch (error) {
+      console.error(error);
+      setAdjustPointsError("Failed to adjust points.");
+    } finally {
+      setAdjustingPoints(false);
+    }
   };
 
   const handleAdminAccountTakeover = () => {
@@ -271,10 +315,14 @@ function AdminPage() {
   return (
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>{t('admin.title')}</strong></h1>
+        <h1>
+          <strong>{t("admin.title")}</strong>
+        </h1>
+        <div>Admin page loaded
+        </div>
 
         <Tabs defaultActiveKey="manage" className="mb-4">
-          <Tab eventKey="manage" title={t('admin.manageDrivers')}>
+          <Tab eventKey="manage" title={t("admin.manageDrivers")}>
             <Row>
               <Col md={4}>
                 <Card className="mb-4">
@@ -326,22 +374,93 @@ function AdminPage() {
               <Col md={5}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>{t('admin.adjustPoints')}</Card.Title>
+                    <Card.Title>{t("admin.adjustPoints")}</Card.Title>
 
-                    {!selectedDriver ? (
-                      <div className="text-muted">{t('admin.selectDriverToAdjust')}</div>
+                    {adjustPointsError && (
+                      <div className="alert alert-danger py-2">{adjustPointsError}</div>
+                    )}
+                    {adjustPointsMessage && (
+                      <div className="alert alert-success py-2">{adjustPointsMessage}</div>
+                    )}
+                    {sponsorDriversError && (
+                      <div className="alert alert-danger py-2">{sponsorDriversError}</div>
+                    )}
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>{t("admin.sponsoredUser")}</Form.Label>
+                      <Form.Select
+                        value={selectedSponsorUsername}
+                        onChange={(e) => setSelectedSponsorUsername(e.target.value)}
+                        disabled={loadingSponsorUsers || !sponsorUsers.length}
+                      >
+                        {!sponsorUsers.length ? (
+                          <option value="">No sponsors found</option>
+                        ) : (
+                          sponsorUsers.map((user) => (
+                            <option key={user.username} value={user.username}>
+                              {user.name || user.preferred_username || user.email || user.username}
+                            </option>
+                          ))
+                        )}
+                      </Form.Select>
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>{t("admin.driver")}</Form.Label>
+                      <Form.Select
+                        value={selectedSponsorDriverUsername}
+                        onChange={(e) =>
+                          setSelectedSponsorDriverUsername(e.target.value)
+                        }
+                        disabled={
+                          loadingSponsorDrivers ||
+                          !selectedSponsorUsername ||
+                          !sponsorDrivers.length
+                        }
+                      >
+                        {!selectedSponsorUsername ? (
+                          <option value="">Select a sponsor first</option>
+                        ) : loadingSponsorDrivers ? (
+                          <option value="">Loading drivers...</option>
+                        ) : !sponsorDrivers.length ? (
+                          <option value="">No drivers assigned</option>
+                        ) : (
+                          sponsorDrivers.map((user) => (
+                            <option key={user.username} value={user.username}>
+                              {user.name || user.preferred_username || user.email || user.username}
+                            </option>
+                          ))
+                        )}
+                      </Form.Select>
+                    </Form.Group>
+
+                    {!selectedSponsorDriver ? (
+                      <div className="text-muted">{t("admin.selectDriverToAdjust")}</div>
                     ) : (
                       <>
                         <p>
-                          {t('admin.sponsoredUser')}: <strong>{selectedSponsUser?.name}</strong>
+                          {t("admin.sponsoredUser")}:{" "}
+                          <strong>
+                            {selectedSponsorUser?.name ||
+                              selectedSponsorUser?.preferred_username ||
+                              selectedSponsorUser?.email ||
+                              selectedSponsorUser?.username}
+                          </strong>
                           <br />
-                          {t('admin.driver')}: <strong>{selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</strong>
+                          {t("admin.driver")}:{" "}
+                          <strong>
+                            {selectedSponsorDriver.name ||
+                              selectedSponsorDriver.preferred_username ||
+                              selectedSponsorDriver.email ||
+                              selectedSponsorDriver.username}
+                          </strong>
                           <br />
-                          {t('admin.currentPoints')}: <strong>{selectedDriver.points}</strong>
+                          {t("admin.currentPoints")}:{" "}
+                          <strong>{selectedSponsorDriver.points ?? 0}</strong>
                         </p>
 
                         <Form.Group className="mb-3">
-                          <Form.Label>{t('admin.amount')}</Form.Label>
+                          <Form.Label>{t("admin.amount")}</Form.Label>
                           <Form.Control
                             type="number"
                             value={amount}
@@ -351,24 +470,32 @@ function AdminPage() {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                          <Form.Label>{t('admin.reasonForAdjustment')}</Form.Label>
+                          <Form.Label>{t("admin.reasonForAdjustment")}</Form.Label>
                           <Form.Control
                             type="text"
-                            placeholder={t('admin.descriptionPlaceholder')}
+                            placeholder={t("admin.descriptionPlaceholder")}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                           />
                         </Form.Group>
 
                         <div className="d-flex gap-2">
-                          <Button variant="success" onClick={() => pointAdjust(amount)}>
-                            {t('admin.addPoints')}
+                          <Button
+                            variant="success"
+                            onClick={() => pointAdjust(amount)}
+                            disabled={adjustingPoints}
+                          >
+                            {adjustingPoints ? "Updating..." : t("admin.addPoints")}
                           </Button>
-                          <Button variant="danger" onClick={() => pointAdjust(-amount)}>
-                            {t('admin.subtractPoints')}
+                          <Button
+                            variant="danger"
+                            onClick={() => pointAdjust(-amount)}
+                            disabled={adjustingPoints}
+                          >
+                            {adjustingPoints ? "Updating..." : t("admin.subtractPoints")}
                           </Button>
                           <Button variant="secondary" onClick={handleAdminAccountTakeover}>
-                            {t('admin.manageAccount')}
+                            {t("admin.manageAccount")}
                           </Button>
                         </div>
                       </>
@@ -386,13 +513,18 @@ function AdminPage() {
                         <p className="mb-3">
                           Manage account information for{" "}
                           <strong>
-                            {selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}
-                          </strong>.
+                            {selectedDriverUser.name ||
+                              selectedDriverUser.preferred_username ||
+                              selectedDriverUser.username}
+                          </strong>
+                          .
                         </p>
                         <Button
                           style={{ width: "160px", height: "50px" }}
                           variant="secondary"
-                          onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}
+                          onClick={() =>
+                            navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)
+                          }
                         >
                           Edit Account
                         </Button>
@@ -447,9 +579,7 @@ function AdminPage() {
                     )}
 
                     {sponsorUsersError && (
-                      <div className="alert alert-danger py-2 mt-3">
-                        {sponsorUsersError}
-                      </div>
+                      <div className="alert alert-danger py-2 mt-3">{sponsorUsersError}</div>
                     )}
                   </Card.Body>
                 </Card>
@@ -478,9 +608,7 @@ function AdminPage() {
                         <Button
                           style={{ width: "180px", height: "50px" }}
                           variant="secondary"
-                          onClick={() =>
-                            navigate(`/admin/drivers/${selectedSponsorUser.username}/edit`)
-                          }
+                          onClick={handleSponsorAccountTakeover}
                         >
                           Edit Account
                         </Button>
@@ -532,8 +660,10 @@ function AdminPage() {
                       {selectedPendingUser && (
                         <>
                           <div className="mb-3">
-                            <strong>Selected User:</strong><br />
-                            {selectedPendingUser.name || "No name"}<br />
+                            <strong>Selected User:</strong>
+                            <br />
+                            {selectedPendingUser.name || "No name"}
+                            <br />
                             <span className="text-muted">
                               {selectedPendingUser.email || selectedPendingUser.username}
                             </span>
@@ -586,27 +716,31 @@ function AdminPage() {
             </Col>
           </Tab>
 
-          <Tab eventKey="audit" title={t('admin.logsReports')}>
+          <Tab eventKey="audit" title={t("admin.logsReports")}>
             <Row>
               <Col md={4}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
-                    <ListGroup>
-                      {SponsoredUsers.map((c) => (
-                        <ListGroup.Item
-                          key={c.id}
-                          action
-                          active={c.id === selectedSponsUserId}
-                          onClick={() => {
-                            setSelectedSponsUserId(c.id);
-                            setSelectedDriverId(null);
-                          }}
-                        >
-                          {c.name}
-                        </ListGroup.Item>
-                      ))}
-                    </ListGroup>
+                    <Card.Title>{t("admin.sponsoredUsers")}</Card.Title>
+
+                    {loadingSponsorUsers ? (
+                      <div className="text-muted">Loading sponsors...</div>
+                    ) : !sponsorUsers.length ? (
+                      <div className="text-muted">No sponsors found.</div>
+                    ) : (
+                      <ListGroup>
+                        {sponsorUsers.map((user) => (
+                          <ListGroup.Item
+                            key={user.username}
+                            action
+                            active={user.username === selectedSponsorUsername}
+                            onClick={() => setSelectedSponsorUsername(user.username)}
+                          >
+                            {user.name || user.preferred_username || user.email || user.username}
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
                   </Card.Body>
                 </Card>
               </Col>
@@ -615,27 +749,53 @@ function AdminPage() {
                 <Card>
                   <Card.Body>
                     <Card.Title>
-                      {t('admin.logs')} {selectedSponsUser ? `(${selectedSponsUser.name})` : ""}
+                      {t("admin.logs")}{" "}
+                      {selectedSponsorUser
+                        ? `(${
+                            selectedSponsorUser.name ||
+                            selectedSponsorUser.preferred_username ||
+                            selectedSponsorUser.email ||
+                            selectedSponsorUser.username
+                          })`
+                        : ""}
                     </Card.Title>
 
-                    {!SponsUserLogs.length ? (
-                      <div className="text-muted mt-3">{t('admin.noAdjustmentsLogged')}</div>
+                    {sponsorLogsError && (
+                      <div className="alert alert-danger py-2">{sponsorLogsError}</div>
+                    )}
+
+                    {loadingSponsorLogs ? (
+                      <div className="text-muted mt-3">Loading logs...</div>
+                    ) : !sponsorAdjustmentLogs.length ? (
+                      <div className="text-muted mt-3">
+                        {t("admin.noAdjustmentsLogged")}
+                      </div>
                     ) : (
                       <ListGroup>
-                        {SponsUserLogs.map((log, index) => (
-                          <ListGroupItem key={index}>
+                        {sponsorAdjustmentLogs.map((log, index) => (
+                          <ListGroupItem key={log.id || index}>
                             <div>
-                              <strong>{log.driver}</strong>
+                              <strong>
+                                {log.driverName || log.driver || log.driverUsername}
+                              </strong>
                             </div>
                             <div>
-                              {t('admin.change')}:{" "}
-                              <span className={log.change >= 0 ? "text-success" : "text-danger"}>
-                                {log.change >= 0 ? `+${log.change}` : log.change}
+                              {t("admin.change")}:{" "}
+                              <span
+                                className={
+                                  Number(log.change) >= 0 ? "text-success" : "text-danger"
+                                }
+                              >
+                                {Number(log.change) >= 0
+                                  ? `+${log.change}`
+                                  : log.change}
                               </span>
                             </div>
-                            <div>{t('admin.reason')}: {log.reason}</div>
+                            <div>
+                              {t("admin.reason")}: {log.reason || "No Reason Provided"}
+                            </div>
                             <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                              {log.time}
+                              {log.time || log.createdAt || ""}
                             </div>
                           </ListGroupItem>
                         ))}

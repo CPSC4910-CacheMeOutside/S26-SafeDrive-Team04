@@ -19,3 +19,4 @@ export async function fetchSponsorUsers() {
   const { body } = await restOperation.response;
   return await body.json();
 }
+

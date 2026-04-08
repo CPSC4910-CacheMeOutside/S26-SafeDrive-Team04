@@ -69,7 +69,7 @@ new GatewayResponse(apiStack, 'Default4xxGatewayResponse', {
   responseHeaders: {
     'Access-Control-Allow-Origin': "'http://localhost:5173'",
     'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+    'Access-Control-Allow-Methods': "'GET,PUT,POST,DELETE,OPTIONS'",
   },
 });
 
@@ -79,7 +79,7 @@ new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
   responseHeaders: {
     'Access-Control-Allow-Origin': "'http://localhost:5173'",
     'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+    'Access-Control-Allow-Methods': "'GET,PUT,POST,DELETE,OPTIONS'",
   },
 });
 
@@ -136,6 +136,39 @@ backend.addOutput({
       },
     },
   },
+});
+
+const sponsorsPath = adminPath.addResource('sponsors');
+const sponsorUsernamePath = sponsorsPath.addResource('{sponsorUsername}');
+
+const sponsorDriversPath = sponsorUsernamePath.addResource('drivers');
+sponsorDriversPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const sponsorDriverUsernamePath = sponsorDriversPath.addResource('{driverUsername}');
+
+sponsorDriverUsernamePath.addMethod('POST', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+sponsorDriverUsernamePath.addMethod('DELETE', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const sponsorDriverPointsPath = sponsorDriverUsernamePath.addResource('points');
+sponsorDriverPointsPath.addMethod('POST', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const sponsorLogsPath = sponsorUsernamePath.addResource('logs');
+sponsorLogsPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
 });
 
 export { backend };
