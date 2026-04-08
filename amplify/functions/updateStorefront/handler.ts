@@ -1,4 +1,3 @@
-import type { Handler } from 'aws-lambda';
 import type { EventBridgeHandler } from "aws-lambda";
 import type { AboutSchema } from '../../../amplify/data/resource';
 import { generateClient } from 'aws-amplify/data';
@@ -16,6 +15,8 @@ type tProduct = {
 };
 
 export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async (event) => {
+    console.log("Lambda updateStorefront triggered...");
+    console.log("Event:", JSON.stringify(event));
 
     // Generate client
     const client = generateClient<AboutSchema>();
@@ -23,10 +24,11 @@ export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async 
     const apiStr = "https://api.escuelajs.co/api/v1/products";
 
     const storeRequest = await fetch(apiStr);
-    const storeFront = await storeRequest.json() as tProduct;
+    const storeFront = await storeRequest.json() as tProduct[];
 
     if (!Array.isArray(storeFront)) {
-        throw new Error("API did not return an array");
+        console.log("API did not return an array");
+        return;
     }
 
     // Store all products available on the storefront
@@ -42,9 +44,16 @@ export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async 
             available: true,
         }
     ));
+    console.log("Pulled the following from Platzi: ", storeFrontProducts);
 
     // Store all products already present in the Product table
     const { data: tableProducts, errors: tpErrors } = await client.models.Product.list({});
+
+    if (tpErrors) {
+        console.log("Storefront Error: Could not get products from table: ", tpErrors);
+        return;
+    }
+    console.log("Pulled the following from table Product: ", tableProducts);
 
     // For each product in the table that isn't in the store front products, set availability to false
     if (tableProducts !== null) {
@@ -58,26 +67,32 @@ export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async 
                 const {data: updatedProd, errors: upErrors } = await client.models.Product.update(iproduct);
 
                 if (upErrors) {
-                    throw new Error(`Storefront Error: Could not update product:${updatedProd} :${upErrors}`);
+                    console.log(`Storefront Error: Could not update product:${updatedProd} :${upErrors}`);
+                    return;
                 } else if (updatedProd === null) {
-                    throw new Error(`Storefront Error: Could not update product:${updatedProd} : Attempted to update null`);
+                    console.log(`Storefront Error: Could not update product:${updatedProd} : Attempted to update null`);
+                    return;
                 }
             }
         }
+        console.log("Marked the following products as unavailable: ", notInStoreFront);
     } 
 
     // Add the store front products not present in the product table
     const tableProductIds = new Set(tableProducts ? tableProducts.map(p => String(p.pId)) : []);
     const notInTable = storeFrontProducts.filter(item => !tableProductIds.has(String(item.pId)));
-
+    console.log("Adding new products to table...");
     for (const prod of notInTable) {
         const { data: createdProd, errors: cpErrors } = await client.models.Product.create(prod);
 
         if (cpErrors) {
-            throw new Error(`Storefront Error: Could not add product:${createdProd} to table :${cpErrors}`);
+            console.log(`Storefront Error: Could not add product:${createdProd} to table :${cpErrors}`);
+            return;
         } else if (createdProd === null) {
-            throw new Error(`Storefront Error: Could not add product:${createdProd} to table : Attempted to add null`);
+            console.log(`Storefront Error: Could not add product:${createdProd} to table : Attempted to add null`);
+            return;
         }
+        console.log("Added product: ", createdProd);
     }
-
+    console.log("Lambda updateStorefront completed!")
 };
