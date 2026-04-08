@@ -1,4 +1,5 @@
 import { a, defineData, type ClientSchema} from '@aws-amplify/backend';
+import { Product } from 'aws-cdk-lib/aws-servicecatalog';
 import { id } from 'aws-sdk/clients/datapipeline';
  
 // Create our About Table
@@ -15,7 +16,6 @@ const SafeDriveSchema = a.schema({
   // A admin class user
   Admin: a.model({
     adminId: a.id().required(),
-    userId: a.id()
   }).identifier(['adminId'])
   .authorization(allow => [
     allow.groups(['Admin'])
@@ -24,11 +24,11 @@ const SafeDriveSchema = a.schema({
   // A sponsor class user
   Sponsor: a.model({
     sponsorId: a.id().required(),
-    userId: a.id(),
     affiliation: a.string(),
 
     drivers: a.hasMany("DriverSponsor", 'sponsorId'),
     applications: a.hasMany('Application', 'sponsorId'),
+    catalog: a.hasOne("Catalog", "sponsorId")
   })
   .identifier(['sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
@@ -76,7 +76,6 @@ const SafeDriveSchema = a.schema({
   // A driver class user
   Driver: a.model({
     driverId: a.id().required(),
-    userId: a.id(),
     licenseNo: a.string(),
     state: a.string(),
     expDate: a.string(),
@@ -86,26 +85,108 @@ const SafeDriveSchema = a.schema({
 
     sponsors: a.hasMany("DriverSponsor", "driverId"),
     wishlist: a.hasOne('Wishlist', 'driverId'),
+    cart: a.hasOne('Cart', 'driverId'),
+    catalogs: a.hasMany("Catalog", "driverId"),
     applications: a.hasMany('Application', 'driverId'),
   })
   .identifier(['driverId'])
   .authorization(allow => [
     allow.groups(['Admin']),
     allow.groups(['Sponsor']),
-    allow.groups(['Driver'])
+    allow.groups(['Driver']),
+    allow.publicApiKey()
   ]),
+
+  Catalog: a.model({
+    driverId: a.id().required(),
+    drivers: a.belongsTo("Driver", "driverId"),
+    sponsorId: a.id().required(),
+    sponsors: a.belongsTo("Sponsor", "sponsorId"),
+
+    products: a.hasMany("CatalogProduct", ['driverId', 'sponsorId'])
+  }).identifier(['driverId', 'sponsorId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  CatalogProduct: a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    catalog: a.belongsTo("Catalog", ['driverId', 'sponsorId']),
+
+    pId: a.id().required(),
+    product: a.belongsTo('Product', "pId")
+  }).identifier(['driverId', 'sponsorId', 'pId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Cart : a.model({
+    cartId: a.id(),
+    driverId: a.id(),
+
+    driver: a.belongsTo("Driver", "driverId"),
+    products: a.hasMany("CartProduct", "cartId")
+
+  }).identifier(['cartId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  CartProduct: a.model({
+    cartId: a.id().required(),
+    cart: a.belongsTo('Cart', 'cartId'),
+    pId: a.id().required(),
+    product: a.belongsTo('Product', 'pId')
+  }).identifier(['cartId', 'pId'])
+  .authorization(allow => [allow.publicApiKey()]),
 
   Wishlist: a.model({
     wishId: a.id().required(),
     driverId: a.id().required(),
-    driver: a.belongsTo('Driver', 'driverId')
+    driver: a.belongsTo('Driver', 'driverId'),
+    products: a.hasMany("WishlistProduct", "wishId")
   }).identifier(['wishId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  // TODO: Model is slated for deprication. Ensure all references are handled before removing
+  SponsorTransaction: a.model({
+    transactionId: a.id().required(),
+    // TODO: Re-add relationship link to sponsor
+    sponsorId: a.id().required(),
+    // TODO: Re-add relationship link to driver
+    driverId: a.id().required(),
+    
+    amount: a.integer().required(),
+    type: a.string().required(),
+    reason: a.string(),
+    note: a.string(),
+    receiptUrl: a.string(),
+    balanceAfter: a.integer(),
+  })
+  .identifier(['transactionId'])
   .authorization(allow => [allow.publicApiKey()]), 
 
   WishlistProduct: a.model({
     wishId: a.id().required(),
-    pId: a.id().required()
+    wishlist: a.belongsTo("Wishlist", "wishId"),
+    pId: a.id().required(),
+    product: a.belongsTo("Product", "pId")
   }).identifier(['wishId', 'pId'])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  Order : a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    time: a.string().required(),
+    status: a.integer().required(),
+
+    products: a.hasMany("OrderProduct", ['driverId', 'sponsorId'])
+
+  }).identifier(["sponsorId", "driverId"])
+  .authorization(allow => [allow.publicApiKey()]),
+
+  OrderProduct : a.model({
+    driverId: a.id().required(),
+    sponsorId: a.id().required(),
+    order: a.belongsTo("Order", ["driverId", "sponsorId"]),
+    pId: a.id().required(),
+    product: a.belongsTo("Product", "pId")
+  }).identifier(['driverId', 'sponsorId', 'pId'])
   .authorization(allow => [allow.publicApiKey()]),
  
   Product: a.model({
@@ -117,7 +198,10 @@ const SafeDriveSchema = a.schema({
     price: a.float(),
     available: a.boolean(),
 
-    
+    carts: a.hasMany("CartProduct", "pId"),
+    wishlists: a.hasMany("WishlistProduct", "pId"),
+    catalogs: a.hasMany("CatalogProduct", "pId"),
+    orders: a.hasMany("OrderProduct", "pId")
   }).identifier(['pId'])
   .authorization(allow => [allow.publicApiKey()]),
 
@@ -136,34 +220,6 @@ const SafeDriveSchema = a.schema({
 
     notification: a.belongsTo('Notification', 'nId'),
   }).identifier(['sendId', 'recipId', 'nId'])
-  .authorization(allow => [allow.publicApiKey()]),
-
-  Order: a.model({
-    driverId: a.id().required(),
-    sponsorId: a.id().required(),
-
-    time: a.string().required(),
-    status: a.integer().required()
-
-  }).identifier(["driverId", "sponsorId"])
-  .authorization(allow => [allow.publicApiKey()]),
-
-  OrderLog: a.model({
-    logId: a.id().required(),
-    driverId: a.id().required(),
-    sponsorId: a.id().required(),
-    time: a.string().required(),
-    status: a.integer().required()
-  }).identifier(["logId"])
-  .authorization(allow => [allow.publicApiKey()]),
-
-  OrderProduct: a.model({
-    driverId: a.id().required(),
-    sponsorId: a.id().required(),
-    order: a.belongsTo("Order", ["driverId", "sponsorId"]),
-    pId: a.id().required(),
-    product: a.belongsTo("Product", "pId")
-  }).identifier(["driverId", "sponsorId", "pId"])
   .authorization(allow => [allow.publicApiKey()]),
 
 });
