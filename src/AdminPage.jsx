@@ -27,8 +27,6 @@ import {
   fetchSponsorGroupUsers,
 } from "./adminUpdateDriverInfo-api";
 
-
-
 function AdminPage(){
   const [editingPoints, setEditingPoints] = useState({});
   const [savingPoints, setSavingPoints] = useState(false);
@@ -61,43 +59,40 @@ function AdminPage(){
     [driverUsers, selectedDriverUsername]
   );
 
-  const loadDriverUsers = async () => {
-    try {
-      setLoadingDriverUsers(true);
-      setDriverUsersError("");
+  const safeArray = (value) => (Array.isArray(value) ? value : []);
 
-      const data = await fetchDriverUsers();
-      const users = Array.isArray(data) ? data : [];
-
-      setDriverUsers(users);
-      setSelectedDriverUsername((prev) => {
-        if (prev && users.some((u) => u.username === prev)) return prev;
-        return users[0]?.username ?? "";
-      });
-    } catch (error) {
-      console.error(error);
-      setDriverUsersError("Failed to load drivers.");
-    } finally {
-      setLoadingDriverUsers(false);
+  const pickSelected = (items, currentValue, key) => {
+    if (currentValue && items.some((item) => item[key] === currentValue)) {
+      return currentValue;
     }
+    return items[0]?.[key] || "";
   };
+
+  const clearRoleStatus = () => {
+    setRoleCardError("");
+    setRoleCardMessage("");
+  };
+
+  const clearRelationshipStatus = () => {
+    setRelationshipError("");
+    setRelationshipMessage("");
+  };
+
+
+
+
 
   const selectedPendingUser = useMemo(() => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null, [unassignedUsers, selectedPendingUsername]);
   
   const loadUnassignedUsers = async () => {
     try {
       setLoadingPendingUsers(true);
-      setRoleCardError("");
-      setRoleCardMessage("");
+      clearRoleStatus();
 
-      const data = await fetchUnassignedUsers();
-      const users = Array.isArray(data) ? data : [];
+      const users = safeArray(await fetchUnassignedUsers());
 
       setUnassignedUsers(users);
-      setSelectedPendingUsername((prev) => {
-        if (prev && users.some((u) => u.username === prev)) return prev;
-        return users[0]?.username ?? "";
-      });
+      setSelectedPendingUsername((prev) => pickSelected(users, prev, "username"));
     } catch (error) {
       console.error(error);
       setRoleCardError("Failed to load unassigned users.");
@@ -191,35 +186,40 @@ function AdminPage(){
   };
 
 
+    //Driver Handlers
+  const loadDriverUsers = async () => {
+    try {
+      setLoadingDriverUsers(true);
+      setDriverUsersError("");
 
+      const users = safeArray(await fetchDriverUsers());
 
+      setDriverUsers(users);
+      setSelectedDriverUsername((prev) => pickSelected(users, prev, "username"));
+    } catch (error) {
+      console.error(error);
+      setDriverUsersError("Failed to load drivers.");
+    } finally {
+      setLoadingDriverUsers(false);
+    }
+  };
 
-
-
-
-
+  //Sponsor User Handlers
   const loadSponsors = async () => {
     try {
       setLoadingSponsors(true);
       setRelationshipError("");
 
-      const data = await fetchSponsorGroupUsers();
-      const sponsorUsers = Array.isArray(data) ? data : [];
-
-      // make sure each sponsor-group user has a Sponsor row
+      const sponsorUsers = safeArray(await fetchSponsorGroupUsers());
       const ensuredSponsors = [];
+
       for (const user of sponsorUsers) {
         const sponsorRecord = await ensureSponsorRecord(user);
-        if (sponsorRecord) {
-          ensuredSponsors.push(sponsorRecord);
-        }
+        if (sponsorRecord) ensuredSponsors.push(sponsorRecord);
       }
 
       setSponsors(ensuredSponsors);
-      setSelectedSponsorId((prev) => {
-        if (prev && ensuredSponsors.some((s) => s.sponsorId === prev)) return prev;
-        return ensuredSponsors[0]?.sponsorId || "";
-      });
+      setSelectedSponsorId((prev) => pickSelected(ensuredSponsors, prev, "sponsorId"));
     } catch (error) {
       console.error(error);
       setRelationshipError("Failed to load sponsors.");
@@ -229,25 +229,20 @@ function AdminPage(){
   };
 
   const loadRelationshipDrivers = async () => {
-  try {
-    setRelationshipError("");
+    try {
+      setRelationshipError("");
 
-    // pull from Cognito Driver group, not just the data table
-    const data = await fetchDriverUsers();
-    const driverUsers = Array.isArray(data) ? data : [];
+      const cognitoDrivers = safeArray(await fetchDriverUsers());
+      const ensuredDrivers = await ensureDriverRecords(cognitoDrivers);
 
-    // make sure every Driver-group user has a Driver row
-    const ensuredDrivers = await ensureDriverRecords(driverUsers);
-
-    setRelationshipDrivers(ensuredDrivers);
-    setSelectedRelationshipDriverId((prev) => {
-      if (prev && ensuredDrivers.some((d) => d.driverId === prev)) return prev;
-      return ensuredDrivers[0]?.driverId || "";
-    });
-  } catch (error) {
-    console.error(error);
-    setRelationshipError("Failed to load drivers for relationships.");
-  }
+      setRelationshipDrivers(ensuredDrivers);
+      setSelectedRelationshipDriverId((prev) =>
+        pickSelected(ensuredDrivers, prev, "driverId")
+      );
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to load drivers for relationships.");
+    }
   };
 
   const loadRelationships = async (sponsorId) => {
@@ -278,6 +273,10 @@ function AdminPage(){
     }
   };
 
+
+
+
+  //Relationship Handlers
   const handleAssignDriverToSponsor = async () => {
     if (!selectedSponsorId || !selectedRelationshipDriverId) {
       setRelationshipError("Please select both a sponsor and a driver.");
@@ -360,6 +359,9 @@ function AdminPage(){
 
 
 
+
+
+  //Handlers for reading proper lables for Drivers and Sponsors
   const getDriverLabel = (driverId) => {
   const match = driverUsers.find((u) => u.username === driverId);
 
