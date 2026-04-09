@@ -13,12 +13,12 @@ import Tab from"react-bootstrap/Tab"
 import { ListGroupItem } from 'react-bootstrap';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 import {
-  fetchDriverUsersFromData,
   fetchSponsorRelationships,
   assignDriverToSponsor,
   removeDriverFromSponsor,
   ensureSponsorRecord,
   ensureDriverRecord,
+  ensureDriverRecords,
 } from "./adminDriverSponsor-api";
 
 import {
@@ -196,10 +196,6 @@ function AdminPage(){
 
 
 
-
-
-
-
   const loadSponsors = async () => {
     try {
       setLoadingSponsors(true);
@@ -231,21 +227,25 @@ function AdminPage(){
   };
 
   const loadRelationshipDrivers = async () => {
-    try {
-      setRelationshipError("");
+  try {
+    setRelationshipError("");
 
-      const data = await fetchDriverUsersFromData();
-      const driversList = Array.isArray(data) ? data : [];
+    // pull from Cognito Driver group, not just the data table
+    const data = await fetchDriverUsers();
+    const driverUsers = Array.isArray(data) ? data : [];
 
-      setRelationshipDrivers(driversList);
-      setSelectedRelationshipDriverId((prev) => {
-        if (prev && driversList.some((d) => d.driverId === prev)) return prev;
-        return driversList[0]?.driverId || "";
-      });
-    } catch (error) {
-      console.error(error);
-      setRelationshipError("Failed to load drivers for relationships.");
-    }
+    // make sure every Driver-group user has a Driver row
+    const ensuredDrivers = await ensureDriverRecords(driverUsers);
+
+    setRelationshipDrivers(ensuredDrivers);
+    setSelectedRelationshipDriverId((prev) => {
+      if (prev && ensuredDrivers.some((d) => d.driverId === prev)) return prev;
+      return ensuredDrivers[0]?.driverId || "";
+    });
+  } catch (error) {
+    console.error(error);
+    setRelationshipError("Failed to load drivers for relationships.");
+  }
   };
 
   const loadRelationships = async (sponsorId) => {
@@ -277,6 +277,18 @@ function AdminPage(){
     try {
       setRelationshipError("");
       setRelationshipMessage("");
+
+      // optional local duplicate check for friendlier UX
+      const alreadyAssigned = relationships.some(
+        (rel) =>
+          rel.driverId === selectedRelationshipDriverId &&
+          rel.sponsorId === selectedSponsorId
+      );
+
+      if (alreadyAssigned) {
+        setRelationshipMessage("Driver is already assigned to this sponsor.");
+        return;
+      }
 
       await assignDriverToSponsor(selectedRelationshipDriverId, selectedSponsorId);
 
