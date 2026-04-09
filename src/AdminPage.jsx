@@ -315,6 +315,30 @@ function AdminPage(){
     }
   };
 
+
+  const getDriverLabel = (driverId) => {
+  const match = driverUsers.find((u) => u.username === driverId);
+
+  if (!match) return driverId;
+
+  return (
+    match.preferred_username ||
+    match.name ||
+    match.email ||
+    match.username ||
+    driverId
+    );
+  };
+
+  const getSponsorLabel = (sponsorId) => {
+  const match = sponsors.find((s) => s.sponsorId === sponsorId);
+
+  if (!match) return sponsorId;
+
+  return match.affiliation || sponsorId;
+  };
+
+
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
@@ -431,7 +455,7 @@ function AdminPage(){
                               <option value="">Choose a driver</option>
                               {relationshipDrivers.map((driver) => (
                                 <option key={driver.driverId} value={driver.driverId}>
-                                  {driver.driverId}
+                                  {getDriverLabel(driver.driverId)}
                                 </option>
                               ))}
                             </Form.Select>
@@ -463,7 +487,7 @@ function AdminPage(){
                     <Card.Body>
                       <Card.Title>
                         Current Relationships
-                        {selectedSponsorId ? ` (${selectedSponsorId})` : ""}
+                        {selectedSponsorId ? ` (${getSponsorLabel(selectedSponsorId)})` : ""}
                       </Card.Title>
 
                       {loadingRelationships ? (
@@ -480,7 +504,7 @@ function AdminPage(){
                               className="d-flex justify-content-between align-items-center"
                             >
                               <div>
-                                <div className="fw-semibold">{rel.driverId}</div>
+                                <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
                                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                                   Points: {rel.points || 0}
                                 </div>
