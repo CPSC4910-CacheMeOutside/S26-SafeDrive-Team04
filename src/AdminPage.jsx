@@ -19,6 +19,7 @@ import {
   ensureSponsorRecord,
   ensureDriverRecord,
   ensureDriverRecords,
+  updateDriverSponsorPoints,
 } from "./adminDriverSponsor-api";
 
 import {
@@ -29,7 +30,8 @@ import {
 
 
 function AdminPage(){
-
+  const [editingPoints, setEditingPoints] = useState({});
+  const [savingPoints, setSavingPoints] = useState(false);
   const [unassignedUsers, setUnassignedUsers] = useState([]);
   const [selectedPendingUsername, setSelectedPendingUsername] = useState("");
   const [selectedRole, setSelectedRole] = useState("Driver");
@@ -42,6 +44,7 @@ function AdminPage(){
   const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
   const [loadingDriverUsers, setLoadingDriverUsers] = useState(false);
   const [driverUsersError, setDriverUsersError] = useState("");
+
   const [sponsors, setSponsors] = useState([]);
   const [relationshipDrivers, setRelationshipDrivers] = useState([]);
   const [selectedSponsorId, setSelectedSponsorId] = useState("");
@@ -51,7 +54,6 @@ function AdminPage(){
   const [loadingRelationships, setLoadingRelationships] = useState(false);
   const [relationshipMessage, setRelationshipMessage] = useState("");
   const [relationshipError, setRelationshipError] = useState("");
-
 
 
   const selectedDriverUser = useMemo(
@@ -259,7 +261,15 @@ function AdminPage(){
       setRelationshipError("");
 
       const data = await fetchSponsorRelationships(sponsorId);
-      setRelationships(Array.isArray(data) ? data : []);
+      const relationshipList = Array.isArray(data) ? data : [];
+
+      setRelationships(relationshipList);
+
+      const nextEditingPoints = {};
+      relationshipList.forEach((rel) => {
+        nextEditingPoints[`${rel.driverId}-${rel.sponsorId}`] = rel.points ?? 0;
+      });
+      setEditingPoints(nextEditingPoints);
     } catch (error) {
       console.error(error);
       setRelationshipError("Failed to load sponsor relationships.");
@@ -314,6 +324,40 @@ function AdminPage(){
       setRelationshipError("Failed to remove relationship.");
     }
   };
+
+  const handleSaveRelationshipPoints = async (driverId, sponsorId) => {
+    const key = `${driverId}-${sponsorId}`;
+    const rawValue = editingPoints[key];
+
+    if (rawValue === undefined || rawValue === "") {
+      setRelationshipError("Please enter a points value.");
+      return;
+    }
+
+    const parsedPoints = Number(rawValue);
+
+    if (Number.isNaN(parsedPoints)) {
+      setRelationshipError("Points must be a valid number.");
+      return;
+    }
+
+    try {
+      setSavingPoints(true);
+      setRelationshipError("");
+      setRelationshipMessage("");
+
+      await updateDriverSponsorPoints(driverId, sponsorId, parsedPoints);
+
+      setRelationshipMessage("Points updated successfully.");
+      await loadRelationships(selectedSponsorId);
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to update points.");
+    } finally {
+      setSavingPoints(false);
+    }
+  };
+
 
 
   const getDriverLabel = (driverId) => {
@@ -498,29 +542,60 @@ function AdminPage(){
                         <div className="text-muted">No drivers assigned to this sponsor yet.</div>
                       ) : (
                         <ListGroup>
-                          {relationships.map((rel) => (
-                            <ListGroupItem
-                              key={`${rel.driverId}-${rel.sponsorId}`}
-                              className="d-flex justify-content-between align-items-center"
-                            >
-                              <div>
-                                <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
-                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                  Points: {rel.points || 0}
-                                </div>
-                              </div>
+                          {relationships.map((rel) => {
+                            const key = `${rel.driverId}-${rel.sponsorId}`;
 
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() =>
-                                  handleRemoveRelationship(rel.driverId, rel.sponsorId)
-                                }
+                            return (
+                              <ListGroupItem
+                                key={key}
+                                className="d-flex justify-content-between align-items-center"
                               >
-                                Remove
-                              </Button>
-                            </ListGroupItem>
-                          ))}
+                                <div style={{ flex: 1 }}>
+                                  <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
+                                  <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                    ID: {rel.driverId}
+                                  </div>
+                                  <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                    Current Points: {rel.points ?? 0}
+                                  </div>
+                                </div>
+
+                                <div className="d-flex align-items-center gap-2">
+                                  <Form.Control
+                                    type="number"
+                                    style={{ width: "100px" }}
+                                    value={editingPoints[key] ?? 0}
+                                    onChange={(e) =>
+                                      setEditingPoints((prev) => ({
+                                        ...prev,
+                                        [key]: e.target.value,
+                                      }))
+                                    }
+                                  />
+
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleSaveRelationshipPoints(rel.driverId, rel.sponsorId)
+                                    }
+                                    disabled={savingPoints}
+                                  >
+                                    Save
+                                  </Button>
+
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleRemoveRelationship(rel.driverId, rel.sponsorId)
+                                    }
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </ListGroupItem>
+                            );
+                          })}
                         </ListGroup>
                       )}
                     </Card.Body>
