@@ -10,6 +10,7 @@ import Col from "react-bootstrap/Col"
 import Form from "react-bootstrap/Form"
 import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
+import Nav from "react-bootstrap/Nav"
 import { ListGroupItem } from 'react-bootstrap';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 import { fetchDriverUsers } from './adminUpdateDriverInfo-api';
@@ -246,184 +247,165 @@ function AdminPage(){
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         <h1><strong>{t('admin.title')}</strong></h1>
 
-        <Tabs defaultActiveKey="manage" className="mb-4">
-          <Tab eventKey="manage" title={t('admin.manageDrivers')}>
-            <Row>
-              <Col md={4}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title><strong>Drivers</strong></Card.Title>
-                        <p>Selected Driver:{" "}<strong>{selectedDriverUser ? selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username : "None selected"}</strong></p>
-                      {loadingDriverUsers ? (<div className="text-muted">Loading drivers...</div>) : !driverUsers.length ? (<div className="text-muted">No drivers found.</div>) : (<>
-                      <ListGroup className="mb-3">
-                        {driverUsers.map((user) => (
-                          <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)}>
-                            <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
-                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
-                          </ListGroupItem>
-                        ))}
-                      </ListGroup>
-                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
-                      </>
-                      )}
-                  </Card.Body>
-                </Card>
-              </Col>
-              
-              <Col md={4}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title><strong>View Driver Account</strong></Card.Title>
-                        <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={handleViewDriverAccount}>View</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
+        <Tab.Container defaultActiveKey="manage">
+          <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
+            <Nav variant="tabs">
+              <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="pendingUsers">Pending Users</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
+            </Nav>
 
-              <Col md={4}>
-                <Card className="mb-4">
-                  <Card.Body>
-                    <Card.Title><strong>Edit Driver Account</strong></Card.Title>
-                      {!selectedDriverUser ? (
-                        <div className="text-muted">Select a driver to manage their account.</div>
-                        ) : (<>
-                          <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit</Button>
+            <div className="ms-3 pb-2 text-nowrap">
+              <span><strong>Selected Driver: </strong></span>{selectedDriverUser ? selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username : "None"}
+            </div>
+          </div>
+
+          <Tab.Content>
+            <Tab.Pane eventKey="manage">
+              <Row>
+                <Col md={4}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title><strong>Drivers</strong></Card.Title>
+                        {loadingDriverUsers ? (
+                          <div className="text-muted">Loading drivers...</div>
+                        ) : !driverUsers.length ? (
+                          <div className="text-muted">No drivers found.</div>
+                        ) : (
+                          <>
+                        <ListGroup className="mb-3">
+                          {driverUsers.map((user) => (
+                            <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)}>
+                              <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
+                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
+                            </ListGroupItem>
+                          ))}
+                        </ListGroup>
+                        <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
                         </>
-                      )}
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          </Tab>
+                        )}
+                    </Card.Body>
+                  </Card>
+                </Col>
 
-          <Tab eventKey="pendingUsers" title="Pending Users">
-            <Col md={5}>
+                <Col md={4}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title><strong>View Driver Account</strong></Card.Title>
+                        <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={handleViewDriverAccount} disabled={!selectedDriverUser}>View</Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                <Col md={4}>
+                  <Card className="mb-4">
+                    <Card.Body>
+                      <Card.Title><strong>Edit Driver Account</strong></Card.Title>
+                        {!selectedDriverUser ? (
+                          <div className="text-muted">Select a driver to manage their account.</div>
+                        ) : (
+                        <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit</Button>
+                        )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="pendingUsers">
+              <Col md={5}>
                 <Card className="mb-4">
                   <Card.Body>
                     <Card.Title>Assign Role</Card.Title>
                       {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
                       {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
-                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>) : 
-                        !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>) : 
-                      (
+                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>
+                      ) : !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>
+                      ) : (
+                      <>
+                      <ListGroup className="mb-3">
+                        {unassignedUsers.map((user) => (
+                          <ListGroupItem key={user.username} action active={user.username === selectedPendingUsername} onClick={() => setSelectedPendingUsername(user.username)}>
+                            <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
+                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
+                          </ListGroupItem>
+                        ))}
+                      </ListGroup>
+
+                      {selectedPendingUser && (
                         <>
-                          <ListGroup className="mb-3">
-                            {unassignedUsers.map((user) => (
-                              <ListGroupItem
-                                key={user.username}
-                                action
-                                active={user.username === selectedPendingUsername}
-                                onClick={() => setSelectedPendingUsername(user.username)}
-                              >
-                                <div className="fw-semibold">
-                                  {user.name || user.preferred_username || user.username}
-                                </div>
-                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                  {user.email || user.username}
-                                </div>
-                              </ListGroupItem>
-                            ))}
-                          </ListGroup>
+                        <div className="mb-3">
+                          <strong>Selected User:</strong><br />{selectedPendingUser.name || "No name"}<br />
+                          <span className="text-muted">{selectedPendingUser.email || selectedPendingUser.username}</span>
+                        </div>
 
-                          {selectedPendingUser && (
-                            <>
-                              <div className="mb-3">
-                                <strong>Selected User:</strong><br />
-                                {selectedPendingUser.name || "No name"}<br />
-                                <span className="text-muted">
-                                  {selectedPendingUser.email || selectedPendingUser.username}
-                                </span>
-                              </div>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Assign Group</Form.Label>
+                          <Form.Select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+                            <option value="Admin">Admin</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Sponsor">Sponsor</option>
+                          </Form.Select>
+                        </Form.Group>
 
-                              <Form.Group className="mb-3">
-                                <Form.Label>Assign Group</Form.Label>
-                                <Form.Select
-                                  value={selectedRole}
-                                  onChange={(e) => setSelectedRole(e.target.value)}
-                                >
-                                  <option value="Admin">Admin</option>
-                                  <option value="Driver">Driver</option>
-                                  <option value="Sponsor">Sponsor</option>
-                                </Form.Select>
-                              </Form.Group>
-
-                              <div className="d-flex justify-content-center gap-4">
-                                <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
-                                <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
-                              </div>
-                            </>
-                          )}
+                        <div className="d-flex justify-content-center gap-4">
+                          <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
+                          <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
+                        </div>
                         </>
+                        )}
+                      </>
                       )}
-                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
+                    <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
                   </Card.Body>
                 </Card>
               </Col>
-          </Tab>
+            </Tab.Pane>
 
-          <Tab eventKey="audit" title={t('admin.logsReports')}>
-            <Row>
-            <Col md={4}>
-            <Card>
-              <Card.Body>
-                <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
-                <ListGroup>
-                  {SponsoredUsers.map((c) => (
-                    <ListGroup.Item
-                      key={c.id}
-                      action
-                      active={c.id === selectedSponsUserId}
-                      onClick={() => {
-                        setSelectedSponsUserId(c.id);
-                        setSelectedDriverId(null);
-                      }}
-                    >
-                    {c.name}
+            <Tab.Pane eventKey="audit">
+              <Row>
+                <Col md={4}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
+                        <ListGroup>{SponsoredUsers.map((c) => (
+                          <ListGroup.Item key={c.id} action active={c.id === selectedSponsUserId} onClick={() => {
+                            setSelectedSponsUserId(c.id);
+                            setSelectedDriverId(null);
+                          }}>{c.name}</ListGroup.Item>
+                        ))}
+                        </ListGroup>
+                    </Card.Body>
+                  </Card>
+                </Col>
 
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col md={8}>
-            <Card>
-              <Card.Body>
-                <Card.Title>
-                  {t('admin.logs')} {selectedSponsUser ? `(${selectedSponsUser.name})` :""}
-                  </Card.Title>
-                  {!SponsUserLogs.length ? (
-                    <div className="text-muted mt-3">{t('admin.noAdjustmentsLogged')}</div>
-                ) : (
-                  <ListGroup>
-                    {SponsUserLogs.map((log,index) => (
-                      <ListGroupItem key={index}>
-                        <div>
-                          <strong>{log.driver}</strong>
-                        </div>
-                        <div>
-                          {t('admin.change')}:{" "}
-                          <span className={log.change >= 0 ? "text-success" : "text-danger"}>
-                            {log.change >= 0 ? `+${log.change}` : log.change}
-                          </span>
-                        </div>
-                          <div>{t('admin.reason')}: {log.reason}</div>
-                          <div className="text-muted" style={{ fontSize: "0.9rem"}}>
-                            {log.time}
-                          </div>
-                      </ListGroupItem>
-                    ))}
-                  </ListGroup>
-                )}
-              </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Tab>
-  </Tabs>
- </div>
-</Container>
-  );  
-}
+                <Col md={8}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title>{t('admin.logs')} {selectedSponsUser ? `(${selectedSponsUser.name})` : ""}</Card.Title>
+                        {!SponsUserLogs.length ? (<div className="text-muted mt-3">{t('admin.noAdjustmentsLogged')}</div>
+                        ) : (
+                        <ListGroup>{SponsUserLogs.map((log, index) => (
+                          <ListGroupItem key={index}>
+                            <div><strong>{log.driver}</strong></div>
+                            <div>{t('admin.change')}:{" "}
+                              <span className={log.change >= 0 ? "text-success" : "text-danger"}>{log.change >= 0 ? `+${log.change}` : log.change}</span>
+                            </div>
+                            <div>{t('admin.reason')}: {log.reason}</div>
+                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{log.time}</div>
+                          </ListGroupItem>
+                        ))}
+                        </ListGroup>
+                        )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </Tab.Pane>
+          </Tab.Content>
+        </Tab.Container>
+      </div>
+    </Container>
+  )}
 
 export default AdminPage;
