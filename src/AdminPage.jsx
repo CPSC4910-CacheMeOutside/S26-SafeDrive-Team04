@@ -29,6 +29,7 @@ function AdminPage(){
   const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
   const [loadingDriverUsers, setLoadingDriverUsers] = useState(false);
   const [driverUsersError, setDriverUsersError] = useState("");
+  const [activeTab, setActiveTab] = useState("manage");
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -247,7 +248,7 @@ function AdminPage(){
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         <h1><strong>{t('admin.title')}</strong></h1>
 
-        <Tab.Container defaultActiveKey="manage">
+        <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
           <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
             <Nav variant="tabs">
               <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
@@ -255,9 +256,11 @@ function AdminPage(){
               <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
             </Nav>
 
-            <div className="ms-3 pb-2 text-nowrap">
-              <span><strong>Selected Driver: </strong></span>{selectedDriverUser ? selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username : "None"}
-            </div>
+            {activeTab === "manage" && (
+              <div className="ms-3 pb-2 text-nowrap">
+                <span><strong>Selected Driver: </strong></span>{selectedDriverUser ? selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username : "None"}
+              </div>
+            )}
           </div>
 
           <Tab.Content>
@@ -266,7 +269,7 @@ function AdminPage(){
                 <Col md={4}>
                   <Card>
                     <Card.Body>
-                      <Card.Title><strong>Drivers</strong></Card.Title>
+                      <Card.Title className="mb-4"><strong>Drivers</strong></Card.Title>
                         {loadingDriverUsers ? (
                           <div className="text-muted">Loading drivers...</div>
                         ) : !driverUsers.length ? (
@@ -275,13 +278,14 @@ function AdminPage(){
                           <>
                         <ListGroup className="mb-3">
                           {driverUsers.map((user) => (
-                            <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)}>
+                            <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)} 
+                              style={user.username === selectedDriverUsername ? { backgroundColor: "#10b981", border: "None", color: "white" } : {}}>
                               <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
                               <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
                             </ListGroupItem>
                           ))}
                         </ListGroup>
-                        <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
+                        <Button className="mt-3" style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
                         </>
                         )}
                     </Card.Body>
@@ -292,7 +296,7 @@ function AdminPage(){
                   <Card>
                     <Card.Body>
                       <Card.Title><strong>View Driver Account</strong></Card.Title>
-                        <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={handleViewDriverAccount} disabled={!selectedDriverUser}>View</Button>
+                        <Button className="mt-3" style={{ width: "160px", height: "50px" }} variant="primary" onClick={handleViewDriverAccount} disabled={!selectedDriverUser}>View</Button>
                     </Card.Body>
                   </Card>
                 </Col>
@@ -304,7 +308,7 @@ function AdminPage(){
                         {!selectedDriverUser ? (
                           <div className="text-muted">Select a driver to manage their account.</div>
                         ) : (
-                        <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit</Button>
+                        <Button className="mt-3" style={{ width: "160px", height: "50px" }} variant="primary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit</Button>
                         )}
                     </Card.Body>
                   </Card>
