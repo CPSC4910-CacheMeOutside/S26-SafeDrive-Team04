@@ -258,7 +258,12 @@ function AdminPage(){
 
             {activeTab === "manage" && (
               <div className="ms-3 pb-2 text-nowrap">
-                <span><strong>Selected Driver: </strong></span>{selectedDriverUser ? selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username : "None"}
+                <span style={{ color: "black", fontWeight: "600" }} className="me-2">Selected Driver:</span>
+                {selectedDriverUser ? (<span style={{backgroundColor: "#10b981", color: "white", padding: "4px 10px", borderRadius: "8px", fontWeight: "500"}}>
+                {selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</span>
+                ) : (
+                  <span className="text-muted">None</span>
+                )}
               </div>
             )}
           </div>

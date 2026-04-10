@@ -184,8 +184,8 @@ function EditProfilePage({
         <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{adminView ? "Edit Driver Account" : "Edit Profile"}</h1>
         <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         {adminView && (
-          <Alert variant="warning">
-            {t('editProfile.adminViewAlert')} {targetDriverId}
+          <Alert style={{backgroundColor: "#10b981", color: "white", border: "none"}}>
+            <strong>*** You're editing driver account:</strong>{" "}{targetDriverId}<strong>{" ***"}</strong>
           </Alert>
         )}
 
