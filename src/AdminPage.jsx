@@ -236,6 +236,11 @@ function AdminPage(){
     navigate(`/admin/drivers/${selectedDriver.id}/edit`);
   };
 
+  const handleViewDriverAccount = () => {
+    if (!selectedDriverUser) return;
+    navigate(`/admin/drivers/${selectedDriverUser.username}/view`);
+  };
+
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
@@ -244,33 +249,11 @@ function AdminPage(){
         <Tabs defaultActiveKey="manage" className="mb-4">
           <Tab eventKey="manage" title={t('admin.manageDrivers')}>
             <Row>
-              {/* <Col md={3}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
-                    <ListGroup>
-                      {SponsoredUsers.map((c) => (
-                        <ListGroupItem
-                          key={c.id}
-                          action
-                          active={c.id === selectedSponsUserId}
-                          onClick={() => {
-                            setSelectedSponsUserId(c.id);
-                            setSelectedDriverId(null);
-                          }}
-                        >
-                        {c.name}
-                        </ListGroupItem>
-                      ))}
-                    </ListGroup>
-                  </Card.Body>
-                </Card>
-              </Col> */}
-
               <Col md={4}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Drivers</Card.Title>
+                    <Card.Title><strong>Drivers</strong></Card.Title>
+                        <p>Selected Driver:{" "}<strong>{selectedDriverUser ? selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username : "None selected"}</strong></p>
                       {loadingDriverUsers ? (<div className="text-muted">Loading drivers...</div>) : !driverUsers.length ? (<div className="text-muted">No drivers found.</div>) : (<>
                       <ListGroup className="mb-3">
                         {driverUsers.map((user) => (
@@ -286,66 +269,24 @@ function AdminPage(){
                   </Card.Body>
                 </Card>
               </Col>
-
-              <Col md={5}>
+              
+              <Col md={4}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>{t('admin.adjustPoints')}</Card.Title>
-
-                    {!selectedDriver ? (
-                      <div className="text-muted">{t('admin.selectDriverToAdjust')}</div>
-                    ) : (
-                      <>
-                      <p>
-                        {t('admin.sponsoredUser')}: <strong>{selectedSponsUser?.name}</strong>
-                        <br />
-                        {t('admin.driver')}: <strong>{selectedDriver.name}</strong>
-                        <br />
-                        {t('admin.currentPoints')}: <strong>{selectedDriver.points}</strong>
-                      </p>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>{t('admin.amount')}</Form.Label>
-                      <Form.Control
-                        type="number"
-                        value={amount}
-                        min={1}
-                        onChange={(e) => setAmount(Number(e.target.value))}
-                      />
-                    </Form.Group>
-                      <Form.Group className="mb-3">
-                        <Form.Label>{t('admin.reasonForAdjustment')}</Form.Label>
-                        <Form.Control
-                          type="text"
-                          placeholder={t('admin.descriptionPlaceholder')}
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                      />
-                    </Form.Group>
-                    <div className="d-flex gap-2">
-                      <Button variant="success" onClick={() => pointAdjust(amount)}>
-                        {t('admin.addPoints')}
-                      </Button>
-                      <Button variant="danger" onClick={() => pointAdjust(-amount)}>
-                        {t('admin.subtractPoints')}
-                      </Button>
-                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>
-                        {t('admin.manageAccount')}
-                      </Button>
-                    </div>
-                  </>
-                  )}
+                    <Card.Title><strong>View Driver Account</strong></Card.Title>
+                        <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={handleViewDriverAccount}>View</Button>
                   </Card.Body>
                 </Card>
-          
-                <Card className="mt-4">
+              </Col>
+
+              <Col md={4}>
+                <Card className="mb-4">
                   <Card.Body>
-                    <Card.Title>Edit Driver Account</Card.Title>
+                    <Card.Title><strong>Edit Driver Account</strong></Card.Title>
                       {!selectedDriverUser ? (
                         <div className="text-muted">Select a driver to manage their account.</div>
                         ) : (<>
-                          <p className="mb-3">Manage account information for{" "}<strong>{selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</strong>.</p>
-                          <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit Account</Button>
+                          <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit</Button>
                         </>
                       )}
                   </Card.Body>
