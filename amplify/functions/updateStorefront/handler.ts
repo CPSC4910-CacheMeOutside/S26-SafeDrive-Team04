@@ -1,111 +1,140 @@
 import type { EventBridgeHandler } from "aws-lambda";
 import { getAmplifyDataClientConfig } from "@aws-amplify/backend/function/runtime";
 import { Amplify } from "aws-amplify";
-import type { AboutSchema } from '../../../amplify/data/resource';
-import { generateClient } from 'aws-amplify/data';
-import context from "react-bootstrap/esm/AccordionContext";
+import type { AboutSchema } from "../../../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
+import { env } from "$amplify/env/update-storefront";
 
-type tProduct = {
-    id: number;
-    title: string;
-    images: string[];
-    slug: string;
-    description: string;
-    category: {
-        name: string;
-    };
-    price: number;
+// Ensure AMPLIFY_DATA_DEFAULT_NAME is available
+
+type palatziProduct = {
+  id: number;
+  title: string;
+  price: number;
+  description: string;
+  images: string[];
+  slug: string;
+  category: {
+    name: string;
+  };
 };
 
-export const handler: EventBridgeHandler<"Scheduled Event", null, void> = async (event) => {
-    console.log("Lambda updateStorefront triggered...");
-    console.log("Event:", JSON.stringify(event));
+// Generate client
+const { resourceConfig, libraryOptions } =
+  await getAmplifyDataClientConfig(env);
+Amplify.configure(resourceConfig, libraryOptions);
+const client = generateClient<AboutSchema>();
 
-    // Generate client
-    const { resourceConfig, libraryOptions } =
-        await getAmplifyDataClientConfig(process.env as unknown as {
-            AWS_ACCESS_KEY_ID: string;
-            AWS_SECRET_ACCESS_KEY: string;
-            AWS_SESSION_TOKEN: string;
-            AWS_REGION: string;
-            AMPLIFY_DATA_DEFAULT_NAME: string;
-        });
+export const handler: EventBridgeHandler<
+  "Scheduled Event",
+  null,
+  void
+> = async (event) => {
+  console.log("Lambda updateStorefront triggered...");
+  console.log("Event:", JSON.stringify(event));
 
-    Amplify.configure(resourceConfig, libraryOptions);
-    const client = generateClient<AboutSchema>();
-    // Contact the store api
-    const apiStr = "https://api.escuelajs.co/api/v1/products";
+  // Contact the store api
+  const apiStr = "https://api.escuelajs.co/api/v1/products";
 
-    const storeRequest = await fetch(apiStr);
-    const storeFront = await storeRequest.json() as tProduct[];
+  const storeRequest = await fetch(apiStr);
+  const storeFront = (await storeRequest.json()) as palatziProduct[];
 
-    if (!Array.isArray(storeFront)) {
-        console.log("API did not return an array");
-        return;
-    }
+  if (!Array.isArray(storeFront)) {
+    console.log("API did not return an array");
+    return;
+  }
 
-    // Store all products available on the storefront
-    const storeFrontProducts = storeFront.map( (rawProduct : tProduct) => (
-        {
-            pId: String(rawProduct.id),
-            title: rawProduct.title,
-            imgs: rawProduct.images,
-            synop: rawProduct.slug,
-            desc: rawProduct.description,
-            catagory: rawProduct.category.name,
-            price: rawProduct.price,
-            available: true,
-        }
-    ));
-    console.log("Pulled the following from Platzi: ", storeFrontProducts);
+  // Store all products available on the storefront
+  const storeFrontProducts = storeFront.map((rawProduct: palatziProduct) => ({
+    pId: String(rawProduct.id),
+    title: rawProduct.title,
+    imgs: rawProduct.images,
+    synop: rawProduct.slug,
+    desc: rawProduct.description,
+    category: rawProduct.category.name,
+    price: rawProduct.price,
+    available: true,
+  }));
+  console.log("Pulled the following from Platzi: ", storeFrontProducts);
 
-    // Store all products already present in the Product table
-    const { data: tableProducts, errors: tpErrors } = await client.models.Product.list({});
+  // Store all products already present in the Product table
+  const { data: tableProducts, errors: tpErrors } = await client.models.Product.list({});
 
-    if (tpErrors) {
-        console.log("Storefront Error: Could not get products from table: ", tpErrors);
-        return;
-    }
-    console.log("Pulled the following from table Product: ", tableProducts);
+  if (tpErrors) {
+    console.log("Storefront Error: Could not get products from table: ", JSON.stringify(tpErrors));
+    return;
+  }
+  console.log("Pulled the following from table Product: ", JSON.stringify(tableProducts));
 
+  // If the table is populated run availability check
+  if (tableProducts.length > 0) {
     // For each product in the table that isn't in the store front products, set availability to false
-    if (tableProducts !== null) {
-        const storeFrontIds = new Set(storeFrontProducts.map(p => String(p.pId) ));
-        const notInStoreFront = tableProducts.filter(item => !storeFrontIds.has(item.pId));
+    const storeFrontIds = new Set(storeFrontProducts.map((p) => String(p.pId)));
+    const notInStoreFront = tableProducts.filter( (item) => !storeFrontIds.has(item.pId));
 
-        for (const prod of notInStoreFront) {
-            let iproduct = tableProducts.find(i => i.pId === prod.pId);
-            if (iproduct) {
-                iproduct.available = false
-                const {data: updatedProd, errors: upErrors } = await client.models.Product.update(iproduct);
+    for (const prod of notInStoreFront) {
+      let iproduct = tableProducts.find((i) => i.pId === prod.pId);
+      if (iproduct) {
+        iproduct.available = false;
+        const { data: updatedProd, errors: upErrors } = await client.models.Product.update(iproduct);
 
-                if (upErrors) {
-                    console.log(`Storefront Error: Could not update product:${updatedProd} :${upErrors}`);
-                    return;
-                } else if (updatedProd === null) {
-                    console.log(`Storefront Error: Could not update product:${updatedProd} : Attempted to update null`);
-                    return;
-                }
-            }
+        if (upErrors) {
+          console.log(
+            `Storefront Error: Could not update product:${JSON.stringify(updatedProd)} : ${JSON.stringify(upErrors)}`,
+          );
+          return;
+        } else if (updatedProd === null) {
+          console.log(
+            `Storefront Error: Could not update product:${JSON.stringify(updatedProd)} : Attempted to update null`,
+          );
+          return;
         }
-        console.log("Marked the following products as unavailable: ", notInStoreFront);
-    } 
-
-    // Add the store front products not present in the product table
-    const tableProductIds = new Set(tableProducts ? tableProducts.map(p => String(p.pId)) : []);
-    const notInTable = storeFrontProducts.filter(item => !tableProductIds.has(String(item.pId)));
-    console.log("Adding new products to table...");
-    for (const prod of notInTable) {
-        const { data: createdProd, errors: cpErrors } = await client.models.Product.create(prod);
-
-        if (cpErrors) {
-            console.log(`Storefront Error: Could not add product:${createdProd} to table :${cpErrors}`);
-            return;
-        } else if (createdProd === null) {
-            console.log(`Storefront Error: Could not add product:${createdProd} to table : Attempted to add null`);
-            return;
-        }
-        console.log("Added product: ", createdProd);
+      }
     }
-    console.log("Lambda updateStorefront completed!")
+    console.log("Marked the following products as unavailable: ", notInStoreFront);
+
+    // For each product in the store front that isn't in the table, add it to the table
+    const tableIds = new Set(tableProducts.map((p) => String(p.pId)));
+    const notInTable = storeFrontProducts.filter( (item) => !tableIds.has(item.pId));
+
+    for (const prod of notInTable) {
+      const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
+        pId: prod.pId,
+        title: prod.title,
+        imgs: JSON.stringify(prod.imgs),
+        synop: prod.synop,
+        category: prod.category,
+        price: prod.price,
+        available: true,
+      });
+
+      if (apErrors) {  
+        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`)
+      }
+    }
+  }
+  // If the product table is empty, add all products marked as available
+  else {
+    console.log(`No products in table. Adding all retrieved products...`)
+    for (const prod of storeFrontProducts) {
+      const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
+        pId: prod.pId,
+        title: prod.title,
+        imgs: JSON.stringify(prod.imgs),
+        synop: prod.synop,
+        category: prod.category,
+        price: prod.price,
+        available: true,
+      });
+
+      if (apErrors) {
+        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`);
+        return;
+      } else if (addedProduct === null ) {
+        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: Created null`);
+        return;
+      }
+    }
+  }
+  console.log("Lambda updateStorefront completed!");
 };

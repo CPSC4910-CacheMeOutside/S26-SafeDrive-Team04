@@ -4,5 +4,6 @@ export const updateStorefront = defineFunction({
   name: 'update-storefront',
   entry: './handler.ts',
   // Update products on storefront every 30 minutes
-  schedule: "30 * ? * * * *"
+  schedule: "every 1h",
+  resourceGroupName: 'data'
 });
