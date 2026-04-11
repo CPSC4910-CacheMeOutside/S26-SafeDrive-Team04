@@ -24,6 +24,10 @@ const backend = defineBackend({
   updateStorefront
 });
 
+Object.values(backend.data.resources.tables).forEach(table => {
+  table.grantReadWriteData(backend.updateStorefront.resources.lambda);
+});
+
 const userPool = backend.auth.resources.userPool;
 const adminUserLambda = backend.adminUsersFunction.resources.lambda as LambdaFunction;
 

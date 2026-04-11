@@ -129,28 +129,11 @@ export default function CatalogBuilder(sponsorId) {
 
     // Add the product to the sponsor's catalog
     async function addProduct(product) {
-        // Add product to catalog
-        const { data: dbProduct, pErrors } = await client.models.Product.create({
-            pId: product.pId,
-            title: product.title,
-            imgs: product.imgs,
-            synop: product.synop,
-            catagory: product.catagory,
-            price: product.price,
-            available: true,
-        })
 
-        if (pErrors) {
-            console.log("Error: Failed to create product: ", pErrors);
-            return;
-        } else if (dbProduct === null) {
-            console.log("Error: Failed to create product: Null was created");
-            return;
-        }
         // Create the catalog assignment
         for (const dr of sponsoredUser.drivers) {
             const { data: assignment, aErrors } = await client.models.CatalogProduct.create({
-                pId: dbProduct.pId,
+                pId: product.pId,
                 sponsorId: sponsoredUser.sponsorId,
                 driverId: dr.driverId
             });

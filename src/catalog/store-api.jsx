@@ -51,7 +51,7 @@ export async function getProducts(filters){
             imgs: rawProduct.images,
             synop: rawProduct.slug,
             desc: rawProduct.description,
-            catagory: rawProduct.category.name,
+            category: rawProduct.category.name,
             price: rawProduct.price,
             available: true,
         }

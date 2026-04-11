@@ -1,6 +1,7 @@
 import { a, defineData, type ClientSchema} from '@aws-amplify/backend';
 import { Product } from 'aws-cdk-lib/aws-servicecatalog';
 import { id } from 'aws-sdk/clients/datapipeline';
+import { updateStorefront } from '../functions/updateStorefront/resource';
  
 // Create our About Table
 const SafeDriveSchema = a.schema({
@@ -199,7 +200,7 @@ const SafeDriveSchema = a.schema({
     title: a.string(),
     imgs: a.json(),
     synop: a.string(),
-    catagory: a.string(),
+    category: a.string(),
     price: a.float(),
     available: a.boolean(),
 
@@ -227,7 +228,7 @@ const SafeDriveSchema = a.schema({
   }).identifier(['sendId', 'recipId', 'nId'])
   .authorization(allow => [allow.publicApiKey()]),
 
-});
+}).authorization(allow => [allow.resource(updateStorefront).to(["mutate", "query"])]);
  
 // Used for code completion / highlighting when making requests from frontend
 export type AboutSchema = ClientSchema<typeof SafeDriveSchema>;
