@@ -41,13 +41,10 @@ export default function AccountManagement() {
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
       <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Account Settings</h1>
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-      <h1><strong>{t('accountManagement.title')}</strong></h1>
 
       <Form className="mt-5">
           <Form.Group as={Row} className="mb-3 align-items-center">
-            <Form.Label column sm={3}>
-              Adjust Text Size:
-            </Form.Label>
+            <Form.Label column sm={3}><strong>Adjust Text Size:</strong></Form.Label>
             <Col sm={6}>
               <Button
                 style={{ width: "180px", height: "50px" }}
@@ -62,9 +59,7 @@ export default function AccountManagement() {
           </Form.Group>
 
           <Form.Group as={Row} className="mt-5 align-items-center">
-            <Form.Label column sm={3}>
-              Delete Account:
-            </Form.Label>
+            <Form.Label column sm={3}><strong>Delete Account:</strong></Form.Label>
             <Col sm={6}>
               <Button style={{ padding: "10px 16px", fontSize: "inherit" }} variant="danger" onClick={handleDeleteAccount}>
                 DELETE MY ACCOUNT

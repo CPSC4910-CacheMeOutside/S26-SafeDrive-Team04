@@ -153,25 +153,30 @@ function DriverPage() {
 
   return (
     <Container className="mt-4">
-      <div style={{ minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>Driver Dashboard</strong></h1>
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+          <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Driver Dashboard</h1>
+        
+          <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
 
         {adminView && viewedDriver && (
           <div style={{ backgroundColor: '#10b981', color: 'white', padding: '10px 16px', borderRadius: '8px', marginBottom: '16px',}}>
             <strong>*** You're viewing driver account:</strong> {viewedDriver.driverSub}<strong>{" ***"}</strong>
           </div>
         )}
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
 
         <Row className="mb-4">
           <Col md={4}>
             <Card>
               <Card.Body>
-                <Card.Title>My Profile</Card.Title>
-                <p className="mb-2"><strong>Name:</strong> {driver.fullName || "Unknown User"}</p>
-                <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
-                <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
-                <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
-                <p className="mb-0"><strong>Points:</strong> {driver.points}</p>
+                <Card.Title className="mb-4"><strong>My Profile</strong></Card.Title>
+                  <div className="text-start">
+                    <p className="mb-2 text-nowrap"><strong>Name:</strong> {driver.fullName || "Unknown User"}</p>
+                    <p className="mb-2 text-nowrap"><strong>Email:</strong> {driver.email || "No email found"}</p>
+                    <p className="mb-2 text-nowrap"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
+                    <p className="mb-2 text-nowrap"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
+                    <p className="mb-0 text-nowrap"><strong>Points:</strong> {driver.points}</p>
+                  </div>
               </Card.Body>
             </Card>
           </Col>
@@ -179,7 +184,7 @@ function DriverPage() {
           <Col md={8}>
             <Card>
               <Card.Body>
-                <Card.Title>Overview</Card.Title>
+                <Card.Title className="mb-4"><strong>Overview</strong></Card.Title>
                 <Row>
                   <Col sm={4}>
                     <Card className="text-center">
@@ -215,7 +220,7 @@ function DriverPage() {
           <Tab eventKey="sponsors" title="My Sponsors">
             <Card className="mt-3">
               <Card.Body>
-                <Card.Title>Associated Sponsors</Card.Title>
+                <Card.Title><strong>Associated Sponsors</strong></Card.Title>
                 {!driver.sponsors.length ? (
                   <div className="text-muted">No sponsors associated yet.</div>
                 ) : (
@@ -245,7 +250,7 @@ function DriverPage() {
             <Card className="mt-3">
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <Card.Title className="mb-0">My Applications</Card.Title>
+                  <Card.Title className="mb-0"><strong>My Applications</strong></Card.Title>
                   <Button variant="primary" size="sm">
                     Browse Sponsors
                   </Button>
@@ -280,7 +285,9 @@ function DriverPage() {
             </Card>
           </Tab>
         </Tabs>
-        <Button style={{ width: "160px", height: "50px", marginTop: "20px" }} variant="secondary" className="me-2" onClick={handleExitDriverView}>Exit</Button>
+        {adminView && (<Button style={{ width: "160px", height: "50px", marginTop: "20px" }} variant="secondary" className="me-2" onClick={handleExitDriverView}>Exit</Button>)}
+        </div>
+        </div>
       </div>
     </Container>
   );

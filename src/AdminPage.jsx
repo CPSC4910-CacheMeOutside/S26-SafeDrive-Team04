@@ -265,7 +265,9 @@ function AdminPage(){
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>{t('admin.title')}</strong></h1>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{t('admin.title')}</h1>
+
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
 
         <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
           <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
@@ -432,6 +434,7 @@ function AdminPage(){
             </Tab.Pane>
           </Tab.Content>
         </Tab.Container>
+        </div>
       </div>
     </Container>
   )}

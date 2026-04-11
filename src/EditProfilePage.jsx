@@ -195,7 +195,7 @@ function EditProfilePage({
           <Form onSubmit={handleSubmit}>
             <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.fullName')}</Form.Label>
+                <Form.Label column sm={3}><strong>{t('editProfile.fullName')}</strong></Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authName"
@@ -207,7 +207,7 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.preferredName')}</Form.Label>
+                <Form.Label column sm={3}><strong>{t('editProfile.preferredName')}</strong></Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authNickname"
@@ -218,7 +218,7 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.phoneNumber')}</Form.Label>
+                <Form.Label column sm={3}><strong>{t('editProfile.phoneNumber')}</strong></Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authPhoneNum"
@@ -229,7 +229,7 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.email')}</Form.Label>
+                <Form.Label column sm={3}><strong>{t('editProfile.email')}</strong></Form.Label>
                 <Col sm={6}>
                   <Form.Control
                     name="authEmail"
@@ -241,14 +241,14 @@ function EditProfilePage({
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.role')}</Form.Label>
+                <Form.Label column sm={3}><strong>{t('editProfile.role')}</strong></Form.Label>
                 <Col sm={6} className="d-flex align-items-start">
                   {authRole.length > 0 ? authRole.join(", ") : <span>{t('common.na')}</span>}
                 </Col>
               </Form.Group>
 
               <Form.Group as={Row} className="mb-3 align-items-center">
-                <Form.Label column sm={3}>{t('editProfile.profilePicture')}</Form.Label>
+                <Form.Label column sm={3}><strong>{t('editProfile.profilePicture')}</strong></Form.Label>
                 <Col sm={6}>
                   <div className="d-flex align-items-center">
                     <Form.Control
