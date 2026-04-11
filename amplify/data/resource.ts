@@ -25,13 +25,18 @@ const SafeDriveSchema = a.schema({
   Sponsor: a.model({
     sponsorId: a.id().required(),
     affiliation: a.string(),
+    pointToDollarRatio: a.float(),
 
     drivers: a.hasMany("DriverSponsor", 'sponsorId'),
     applications: a.hasMany('Application', 'sponsorId'),
     catalog: a.hasOne("Catalog", "sponsorId")
   })
   .identifier(['sponsorId'])
-  .authorization(allow => [allow.publicApiKey()]),
+  .authorization(allow => [
+    allow.groups(['Admin']),
+    allow.groups(['Sponsor']),
+    allow.publicApiKey()
+  ]),
 
   // A model that assigns sponsors to drivers and vise versa 
   DriverSponsor: a.model({

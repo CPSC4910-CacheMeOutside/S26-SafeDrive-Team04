@@ -10,9 +10,14 @@ import Col from "react-bootstrap/Col"
 import Form from "react-bootstrap/Form"
 import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
+import Alert from "react-bootstrap/Alert"
 import { ListGroupItem } from 'react-bootstrap';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
-import { fetchDriverUsers } from './adminUpdateDriverInfo-api';
+import { fetchDriverUsers, fetchSponsorUsers } from './adminUpdateDriverInfo-api';
+import { generateClient } from 'aws-amplify/data';
+
+const client = generateClient();
+const DEFAULT_RATIO = 0.10;
 
 function AdminPage(){
 
@@ -28,6 +33,14 @@ function AdminPage(){
   const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
   const [loadingDriverUsers, setLoadingDriverUsers] = useState(false);
   const [driverUsersError, setDriverUsersError] = useState("");
+
+  const [sponsorUsers, setSponsorUsers] = useState([]);
+  const [selectedSponsorUsername, setSelectedSponsorUsername] = useState("");
+  const [loadingSponsors, setLoadingSponsors] = useState(false);
+  const [sponsorRatioInput, setSponsorRatioInput] = useState(DEFAULT_RATIO.toString());
+  const [sponsorRatioError, setSponsorRatioError] = useState("");
+  const [sponsorRatioSuccess, setSponsorRatioSuccess] = useState("");
+  const [savingRatio, setSavingRatio] = useState(false);
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -55,6 +68,65 @@ function AdminPage(){
     }
   };
 
+  const loadSponsorUsers = async () => {
+    try {
+      setLoadingSponsors(true);
+      const data = await fetchSponsorUsers();
+      const users = Array.isArray(data) ? data : [];
+      setSponsorUsers(users);
+      const first = users[0]?.username ?? "";
+      setSelectedSponsorUsername(first);
+      if (first) await loadSponsorRatio(first);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingSponsors(false);
+    }
+  };
+
+  const loadSponsorRatio = async (username) => {
+    try {
+      const result = await client.models.Sponsor.get({ sponsorId: username });
+      const ratio = result?.data?.pointToDollarRatio ?? DEFAULT_RATIO;
+      setSponsorRatioInput(ratio.toString());
+      setSponsorRatioError("");
+      setSponsorRatioSuccess("");
+    } catch (error) {
+      console.error(error);
+      setSponsorRatioInput(DEFAULT_RATIO.toString());
+    }
+  };
+
+  const handleSponsorSelect = async (username) => {
+    setSelectedSponsorUsername(username);
+    await loadSponsorRatio(username);
+  };
+
+  const handleSaveRatio = async () => {
+    const num = parseFloat(sponsorRatioInput);
+    if (isNaN(num) || num < 0.001 || num > 1.0) {
+      setSponsorRatioError("Ratio must be between 0.001 and 1.0");
+      return;
+    }
+    try {
+      setSavingRatio(true);
+      setSponsorRatioError("");
+      const existing = await client.models.Sponsor.get({ sponsorId: selectedSponsorUsername });
+      if (existing?.data) {
+        await client.models.Sponsor.update({ sponsorId: selectedSponsorUsername, pointToDollarRatio: num });
+      } else {
+        await client.models.Sponsor.create({ sponsorId: selectedSponsorUsername, pointToDollarRatio: num });
+      }
+      setSponsorRatioSuccess("Ratio saved successfully!");
+      setTimeout(() => setSponsorRatioSuccess(""), 3000);
+    } catch (error) {
+      console.error(error);
+      setSponsorRatioError("Failed to save ratio.");
+    } finally {
+      setSavingRatio(false);
+    }
+  };
+
   const selectedPendingUser = useMemo(() => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null, [unassignedUsers, selectedPendingUsername]);
   
   const loadUnassignedUsers = async () => {
@@ -79,7 +151,7 @@ function AdminPage(){
     }
   };
 
-  useEffect(() => {loadDriverUsers(); loadUnassignedUsers();}, []);
+  useEffect(() => {loadDriverUsers(); loadUnassignedUsers(); loadSponsorUsers();}, []);
 
   const handleAssignRole = async () => {
     if (!selectedPendingUser) return;
@@ -417,6 +489,100 @@ function AdminPage(){
                   </Card.Body>
                 </Card>
               </Col>
+          </Tab>
+
+          <Tab eventKey="sponsors" title="Manage Sponsors">
+            <Row>
+              <Col md={4}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>Sponsors</Card.Title>
+                    {loadingSponsors ? (
+                      <div className="text-muted">Loading sponsors...</div>
+                    ) : !sponsorUsers.length ? (
+                      <div className="text-muted">No sponsors found.</div>
+                    ) : (
+                      <>
+                        <ListGroup className="mb-3">
+                          {sponsorUsers.map((user) => (
+                            <ListGroupItem
+                              key={user.username}
+                              action
+                              active={user.username === selectedSponsorUsername}
+                              onClick={() => handleSponsorSelect(user.username)}
+                            >
+                              <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
+                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
+                            </ListGroupItem>
+                          ))}
+                        </ListGroup>
+                        <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadSponsorUsers} disabled={loadingSponsors}>Refresh</Button>
+                      </>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={5}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>Point to Dollar Conversion Ratio</Card.Title>
+                    {!selectedSponsorUsername ? (
+                      <div className="text-muted">Select a sponsor to manage their ratio.</div>
+                    ) : (
+                      <>
+                        <p style={{ fontSize: 14, opacity: 0.7 }}>
+                          Set how many dollars each point is worth for this sponsor's drivers.
+                        </p>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Dollars per Point</Form.Label>
+                          <Form.Control
+                            type="number"
+                            step="0.001"
+                            min="0.001"
+                            max="1.0"
+                            value={sponsorRatioInput}
+                            onChange={(e) => {
+                              setSponsorRatioInput(e.target.value);
+                              setSponsorRatioError("");
+                              setSponsorRatioSuccess("");
+                            }}
+                            isInvalid={!!sponsorRatioError}
+                          />
+                          <Form.Text className="text-muted">
+                            Enter value between 0.001 and 1.0 (e.g., 0.10 means 10 points = $1)
+                          </Form.Text>
+                          {sponsorRatioError && (
+                            <Form.Control.Feedback type="invalid" style={{ display: 'block' }}>
+                              {sponsorRatioError}
+                            </Form.Control.Feedback>
+                          )}
+                        </Form.Group>
+
+                        {sponsorRatioSuccess && <Alert variant="success">{sponsorRatioSuccess}</Alert>}
+
+                        <div className="mb-3" style={{ padding: 10, backgroundColor: '#f8f9fa', borderRadius: 5 }}>
+                          <strong>Preview:</strong>
+                          <ul style={{ marginTop: 10, marginBottom: 0 }}>
+                            <li>100 points = ${(100 * (parseFloat(sponsorRatioInput) || DEFAULT_RATIO)).toFixed(2)}</li>
+                            <li>1000 points = ${(1000 * (parseFloat(sponsorRatioInput) || DEFAULT_RATIO)).toFixed(2)}</li>
+                          </ul>
+                        </div>
+
+                        <div className="d-flex gap-2">
+                          <Button variant="primary" onClick={handleSaveRatio} disabled={savingRatio || !!sponsorRatioError}>
+                            {savingRatio ? "Saving..." : "Save Changes"}
+                          </Button>
+                          <Button variant="secondary" onClick={() => { setSponsorRatioInput(DEFAULT_RATIO.toString()); setSponsorRatioError(""); setSponsorRatioSuccess(""); }}>
+                            Reset to Default
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
           </Tab>
 
           <Tab eventKey="audit" title={t('admin.logsReports')}>

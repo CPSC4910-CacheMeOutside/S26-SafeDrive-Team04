@@ -1,19 +1,47 @@
 import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useConversionRatio } from './ConversionRatioContext';
 import { useNotifications } from './NotificationContext';
+import { useAuth } from 'react-oidc-context';
+import { generateClient } from 'aws-amplify/data';
+
+const client = generateClient();
+const DEFAULT_RATIO = 0.10;
 
 export default function SponsorSettingsPage() {
-  const { ratio, setRatio, defaultRatio, convertPointsToDollars } = useConversionRatio();
+  const { setRatio, convertPointsToDollars } = useConversionRatio();
   const { addNotification } = useNotifications();
+  const auth = useAuth();
 
-  const [inputValue, setInputValue] = useState(ratio.toString());
+  const sponsorId =
+    auth?.user?.profile?.sub ||
+    auth?.user?.profile?.username ||
+    auth?.user?.profile?.email ||
+    "";
+
+  const [inputValue, setInputValue] = useState(DEFAULT_RATIO.toString());
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationError, setNotificationError] = useState('');
   const [notificationSuccess, setNotificationSuccess] = useState('');
+
+  // Load ratio from DB on mount
+  useEffect(() => {
+    if (!sponsorId) return;
+    (async () => {
+      try {
+        const result = await client.models.Sponsor.get({ sponsorId });
+        const ratio = result?.data?.pointToDollarRatio ?? DEFAULT_RATIO;
+        setInputValue(ratio.toString());
+        setRatio(ratio);
+      } catch (err) {
+        console.error('Failed to load sponsor ratio:', err);
+      }
+    })();
+  }, [sponsorId]);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -31,21 +59,49 @@ export default function SponsorSettingsPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const num = parseFloat(inputValue);
     if (isNaN(num) || num < 0.001 || num > 1.0) return;
 
-    setRatio(num);
-    setSuccess('Conversion ratio updated successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+    try {
+      setSaving(true);
+      const existing = await client.models.Sponsor.get({ sponsorId });
+      if (existing?.data) {
+        await client.models.Sponsor.update({ sponsorId, pointToDollarRatio: num });
+      } else {
+        await client.models.Sponsor.create({ sponsorId, pointToDollarRatio: num });
+      }
+      setRatio(num);
+      setSuccess('Conversion ratio updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to save ratio:', err);
+      setError('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleReset = () => {
-    setInputValue(defaultRatio.toString());
-    setRatio(defaultRatio);
-    setError('');
-    setSuccess('Reset to default ratio');
-    setTimeout(() => setSuccess(''), 3000);
+  const handleReset = async () => {
+    setInputValue(DEFAULT_RATIO.toString());
+    try {
+      setSaving(true);
+      const existing = await client.models.Sponsor.get({ sponsorId });
+      if (existing?.data) {
+        await client.models.Sponsor.update({ sponsorId, pointToDollarRatio: DEFAULT_RATIO });
+      } else {
+        await client.models.Sponsor.create({ sponsorId, pointToDollarRatio: DEFAULT_RATIO });
+      }
+      setRatio(DEFAULT_RATIO);
+      setError('');
+      setSuccess('Reset to default ratio');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to reset ratio:', err);
+      setError('Failed to reset. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleNotificationChange = (e) => {
@@ -73,6 +129,8 @@ export default function SponsorSettingsPage() {
     setNotificationSuccess('Notification sent to all drivers successfully!');
     setTimeout(() => setNotificationSuccess(''), 3000);
   };
+
+  const previewRatio = parseFloat(inputValue) || DEFAULT_RATIO;
 
   return (
     <Container className="py-4" style={{ maxWidth: 800 }}>
@@ -108,23 +166,24 @@ export default function SponsorSettingsPage() {
           <div className="mb-3" style={{ padding: 10, backgroundColor: '#f8f9fa', borderRadius: 5 }}>
             <strong>Preview:</strong>
             <ul style={{ marginTop: 10, marginBottom: 0 }}>
-              <li>100 points = ${convertPointsToDollars(100).toFixed(2)}</li>
-              <li>1000 points = ${convertPointsToDollars(1000).toFixed(2)}</li>
-              <li>144 points = ${convertPointsToDollars(144).toFixed(2)}</li>
+              <li>100 points = ${(100 * previewRatio).toFixed(2)}</li>
+              <li>1000 points = ${(1000 * previewRatio).toFixed(2)}</li>
+              <li>144 points = ${(144 * previewRatio).toFixed(2)}</li>
             </ul>
           </div>
 
           <Button
             variant="primary"
             onClick={handleSave}
-            disabled={!!error}
+            disabled={!!error || saving}
             className="me-2"
           >
-            Save Changes
+            {saving ? 'Saving...' : 'Save Changes'}
           </Button>
           <Button
             variant="secondary"
             onClick={handleReset}
+            disabled={saving}
           >
             Reset to Default
           </Button>
