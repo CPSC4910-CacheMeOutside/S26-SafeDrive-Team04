@@ -2,8 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "./LanguageContext";
-import { useAuth } from "react-oidc-context";
-
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -14,11 +12,16 @@ import Form from "react-bootstrap/Form";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 
+import { fetchAuthSession } from "aws-amplify/auth";
+
+import { 
+  fetchCurrentSponsorAssignments,
+} from "./sponsorPage-api";
+
 const client = generateClient();
 
 function SponsorPage() {
   const navigate = useNavigate();
-  const auth = useAuth();
   const { t } = useLanguage();
 
   const [relations, setRelations] = useState([]);
@@ -30,147 +33,136 @@ function SponsorPage() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
-  // Replace this with however you identify the logged-in sponsor user
-  const sponsorUserId =
-    auth?.user?.profile?.sub ||
-    auth?.user?.profile?.username ||
-    auth?.user?.profile?.email ||
-    "";
+  const [driverUsers, setDriverUsers] = useState([]);
+
+
+  const [sponsor, setSponsor] = useState({
+    username: "",
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    groups: [],
+    points: 0,
+    sponsors: [],
+    applications: [],
+  });
+
 
   useEffect(() => {
-    loadData();
-  }, [sponsorUserId]);
+    async function loadUser() {
+      try {
+        const [session, assignmentData, users] = await Promise.all([
+          fetchAuthSession(),
+          fetchCurrentSponsorAssignments(),
+        ]);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setPageError("");
+        const idPayload = session.tokens?.idToken?.payload ?? {};
+        const accessPayload = session.tokens?.accessToken?.payload ?? {};
 
-      if (!sponsorUserId) {
-        setRelations([]);
-        setSelectedDriverSponsorId("");
-        return;
+        const groups =
+          idPayload["cognito:groups"] ||
+          accessPayload["cognito:groups"] ||
+          [];
+
+
+        setRelations(
+          Array.isArray(assignmentData.drivers)
+            ? assignmentData.drivers
+            : []
+        );
+
+        if(assignmentData.drivers?.length > 0) {
+          setSelectedDriverSponsorId(assignmentData.drivers[0].driverSponsorId);
+        }
+        setSponsor((prev) => ({
+          ...prev,
+          username: assignmentData.sponsorId || "",
+          fullName: assignmentData.fullName || "",
+          email: assignmentData.email || "",
+          phoneNumber: assignmentData.phoneNumber || "",
+          groups: Array.isArray(groups) ? groups : [],
+          points: assignmentData.totalPoints || 0,
+          drivers: Array.isArray(assignmentData.drivers) ? assignmentData.drivers : [],
+        }));
+      } catch (error) {
+        console.error("Failed to load Cognito user info:", error);
       }
-
-      // Pull all DriverSponsor rows for this sponsor
-      const dsResult = await client.models.DriverSponsor.list({
-        filter: { sponsorId: { eq: sponsorUserId } },
-      });
-
-      if (dsResult.errors) {
-        console.error("DriverSponsor load error:", dsResult.errors);
-        setPageError("Failed to load sponsor-driver relationships.");
-        return;
+      finally{
+        setLoading(false);
       }
-
-      const relationRows = dsResult.data || [];
-
-      // Pull all users once so we can map driverId -> real user info
-      const usersResult = await client.models.User.list();
-
-      if (usersResult.errors) {
-        console.error("User load error:", usersResult.errors);
-        setPageError("Failed to load users.");
-        return;
-      }
-
-      const users = usersResult.data || [];
-      const userMap = new Map(users.map((u) => [u.userId, u]));
-
-      const loadedRelations = relationRows.map((rel) => {
-        const driverUser = userMap.get(rel.driverId);
-
-        return {
-          driverSponsorId: rel.driverSponsorId ?? `${rel.driverId}-${rel.sponsorId}`,
-          sponsorId: rel.sponsorId,
-          driverId: rel.driverId,
-          points: rel.points ?? 0,
-          note: rel.note ?? "",
-          driverName: driverUser
-            ? `${driverUser.first ?? ""} ${driverUser.last ?? ""}`.trim() || driverUser.email || rel.driverId
-            : rel.driverId,
-          driverEmail: driverUser?.email ?? "",
-          raw: rel,
-        };
-      });
-
-      setRelations(loadedRelations);
-
-      setSelectedDriverSponsorId((prev) => {
-        if (prev && loadedRelations.some((r) => r.driverSponsorId === prev)) return prev;
-        return loadedRelations[0]?.driverSponsorId ?? "";
-      });
-    } catch (err) {
-      console.error("ERROR LOADING SPONSOR PAGE:", err);
-      setPageError("Something went wrong while loading sponsor data.");
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const selectedRelation = useMemo(
-    () => relations.find((r) => r.driverSponsorId === selectedDriverSponsorId) ?? null,
-    [relations, selectedDriverSponsorId]
+    loadUser();
+  }, []);
+
+const filteredRelations = useMemo(() => {
+  let list = [...relations];
+
+  if (search) {
+    list = list.filter((r) =>
+      r.driverName?.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+
+  if (sortMode === "points") {
+    list.sort((a, b) => b.points - a.points);
+  } else {
+    list.sort((a, b) =>
+      (a.driverName || "").localeCompare(b.driverName || "")
+    );
+  }
+
+  return list;
+}, [relations, search, sortMode]);
+
+const selectedRelation = useMemo(() => {
+  return relations.find(
+    (r) => r.driverSponsorId === selectedDriverSponsorId
   );
+}, [relations, selectedDriverSponsorId]);
 
-  const sortedRelations = useMemo(() => {
-    const copy = [...relations];
 
-    copy.sort((a, b) => {
-      if (sortMode === "points") return b.points - a.points;
-      if (sortMode === "name") return a.driverName.localeCompare(b.driverName);
-      return 0;
+const pointAdjust = async (delta) => {
+  if (!selectedRelation) return;
+
+  try {
+    const newPoints = Math.max(0, (selectedRelation.points || 0) + delta);
+
+    await client.models.DriverSponsor.update({
+      driverId: selectedRelation.driverId,
+      sponsorId: selectedRelation.sponsorId,
+      points: newPoints,
     });
 
-    return copy;
-  }, [relations, sortMode]);
+    // update UI
+    setRelations((prev) =>
+      prev.map((r) =>
+        r.driverId === selectedRelation.driverId &&
+        r.sponsorId === selectedRelation.sponsorId
+          ? { ...r, points: newPoints }
+          : r
+      )
+    );
 
-  const filteredRelations = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return sortedRelations;
+  } catch (err) {
+    console.error("Failed to update points:", err);
+    setPageError("Failed to update points.");
+  }
+};
 
-    return sortedRelations.filter((r) => {
-      return (
-        r.driverName.toLowerCase().includes(q) ||
-        r.driverEmail.toLowerCase().includes(q) ||
-        String(r.driverId).toLowerCase().includes(q)
-      );
-    });
-  }, [sortedRelations, search]);
 
-  const pointAdjust = async (deltaValue) => {
-    if (!selectedRelation) return;
+const getDriverLabel = (driverId) => {
+  const match = driverUsers.find((u) => u.username === driverId);
 
-    const delta = Number(deltaValue);
-    if (!Number.isFinite(delta)) return;
+  if (!match) return driverId;
 
-    const newPoints = (selectedRelation.points ?? 0) + delta;
-    if (newPoints < 0) {
-      alert(t("sponsor.cannotGoNegative"));
-      return;
-    }
-
-    try {
-      const updatePayload = {
-        driverSponsorId: selectedRelation.raw.driverSponsorId,
-        points: newPoints,
-        note: description.trim() || selectedRelation.raw.note || "",
-      };
-
-      const updateResult = await client.models.DriverSponsor.update(updatePayload);
-
-      if (updateResult.errors) {
-        console.error("DriverSponsor update error:", updateResult.errors);
-        alert(t("sponsor.updateFailed"));
-        return;
-      }
-
-      setDescription("");
-      await loadData();
-    } catch (err) {
-      console.error("POINT ADJUST ERROR:", err);
-      alert(t("sponsor.somethingWentWrong"));
-    }
+  return (
+    match.preferred_username ||
+    match.name ||
+    match.email ||
+    match.username ||
+    driverId
+    );
   };
 
   if (loading) {
@@ -238,10 +230,9 @@ function SponsorPage() {
                           >
                             <div className="d-flex justify-content-between">
                               <div>
-                                <div className="fw-semibold">{rel.driverName}</div>
+                                <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
                                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                  {rel.driverEmail || rel.driverId}
-                                </div>
+                                  {rel.driverEmail || rel.driverId}                                </div>
                               </div>
                               <span className="text-muted">{rel.points}</span>
                             </div>
@@ -263,7 +254,7 @@ function SponsorPage() {
                     ) : (
                       <>
                         <p>
-                          {t("sponsor.driverLabel")}: <strong>{selectedRelation.driverName}</strong>
+                          {t("sponsor.driverLabel")}: <strong>{getDriverLabel(selectedRelation.driverId)}</strong>
                           <br />
                           {t("sponsor.currentPoints")}: <strong>{selectedRelation.points}</strong>
                         </p>
@@ -309,7 +300,7 @@ function SponsorPage() {
                     ) : (
                       <>
                         <p className="mb-3">
-                          Selected driver: <strong>{selectedRelation.driverName}</strong>
+                          Selected driver: <strong>{getDriverLabel(selectedRelation.driverId)}</strong>
                         </p>
                         <Button
                           variant="secondary"
