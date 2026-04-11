@@ -9,8 +9,12 @@ import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
+import { getCurrentDriverView } from './adminDriverView-api';
 
 function DriverPage() {
+  const [adminView, setAdminView] = useState(false);
+  const [viewedDriver, setViewedDriver] = useState(null);
+
   const [driver, setDriver] = useState({
     id: 1,
     subId: "",
@@ -111,10 +115,41 @@ function DriverPage() {
     }
   };
 
+  useEffect(() => {
+    const loadAdminView = async () => {
+      const raw = localStorage.getItem('driverViewSession');
+      if (!raw) return;
+      try {
+        const stored = JSON.parse(raw);
+        const sessionData = await getCurrentDriverView(stored.sessionId);
+        setAdminView(true);
+        setViewedDriver(sessionData);
+        setDriver((prev) => ({
+          ...prev,
+          username: sessionData.driverUsername || prev.username,
+          fullName: sessionData.driverName || prev.fullName,
+          email: '',
+          phoneNumber: '',
+          groups: ['Driver'],
+        }));
+      } catch (error) {
+        console.error(error);
+        localStorage.removeItem('driverViewSession');
+      }
+    };
+    loadAdminView();
+  }, []);
+
   return (
     <Container className="mt-4">
       <div style={{ minHeight: "100vh", padding: "40px" }}>
         <h1><strong>Driver Dashboard</strong></h1>
+
+        {adminView && viewedDriver && (
+          <div style={{ backgroundColor: '#10b981', color: 'white', padding: '10px 16px', borderRadius: '8px', marginBottom: '16px',}}>
+            <strong>*** You're viewing driver account:</strong> {viewedDriver.driverSub}<strong>{" ***"}</strong>
+          </div>
+        )}
 
         <Row className="mb-4">
           <Col md={4}>
