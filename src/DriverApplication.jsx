@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getCurrentUser } from 'aws-amplify/auth';
-import { generateClient } from 'aws-amplify/api';
+import { generateClient } from 'aws-amplify/data';
 import { useLanguage } from './LanguageContext';
+
+// Hardcoded sponsors — mirrors Available-Sponsors.jsx until a sponsor API is available
+const HARDCODED_SPONSORS = [
+  { first: 'Dennis', last: 'Richi',  affiliation: 'Stanford & Sons Antiques LLC.' },
+  { first: 'Jay',    last: 'Gilstrap', affiliation: 'Jay Gilstrap Family Dealerships' },
+  { first: 'Money',  last: 'Bags',   affiliation: 'Rug Pull Crypto' },
+];
 
 const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
 
@@ -57,7 +64,8 @@ function getError(field, value, t) {
 
 export default function DriverApplicationForm() {
 
-  const { appliedSponsor } = useParams();
+  const { appliedSponsor: rawAppliedSponsor } = useParams();
+  const appliedSponsor = rawAppliedSponsor ? decodeURIComponent(rawAppliedSponsor) : "";
   const { t } = useLanguage();
 
   const fields = fieldDefs.map(f => ({ ...f, label: t(f.labelKey) }));
@@ -77,8 +85,39 @@ export default function DriverApplicationForm() {
   const [submitError, setSubmitError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [myAppLoading, setMyAppLoading] = useState(false);
+  const [myAppError, setMyAppError] = useState(null);
+
   useEffect(() => {
   }, []);
+
+  async function loadMyApplications() {
+    setMyAppLoading(true);
+    setMyAppError(null);
+    try {
+      const client = generateClient();
+      const currentUser = await getCurrentUser();
+      const currentDriverId = currentUser.userId;
+
+      const { data: allApps } = await client.models.Application.list();
+      const myApps = allApps
+        .filter(a => a.driverId === currentDriverId)
+        .map(a => ({
+          ...a,
+          status: STATUS_MAP[a.status] ?? "pending",
+          submittedDate: a.createdAt?.slice(0, 10) ?? "",
+          sponsorName: a.sponsorId ?? "",
+          denialReason: a.notes ?? "",
+          driverAction: null,
+        }));
+      setMyApplications(myApps);
+    } catch (err) {
+      console.error("Failed to load applications:", err);
+      setMyAppError("Failed to load your applications. Please try again.");
+    } finally {
+      setMyAppLoading(false);
+    }
+  }
 
   const errors = {};
   for (const f of fieldDefs) {
@@ -109,7 +148,34 @@ export default function DriverApplicationForm() {
 
     setIsSubmitting(true);
     try {
-      await client.models.Application.create({
+      // Look up sponsor from hardcoded list by affiliation (now passed via route param)
+      const matchedSponsor =
+        HARDCODED_SPONSORS.find(s => s.affiliation === appliedSponsor) ||
+        HARDCODED_SPONSORS.find(s => s.affiliation === values.sponsorName) ||
+        HARDCODED_SPONSORS.find(s => s.first === appliedSponsor);
+
+      console.log("appliedSponsor param:", appliedSponsor);
+      console.log("values.sponsorName:", values.sponsorName);
+      console.log("matchedSponsor:", matchedSponsor);
+
+      if (!matchedSponsor) {
+        setSubmitError("Sponsor not found. Please check the sponsor name and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get the current driver's ID from auth
+      let currentDriverId = "unlinked";
+      try {
+        const currentUser = await getCurrentUser();
+        currentDriverId = currentUser.userId;
+        console.log("currentDriverId:", currentDriverId);
+      } catch (authErr) {
+        console.warn("Could not get current user, using 'unlinked':", authErr);
+      }
+
+      const payload = {
+        appId: crypto.randomUUID(),
         first: values.firstName,
         last: values.lastName,
         email: values.email,
@@ -117,10 +183,15 @@ export default function DriverApplicationForm() {
         licenseNo: values.licenseNumber,
         state: values.licenseState,
         expDate: values.licenseExpiry,
-        driverId: "unlinked",   // placeholder until driver accounts are linked
-        sponsorId: "unlinked",  // placeholder until sponsor lookup is set up
+        driverId: currentDriverId,
+        sponsorId: matchedSponsor.affiliation,
         status: 0,
-      });
+      };
+      console.log("Submitting application payload:", payload);
+
+      const result = await client.models.Application.create(payload);
+      console.log("Create result:", result);
+      console.log("Create errors:", result.errors);
 
       setDone(true);
     } catch (err) {
@@ -168,21 +239,29 @@ export default function DriverApplicationForm() {
           <h2 style={{ margin: 0 }}>{t('driverApp.myApplications')}</h2>
         </div>
 
-        {myApplications.length === 0 && (
+        {myAppLoading && (
+          <p style={{ color: "#555" }}>Loading your applications...</p>
+        )}
+
+        {myAppError && (
+          <p style={{ color: "red" }}>{myAppError}</p>
+        )}
+
+        {!myAppLoading && !myAppError && myApplications.length === 0 && (
           <p style={{ color: "#999" }}>You haven't submitted any applications yet.</p>
         )}
 
         {myApplications.map((app) => (
           <div key={app.appId} style={{ border: "1px solid #ddd", borderRadius: 4, padding: 16, marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <strong>{app.sponsorName}</strong>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <strong style={{ fontSize: 15 }}>{app.sponsorName}</strong>
               <StatusBadge status={app.driverAction ? (app.driverAction === "accepted" ? "offer_accepted" : "offer_declined") : app.status} t={t} />
             </div>
             <div style={{ fontSize: 13, color: "#888", marginBottom: 10 }}>{t('driverApp.submittedDate')} {app.submittedDate}</div>
 
             <ApplicationStatusMessage
               status={app.status}
-              rejectionReason={app.rejectionReason}
+              rejectionReason={app.denialReason}
               driverAction={app.driverAction}
               t={t}
             />
@@ -284,7 +363,7 @@ export default function DriverApplicationForm() {
       </form>
 
       <div style={{ textAlign: "center", marginTop: 16 }}>
-        <button onClick={() => setView("myApplications")} style={{ ...btnStyle, background: "#6c757d", fontSize: 13 }}>
+        <button onClick={() => { setView("myApplications"); loadMyApplications(); }} style={{ ...btnStyle, background: "#6c757d", fontSize: 13 }}>
           {t('driverApp.viewMyApplications')}
         </button>
       </div>

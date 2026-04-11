@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { generateClient } from 'aws-amplify/api';
+import { generateClient } from 'aws-amplify/data';
 import { useLanguage } from './LanguageContext';
 
 const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
@@ -12,6 +12,7 @@ export default function SponsorApplicationsPage() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+
 
   const [filterDate, setFilterDate] = useState("");
   const [selectedApp, setSelectedApp] = useState(null);
@@ -27,12 +28,21 @@ export default function SponsorApplicationsPage() {
     async function load() {
       try {
         const client = generateClient();
-        const { data: apps } = await client.models.Application.list();
+        const result = await client.models.Application.list();
+        console.log("Raw API result:", result);
+        console.log("Applications data:", result.data);
+        console.log("Errors:", result.errors);
+        const apps = result.data ?? [];
+        console.log("Number of apps found:", apps.length);
+        if (apps.length > 0) {
+          console.log("First app sample:", JSON.stringify(apps[0], null, 2));
+        }
 
         const normalized = apps.map(a => ({
           ...a,
           id: a.appId,
           name: `${a.first ?? ""} ${a.last ?? ""}`.trim(),
+          sponsorName: a.sponsorId ?? "",
           status: STATUS_MAP[a.status] ?? "pending",
           denialReason: a.notes ?? "",
           submittedDate: a.createdAt?.slice(0, 10) ?? "",
@@ -53,7 +63,32 @@ export default function SponsorApplicationsPage() {
   async function handleAccept(id) {
     try {
       const client = generateClient();
+
+      // Find the application being accepted
+      const app = applications.find(a => a.id === id);
+
+      // Update the application status to accepted
       await client.models.Application.update({ appId: id, status: STATUS_INT.accepted });
+
+      // Create the DriverSponsor relationship if both IDs are real
+      if (app && app.driverId && app.driverId !== "unlinked" && app.sponsorId && app.sponsorId !== "unlinked") {
+        const existing = await client.models.DriverSponsor.list({
+          filter: {
+            and: [
+              { driverId: { eq: app.driverId } },
+              { sponsorId: { eq: app.sponsorId } },
+            ]
+          }
+        });
+        if (!existing.data || existing.data.length === 0) {
+          await client.models.DriverSponsor.create({
+            driverId: app.driverId,
+            sponsorId: app.sponsorId,
+            points: 0,
+          });
+        }
+      }
+
       setApplications(prev => prev.map(a => a.id === id ? { ...a, status: "accepted" } : a));
       if (selectedApp?.id === id) setSelectedApp(a => ({ ...a, status: "accepted" }));
     } catch (err) {
@@ -288,6 +323,7 @@ export default function SponsorApplicationsPage() {
                   <strong style={{ fontSize: 15 }}>{app.name}</strong>
                   <StatusBadge status={app.status} />
                 </div>
+                <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>Applying to: <strong>{app.sponsorName}</strong></div>
                 <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>{app.email}</div>
                 <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
                   {t('sponsorApp.submitted')} {app.submittedDate}
@@ -342,6 +378,7 @@ export default function SponsorApplicationsPage() {
                 <StatusBadge status={selectedApp.status} />
               </div>
 
+              <DetailRow label="Sponsor" value={selectedApp.sponsorName} />
               <DetailRow label={t('sponsorApp.email')} value={selectedApp.email} />
               <DetailRow label={t('sponsorApp.phone')} value={selectedApp.phone} />
               <DetailRow label={t('sponsorApp.licenseNum')} value={selectedApp.licenseNo} />
