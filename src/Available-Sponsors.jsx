@@ -48,7 +48,7 @@ export default function SponsorListings() {
                         <p>{usr.bio}</p>
                     </div>
                     
-                    <Button variant="primary" as={Link} to={`/application/${usr.first}`}>{t('sponsorList.applyNow')}</Button>
+                    <Button variant="primary" as={Link} to={`/application/${encodeURIComponent(usr.affiliation)}`}>{t('sponsorList.applyNow')}</Button>
                 </Col>
             </Stack>
         </Card>

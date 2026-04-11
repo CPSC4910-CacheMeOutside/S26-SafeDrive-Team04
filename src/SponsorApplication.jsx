@@ -1,88 +1,22 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { generateClient } from 'aws-amplify/data';
 import { useLanguage } from './LanguageContext';
 
-const mockApplications = [
-  {
-    id: 1,
-    name: "Taylor Swift",
-    email: "twsift@gmail.com",
-    phone: "123-456-7890",
-    licenseNumber: "DL-112233",
-    licenseState: "PA",
-    licenseExpiry: "2026-08-15",
-    sponsorName: "SafeDrive Co.",
-    submittedDate: "2026-01-10",
-    status: "pending",
-    denialReason: "",
-    driverAction: null,
-  },
-  {
-    id: 2,
-    name: "Harry Styles",
-    email: "hstyles@gmail.com",
-    phone: "321-456-7890",
-    licenseNumber: "DL-445566",
-    licenseState: "WI",
-    licenseExpiry: "2027-03-22",
-    sponsorName: "SafeDrive Co.",
-    submittedDate: "2026-01-15",
-    status: "pending",
-    denialReason: "",
-    driverAction: null,
-  },
-  {
-    id: 3,
-    name: "Lionel Messi",
-    email: "lionel@gmail.com",
-    phone: "555-555-5555",
-    licenseNumber: "DL-778899",
-    licenseState: "AR",
-    licenseExpiry: "2026-11-01",
-    sponsorName: "SafeDrive Co.",
-    submittedDate: "2026-02-03",
-    status: "pending",
-    denialReason: "",
-    driverAction: null,
-  },
-  {
-    id: 4,
-    name: "Beyoncé Knowles",
-    email: "bey@gmail.com",
-    phone: "444-555-6666",
-    licenseNumber: "DL-001122",
-    licenseState: "TX",
-    licenseExpiry: "2027-06-30",
-    sponsorName: "SafeDrive Co.",
-    submittedDate: "2026-02-14",
-    status: "accepted",
-    denialReason: "",
-    driverAction: "accepted",
-  },
-  {
-    id: 5,
-    name: "Cristiano Ronaldo",
-    email: "cr7@gmail.com",
-    phone: "777-888-9999",
-    licenseNumber: "DL-334455",
-    licenseState: "FL",
-    licenseExpiry: "2025-12-01",
-    sponsorName: "SafeDrive Co.",
-    submittedDate: "2026-01-05",
-    status: "denied",
-    denialReason: "License state not supported.",
-    driverAction: null,
-  },
-];
+const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
+const STATUS_INT = { pending: 0, accepted: 1, denied: 2 };
 
 const PAGE_SIZE_OPTIONS = [3, 5, 10, 25];
 
 export default function SponsorApplicationsPage() {
   const { t } = useLanguage();
-  const [applications, setApplications] = useState(mockApplications);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+
   const [filterDate, setFilterDate] = useState("");
   const [selectedApp, setSelectedApp] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
-
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [pageSize, setPageSize] = useState(5);
@@ -90,11 +24,77 @@ export default function SponsorApplicationsPage() {
   const [denyTargetId, setDenyTargetId] = useState(null);
   const [denialReasonDraft, setDenialReasonDraft] = useState("");
 
-  function handleAccept(id) {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: "accepted" } : a))
-    );
-    if (selectedApp?.id === id) setSelectedApp((a) => ({ ...a, status: "accepted" }));
+  useEffect(() => {
+    async function load() {
+      try {
+        const client = generateClient();
+        const result = await client.models.Application.list();
+        console.log("Raw API result:", result);
+        console.log("Applications data:", result.data);
+        console.log("Errors:", result.errors);
+        const apps = result.data ?? [];
+        console.log("Number of apps found:", apps.length);
+        if (apps.length > 0) {
+          console.log("First app sample:", JSON.stringify(apps[0], null, 2));
+        }
+
+        const normalized = apps.map(a => ({
+          ...a,
+          id: a.appId,
+          name: `${a.first ?? ""} ${a.last ?? ""}`.trim(),
+          sponsorName: a.sponsorId ?? "",
+          status: STATUS_MAP[a.status] ?? "pending",
+          denialReason: a.notes ?? "",
+          submittedDate: a.createdAt?.slice(0, 10) ?? "",
+          driverAction: null,
+        }));
+
+        setApplications(normalized);
+      } catch (err) {
+        console.error("Failed to load applications:", err);
+        setLoadError("Failed to load applications. Please refresh and try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  async function handleAccept(id) {
+    try {
+      const client = generateClient();
+
+      // Find the application being accepted
+      const app = applications.find(a => a.id === id);
+
+      // Update the application status to accepted
+      await client.models.Application.update({ appId: id, status: STATUS_INT.accepted });
+
+      // Create the DriverSponsor relationship if both IDs are real
+      if (app && app.driverId && app.driverId !== "unlinked" && app.sponsorId && app.sponsorId !== "unlinked") {
+        const existing = await client.models.DriverSponsor.list({
+          filter: {
+            and: [
+              { driverId: { eq: app.driverId } },
+              { sponsorId: { eq: app.sponsorId } },
+            ]
+          }
+        });
+        if (!existing.data || existing.data.length === 0) {
+          await client.models.DriverSponsor.create({
+            driverId: app.driverId,
+            sponsorId: app.sponsorId,
+            points: 0,
+          });
+        }
+      }
+
+      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: "accepted" } : a));
+      if (selectedApp?.id === id) setSelectedApp(a => ({ ...a, status: "accepted" }));
+    } catch (err) {
+      console.error("Failed to accept application:", err);
+      alert("Failed to accept application. Please try again.");
+    }
   }
 
   function openDenyModal(id) {
@@ -102,23 +102,44 @@ export default function SponsorApplicationsPage() {
     setDenialReasonDraft("");
   }
 
-  function confirmDeny() {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === denyTargetId ? { ...a, status: "denied", denialReason: denialReasonDraft } : a))
-    );
-    if (selectedApp?.id === denyTargetId) setSelectedApp((a) => ({ ...a, status: "denied", denialReason: denialReasonDraft }));
-    setDenyTargetId(null);
-    setDenialReasonDraft("");
+  async function confirmDeny() {
+    try {
+      const client = generateClient();
+      await client.models.Application.update({
+        appId: denyTargetId,
+        status: STATUS_INT.denied,
+        notes: denialReasonDraft,
+      });
+      setApplications(prev =>
+        prev.map(a => a.id === denyTargetId ? { ...a, status: "denied", denialReason: denialReasonDraft } : a)
+      );
+      if (selectedApp?.id === denyTargetId) {
+        setSelectedApp(a => ({ ...a, status: "denied", denialReason: denialReasonDraft }));
+      }
+    } catch (err) {
+      console.error("Failed to deny application:", err);
+      alert("Failed to deny application. Please try again.");
+    } finally {
+      setDenyTargetId(null);
+      setDenialReasonDraft("");
+    }
   }
 
-  function handleDeleteSelected() {
-    setApplications((prev) => prev.filter((a) => !selectedIds.has(a.id)));
-    if (selectedApp && selectedIds.has(selectedApp.id)) setSelectedApp(null);
-    setSelectedIds(new Set());
+  async function handleDeleteSelected() {
+    try {
+      const client = generateClient();
+      await Promise.all([...selectedIds].map(id => client.models.Application.delete({ appId: id })));
+      setApplications(prev => prev.filter(a => !selectedIds.has(a.id)));
+      if (selectedApp && selectedIds.has(selectedApp.id)) setSelectedApp(null);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error("Failed to delete applications:", err);
+      alert("Failed to delete one or more applications. Please try again.");
+    }
   }
 
   function toggleSelect(id) {
-    setSelectedIds((prev) => {
+    setSelectedIds(prev => {
       const n = new Set(prev);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
@@ -126,20 +147,18 @@ export default function SponsorApplicationsPage() {
   }
 
   function toggleSelectAll(visibleIds) {
-    const allSelected = visibleIds.every((id) => selectedIds.has(id));
-    setSelectedIds((prev) => {
+    const allSelected = visibleIds.every(id => selectedIds.has(id));
+    setSelectedIds(prev => {
       const n = new Set(prev);
-      visibleIds.forEach((id) => allSelected ? n.delete(id) : n.add(id));
+      visibleIds.forEach(id => allSelected ? n.delete(id) : n.add(id));
       return n;
     });
   }
 
   const filtered = useMemo(() => {
-    return applications.filter((a) => {
+    return applications.filter(a => {
       const dateMatch = filterDate ? a.submittedDate >= filterDate : true;
-      const statusMatch = statusFilter === "all" ? true
-        : statusFilter === "completed" ? (a.driverAction === "accepted" || a.driverAction === "rejected")
-        : a.status === statusFilter;
+      const statusMatch = statusFilter === "all" ? true : a.status === statusFilter;
       const searchMatch = searchQuery.trim()
         ? a.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
         : true;
@@ -150,11 +169,27 @@ export default function SponsorApplicationsPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
   const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
-  const visibleIds = paginated.map((a) => a.id);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const visibleIds = paginated.map(a => a.id);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
 
   function goToPage(p) {
     setCurrentPage(Math.max(1, Math.min(totalPages, p)));
+  }
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: 60, fontFamily: "Arial, sans-serif", color: "#555" }}>
+        Loading applications...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div style={{ textAlign: "center", padding: 60, fontFamily: "Arial, sans-serif", color: "#dc3545" }}>
+        {loadError}
+      </div>
+    );
   }
 
   return (
@@ -162,8 +197,8 @@ export default function SponsorApplicationsPage() {
       <h1 style={{ marginBottom: 4 }}>{t('sponsorApp.title')}</h1>
       <p style={{ color: "#666", marginBottom: 20 }}>{t('sponsorApp.subtitle')}</p>
 
+      {/* Filters */}
       <div style={{ display: "flex", gap: 16, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
-
         <div>
           <label style={{ fontSize: 13, fontWeight: "bold", display: "block", marginBottom: 4 }}>
             {t('sponsorApp.searchByName')}
@@ -171,7 +206,7 @@ export default function SponsorApplicationsPage() {
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             placeholder={t('sponsorApp.searchPlaceholder')}
             style={{ padding: "6px 10px", border: "1px solid #ccc", borderRadius: 4, fontSize: 14 }}
           />
@@ -184,7 +219,7 @@ export default function SponsorApplicationsPage() {
           <input
             type="date"
             value={filterDate}
-            onChange={(e) => { setFilterDate(e.target.value); setCurrentPage(1); }}
+            onChange={e => { setFilterDate(e.target.value); setCurrentPage(1); }}
             style={{ padding: "6px 10px", border: "1px solid #ccc", borderRadius: 4, fontSize: 14 }}
           />
         </div>
@@ -195,14 +230,13 @@ export default function SponsorApplicationsPage() {
           </label>
           <select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+            onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
             style={{ padding: "6px 10px", border: "1px solid #ccc", borderRadius: 4, fontSize: 14 }}
           >
             <option value="all">{t('sponsorApp.statusAll')}</option>
             <option value="pending">{t('sponsorApp.statusPending')}</option>
             <option value="accepted">{t('sponsorApp.statusAccepted')}</option>
             <option value="denied">{t('sponsorApp.statusDenied')}</option>
-            <option value="completed">{t('sponsorApp.statusCompleted')}</option>
           </select>
         </div>
 
@@ -212,10 +246,10 @@ export default function SponsorApplicationsPage() {
           </label>
           <select
             value={pageSize}
-            onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+            onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
             style={{ padding: "6px 10px", border: "1px solid #ccc", borderRadius: 4, fontSize: 14 }}
           >
-            {PAGE_SIZE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
+            {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </div>
 
@@ -229,6 +263,7 @@ export default function SponsorApplicationsPage() {
         )}
       </div>
 
+      {/* Bulk actions */}
       {selectedIds.size > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 4, padding: "10px 16px", marginBottom: 12 }}>
           <span style={{ fontSize: 13, fontWeight: "bold" }}>{selectedIds.size} {t('sponsorApp.selected')}</span>
@@ -242,8 +277,8 @@ export default function SponsorApplicationsPage() {
       )}
 
       <div style={{ display: "flex", gap: 20 }}>
+        {/* Application list */}
         <div style={{ flex: 1, minWidth: 0 }}>
-
           {paginated.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <input
@@ -260,7 +295,7 @@ export default function SponsorApplicationsPage() {
             <p style={{ color: "#999" }}>{t('sponsorApp.noApplications')}</p>
           )}
 
-          {paginated.map((app) => (
+          {paginated.map(app => (
             <div
               key={app.id}
               onClick={() => setSelectedApp(app)}
@@ -279,8 +314,8 @@ export default function SponsorApplicationsPage() {
               <input
                 type="checkbox"
                 checked={selectedIds.has(app.id)}
-                onChange={(e) => { e.stopPropagation(); toggleSelect(app.id); }}
-                onClick={(e) => e.stopPropagation()}
+                onChange={e => { e.stopPropagation(); toggleSelect(app.id); }}
+                onClick={e => e.stopPropagation()}
                 style={{ cursor: "pointer", marginTop: 2, flexShrink: 0 }}
               />
               <div style={{ flex: 1 }}>
@@ -288,6 +323,7 @@ export default function SponsorApplicationsPage() {
                   <strong style={{ fontSize: 15 }}>{app.name}</strong>
                   <StatusBadge status={app.status} />
                 </div>
+                <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>Applying to: <strong>{app.sponsorName}</strong></div>
                 <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>{app.email}</div>
                 <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
                   {t('sponsorApp.submitted')} {app.submittedDate}
@@ -302,13 +338,13 @@ export default function SponsorApplicationsPage() {
                 {app.status === "pending" && (
                   <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleAccept(app.id); }}
+                      onClick={e => { e.stopPropagation(); handleAccept(app.id); }}
                       style={{ ...btnBase, background: "#28a745", color: "#fff" }}
                     >
                       {t('sponsorApp.accept')}
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); openDenyModal(app.id); }}
+                      onClick={e => { e.stopPropagation(); openDenyModal(app.id); }}
                       style={{ ...btnBase, background: "#dc3545", color: "#fff" }}
                     >
                       {t('sponsorApp.deny')}
@@ -322,7 +358,7 @@ export default function SponsorApplicationsPage() {
           {totalPages > 1 && (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 16 }}>
               <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} style={pageBtnStyle(safePage === 1)}>{t('sponsorApp.prev')}</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                 <button key={p} onClick={() => goToPage(p)} style={pageBtnStyle(false, p === safePage)}>{p}</button>
               ))}
               <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} style={pageBtnStyle(safePage === totalPages)}>{t('sponsorApp.next')}</button>
@@ -333,6 +369,7 @@ export default function SponsorApplicationsPage() {
           </div>
         </div>
 
+        {/* Detail panel */}
         <div style={{ width: 320, flexShrink: 0 }}>
           {selectedApp ? (
             <div style={{ border: "1px solid #ddd", borderRadius: 6, padding: 20, position: "sticky", top: 20 }}>
@@ -341,23 +378,17 @@ export default function SponsorApplicationsPage() {
                 <StatusBadge status={selectedApp.status} />
               </div>
 
+              <DetailRow label="Sponsor" value={selectedApp.sponsorName} />
               <DetailRow label={t('sponsorApp.email')} value={selectedApp.email} />
               <DetailRow label={t('sponsorApp.phone')} value={selectedApp.phone} />
-              <DetailRow label={t('sponsorApp.licenseNum')} value={selectedApp.licenseNumber} />
-              <DetailRow label={t('sponsorApp.licenseState')} value={selectedApp.licenseState} />
-              <DetailRow label={t('sponsorApp.licenseExpiry')} value={selectedApp.licenseExpiry} />
-              <DetailRow label={t('sponsorApp.applyingTo')} value={selectedApp.sponsorName} />
+              <DetailRow label={t('sponsorApp.licenseNum')} value={selectedApp.licenseNo} />
+              <DetailRow label={t('sponsorApp.licenseState')} value={selectedApp.state} />
+              <DetailRow label={t('sponsorApp.licenseExpiry')} value={selectedApp.expDate} />
               <DetailRow label={t('sponsorApp.submittedLabel')} value={selectedApp.submittedDate} />
 
               {selectedApp.status === "denied" && selectedApp.denialReason && (
                 <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: "#721c24", marginTop: 8 }}>
                   <strong>{t('sponsorApp.denialReason')}:</strong> {selectedApp.denialReason}
-                </div>
-              )}
-
-              {selectedApp.driverAction && (
-                <div style={{ background: selectedApp.driverAction === "accepted" ? "#d4edda" : "#e2e3e5", border: "1px solid #c3e6cb", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: selectedApp.driverAction === "accepted" ? "#155724" : "#383d41", marginTop: 8 }}>
-                  <strong>{t('sponsorApp.driverResponse')}:</strong> {selectedApp.driverAction === "accepted" ? t('sponsorApp.acceptedOffer') : t('sponsorApp.declinedOffer')}
                 </div>
               )}
 
@@ -386,16 +417,15 @@ export default function SponsorApplicationsPage() {
         </div>
       </div>
 
+      {/* Deny modal */}
       {denyTargetId !== null && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
           <div style={{ background: "#fff", borderRadius: 6, padding: 28, maxWidth: 420, width: "100%", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
             <h3 style={{ marginTop: 0, color: "#dc3545" }}>{t('sponsorApp.denyApplication')}</h3>
-            <p style={{ fontSize: 14, color: "#555" }}>
-              {t('sponsorApp.denyMessage')}
-            </p>
+            <p style={{ fontSize: 14, color: "#555" }}>{t('sponsorApp.denyMessage')}</p>
             <textarea
               value={denialReasonDraft}
-              onChange={(e) => setDenialReasonDraft(e.target.value)}
+              onChange={e => setDenialReasonDraft(e.target.value)}
               placeholder={t('sponsorApp.denyPlaceholder')}
               rows={3}
               style={{ width: "100%", padding: 10, fontSize: 14, border: "1px solid #ccc", borderRadius: 4, boxSizing: "border-box", resize: "vertical" }}
@@ -422,7 +452,7 @@ function StatusBadge({ status }) {
     denied: { background: "#f8d7da", color: "#721c24" },
   };
   return (
-    <span style={{ ...colors[status], padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: "bold" }}>
+    <span style={{ ...(colors[status] ?? colors.pending), padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: "bold" }}>
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );

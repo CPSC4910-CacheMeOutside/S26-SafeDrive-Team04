@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "./LanguageContext";
-import { useAuth } from "react-oidc-context";
+import useAmplifyAuth from "./UseAmplifyAuth";
 
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
@@ -18,7 +18,7 @@ const client = generateClient();
 
 function SponsorPage() {
   const navigate = useNavigate();
-  const auth = useAuth();
+  const auth = useAmplifyAuth();
   const { t } = useLanguage();
 
   const [relations, setRelations] = useState([]);
@@ -30,11 +30,11 @@ function SponsorPage() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
-  // Replace this with however you identify the logged-in sponsor user
+  // find the logged in sponsor
   const sponsorUserId =
-    auth?.user?.profile?.sub ||
-    auth?.user?.profile?.username ||
-    auth?.user?.profile?.email ||
+    auth?.profile?.sub ||
+    auth?.profile?.username ||
+    auth?.profile?.email ||
     "";
 
   useEffect(() => {
@@ -65,34 +65,16 @@ function SponsorPage() {
 
       const relationRows = dsResult.data || [];
 
-      // Pull all users once so we can map driverId -> real user info
-      const usersResult = await client.models.User.list();
-
-      if (usersResult.errors) {
-        console.error("User load error:", usersResult.errors);
-        setPageError("Failed to load users.");
-        return;
-      }
-
-      const users = usersResult.data || [];
-      const userMap = new Map(users.map((u) => [u.userId, u]));
-
-      const loadedRelations = relationRows.map((rel) => {
-        const driverUser = userMap.get(rel.driverId);
-
-        return {
-          driverSponsorId: rel.driverSponsorId ?? `${rel.driverId}-${rel.sponsorId}`,
-          sponsorId: rel.sponsorId,
-          driverId: rel.driverId,
-          points: rel.points ?? 0,
-          note: rel.note ?? "",
-          driverName: driverUser
-            ? `${driverUser.first ?? ""} ${driverUser.last ?? ""}`.trim() || driverUser.email || rel.driverId
-            : rel.driverId,
-          driverEmail: driverUser?.email ?? "",
-          raw: rel,
-        };
-      });
+      const loadedRelations = relationRows.map((rel) => ({
+        driverSponsorId: rel.driverSponsorId ?? `${rel.driverId}-${rel.sponsorId}`,
+        sponsorId: rel.sponsorId,
+        driverId: rel.driverId,
+        points: rel.points ?? 0,
+        note: rel.note ?? "",
+        driverName: rel.driverId,
+        driverEmail: "",
+        raw: rel,
+      }));
 
       setRelations(loadedRelations);
 

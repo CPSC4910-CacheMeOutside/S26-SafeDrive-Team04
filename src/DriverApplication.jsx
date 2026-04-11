@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getCurrentUser } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/data';
 import { useLanguage } from './LanguageContext';
+
+// Hardcoded sponsors — mirrors Available-Sponsors.jsx until a sponsor API is available
+const HARDCODED_SPONSORS = [
+  { first: 'Dennis', last: 'Richi',  affiliation: 'Stanford & Sons Antiques LLC.' },
+  { first: 'Jay',    last: 'Gilstrap', affiliation: 'Jay Gilstrap Family Dealerships' },
+  { first: 'Money',  last: 'Bags',   affiliation: 'Rug Pull Crypto' },
+];
+
+const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
 
 const fieldDefs = [
   { id: "firstName", labelKey: "driverApp.fieldFirstName", type: "text", required: true, placeholder: "John" },
@@ -52,67 +62,62 @@ function getError(field, value, t) {
   return null;
 }
 
-const mockSubmittedApplications = [
-  {
-    id: 101,
-    sponsorName: "SafeDrive Co.",
-    submittedDate: "2026-01-10",
-    status: "pending",
-    rejectionReason: null,
-    driverAction: null,
-  },
-  {
-    id: 102,
-    sponsorName: "FastFleet Inc.",
-    submittedDate: "2026-01-20",
-    status: "accepted",
-    rejectionReason: null,
-    driverAction: null,
-  },
-  {
-    id: 103,
-    sponsorName: "RoadReady LLC",
-    submittedDate: "2026-02-01",
-    status: "denied",
-    rejectionReason: "Your license state is not currently supported in our operating region.",
-    driverAction: null,
-  },
-];
-
 export default function DriverApplicationForm() {
 
-  const {appliedSponsor} = useParams();
+  const { appliedSponsor: rawAppliedSponsor } = useParams();
+  const appliedSponsor = rawAppliedSponsor ? decodeURIComponent(rawAppliedSponsor) : "";
   const { t } = useLanguage();
 
   const fields = fieldDefs.map(f => ({ ...f, label: t(f.labelKey) }));
 
   const [values, setValues] = useState(
-    fieldDefs.reduce((acc, f) => ({ ...acc, [f.id]: "" }), {})
+    fieldDefs.reduce((acc, f) => ({
+      ...acc,
+      [f.id]: f.id === "sponsorName" && appliedSponsor ? appliedSponsor : ""
+    }), {})
   );
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [done, setDone] = useState(false);
   const [view, setView] = useState("form");
-  const [myApplications, setMyApplications] = useState(mockSubmittedApplications);
+  const [myApplications, setMyApplications] = useState([]);
   const [driverId, setDriverId] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [myAppLoading, setMyAppLoading] = useState(false);
+  const [myAppError, setMyAppError] = useState(null);
 
   useEffect(() => {
-    async function getUser() {
-      const { userId } = await getCurrentUser();
-      const { data: drivers } = await client.models.Driver.list({
-        filter: { userId: { eq: userId }}
-      });
-      const driver = drivers[0];
-      setDriverId(driver.driverId);
-    }
-    getUser();
-
-    async function fetchApplications() {
-      const { data } = await client.models.Application.list();
-      setMyApplications(data);
-    }
-    fetchApplications();
   }, []);
+
+  async function loadMyApplications() {
+    setMyAppLoading(true);
+    setMyAppError(null);
+    try {
+      const client = generateClient();
+      const currentUser = await getCurrentUser();
+      const currentDriverId = currentUser.userId;
+
+      const { data: allApps } = await client.models.Application.list();
+      const myApps = allApps
+        .filter(a => a.driverId === currentDriverId)
+        .map(a => ({
+          ...a,
+          status: STATUS_MAP[a.status] ?? "pending",
+          submittedDate: a.createdAt?.slice(0, 10) ?? "",
+          sponsorName: a.sponsorId ?? "",
+          denialReason: a.notes ?? "",
+          driverAction: null,
+        }));
+      setMyApplications(myApps);
+    } catch (err) {
+      console.error("Failed to load applications:", err);
+      setMyAppError("Failed to load your applications. Please try again.");
+    } finally {
+      setMyAppLoading(false);
+    }
+  }
 
   const errors = {};
   for (const f of fieldDefs) {
@@ -131,14 +136,46 @@ export default function DriverApplicationForm() {
   }
 
   async function handleSubmit(e) {
+    const client = generateClient();
     e.preventDefault();
+    setSubmitError(null);
 
     const allTouched = fieldDefs.reduce((acc, f) => ({ ...acc, [f.id]: true }), {});
     setTouched(allTouched);
     setSubmitted(true);
 
-    if (!hasErrors) {
-      await client.models.Application.create({
+    if (hasErrors) return;
+
+    setIsSubmitting(true);
+    try {
+      // Look up sponsor from hardcoded list by affiliation (now passed via route param)
+      const matchedSponsor =
+        HARDCODED_SPONSORS.find(s => s.affiliation === appliedSponsor) ||
+        HARDCODED_SPONSORS.find(s => s.affiliation === values.sponsorName) ||
+        HARDCODED_SPONSORS.find(s => s.first === appliedSponsor);
+
+      console.log("appliedSponsor param:", appliedSponsor);
+      console.log("values.sponsorName:", values.sponsorName);
+      console.log("matchedSponsor:", matchedSponsor);
+
+      if (!matchedSponsor) {
+        setSubmitError("Sponsor not found. Please check the sponsor name and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get the current driver's ID from auth
+      let currentDriverId = "unlinked";
+      try {
+        const currentUser = await getCurrentUser();
+        currentDriverId = currentUser.userId;
+        console.log("currentDriverId:", currentDriverId);
+      } catch (authErr) {
+        console.warn("Could not get current user, using 'unlinked':", authErr);
+      }
+
+      const payload = {
+        appId: crypto.randomUUID(),
         first: values.firstName,
         last: values.lastName,
         email: values.email,
@@ -146,17 +183,28 @@ export default function DriverApplicationForm() {
         licenseNo: values.licenseNumber,
         state: values.licenseState,
         expDate: values.licenseExpiry,
-        driverId: driverId,
-        sponsorId: "TBD",
+        driverId: currentDriverId,
+        sponsorId: matchedSponsor.affiliation,
         status: 0,
-      });
+      };
+      console.log("Submitting application payload:", payload);
+
+      const result = await client.models.Application.create(payload);
+      console.log("Create result:", result);
+      console.log("Create errors:", result.errors);
+
       setDone(true);
+    } catch (err) {
+      console.error("Submission failed:", err);
+      setSubmitError("Something went wrong submitting your application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   function handleDriverAction(appId, action) {
     setMyApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, driverAction: action } : a))
+      prev.map((a) => (a.appId === appId ? { ...a, driverAction: action } : a))
     );
   }
 
@@ -170,6 +218,7 @@ export default function DriverApplicationForm() {
             setDone(false);
             setSubmitted(false);
             setTouched({});
+            setSubmitError(null);
             setValues(fieldDefs.reduce((acc, f) => ({ ...acc, [f.id]: "" }), {}));
           }}
           style={btnStyle}
@@ -190,17 +239,29 @@ export default function DriverApplicationForm() {
           <h2 style={{ margin: 0 }}>{t('driverApp.myApplications')}</h2>
         </div>
 
+        {myAppLoading && (
+          <p style={{ color: "#555" }}>Loading your applications...</p>
+        )}
+
+        {myAppError && (
+          <p style={{ color: "red" }}>{myAppError}</p>
+        )}
+
+        {!myAppLoading && !myAppError && myApplications.length === 0 && (
+          <p style={{ color: "#999" }}>You haven't submitted any applications yet.</p>
+        )}
+
         {myApplications.map((app) => (
-          <div key={app.id} style={{ border: "1px solid #ddd", borderRadius: 4, padding: 16, marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <strong>{app.sponsorName}</strong>
+          <div key={app.appId} style={{ border: "1px solid #ddd", borderRadius: 4, padding: 16, marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <strong style={{ fontSize: 15 }}>{app.sponsorName}</strong>
               <StatusBadge status={app.driverAction ? (app.driverAction === "accepted" ? "offer_accepted" : "offer_declined") : app.status} t={t} />
             </div>
             <div style={{ fontSize: 13, color: "#888", marginBottom: 10 }}>{t('driverApp.submittedDate')} {app.submittedDate}</div>
 
             <ApplicationStatusMessage
               status={app.status}
-              rejectionReason={app.rejectionReason}
+              rejectionReason={app.denialReason}
               driverAction={app.driverAction}
               t={t}
             />
@@ -212,13 +273,13 @@ export default function DriverApplicationForm() {
                 </p>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
-                    onClick={() => handleDriverAction(app.id, "accepted")}
+                    onClick={() => handleDriverAction(app.appId, "accepted")}
                     style={{ ...btnStyle, background: "#28a745", padding: "7px 18px", fontSize: 13 }}
                   >
                     {t('driverApp.acceptOffer')}
                   </button>
                   <button
-                    onClick={() => handleDriverAction(app.id, "rejected")}
+                    onClick={() => handleDriverAction(app.appId, "rejected")}
                     style={{ ...btnStyle, background: "#dc3545", padding: "7px 18px", fontSize: 13 }}
                   >
                     {t('driverApp.declineOffer')}
@@ -286,8 +347,12 @@ export default function DriverApplicationForm() {
           ))}
         </div>
 
-        <button type="submit" style={{ ...btnStyle, width: "100%", marginTop: 16 }}>
-          {t('driverApp.submitApplication')}
+        {submitError && (
+          <p style={{ color: "red", textAlign: "center", marginTop: 8 }}>{submitError}</p>
+        )}
+
+        <button type="submit" disabled={isSubmitting} style={{ ...btnStyle, width: "100%", marginTop: 16, opacity: isSubmitting ? 0.7 : 1 }}>
+          {isSubmitting ? "Submitting..." : t('driverApp.submitApplication')}
         </button>
 
         {submitted && hasErrors && (
@@ -298,7 +363,7 @@ export default function DriverApplicationForm() {
       </form>
 
       <div style={{ textAlign: "center", marginTop: 16 }}>
-        <button onClick={() => setView("myApplications")} style={{ ...btnStyle, background: "#6c757d", fontSize: 13 }}>
+        <button onClick={() => { setView("myApplications"); loadMyApplications(); }} style={{ ...btnStyle, background: "#6c757d", fontSize: 13 }}>
           {t('driverApp.viewMyApplications')}
         </button>
       </div>
@@ -411,7 +476,6 @@ const btnStyle = {
   cursor: "pointer",
   fontSize: 15,
 };
-
 
 const sectionTitleStyle = {
   color: "#333",
