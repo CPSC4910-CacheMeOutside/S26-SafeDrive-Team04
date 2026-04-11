@@ -15,7 +15,6 @@ import { Amplify } from 'aws-amplify';
 import { parseAmplifyConfig } from 'aws-amplify/utils';
 import 'aws-amplify/auth/enable-oauth-listener';
 import { fetchAuthSession } from 'aws-amplify/auth';
-import 'aws-amplify/auth/enable-oauth-listener';
 import outputs from '../amplify_outputs.json';
 
 const amplifyConfig = parseAmplifyConfig(outputs);

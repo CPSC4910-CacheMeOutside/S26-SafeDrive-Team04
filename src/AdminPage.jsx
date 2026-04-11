@@ -14,6 +14,8 @@ import Nav from "react-bootstrap/Nav"
 import { ListGroupItem } from 'react-bootstrap';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 import { fetchDriverUsers } from './adminUpdateDriverInfo-api';
+import { startDriverView } from './adminDriverView-api';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 function AdminPage(){
 
@@ -238,9 +240,26 @@ function AdminPage(){
     navigate(`/admin/drivers/${selectedDriver.id}/edit`);
   };
 
-  const handleViewDriverAccount = () => {
+  const handleViewDriverAccount = async () => {
     if (!selectedDriverUser) return;
-    navigate(`/admin/drivers/${selectedDriverUser.username}/view`);
+
+    try {
+      const data = await startDriverView(selectedDriverUser.username);
+
+      localStorage.setItem(
+        'driverViewSession',
+        JSON.stringify({
+          sessionId: data.sessionId,
+          driverUsername: data.driverUsername,
+          driverName: data.driverName,
+          expiresAt: data.expiresAt,
+        })
+      );
+      navigate('/DriverPage?adminView=1');
+    } catch (error) {
+      console.error('Error: Failed to start driver view', error);
+      alert(error?.message || 'Could not open driver account view.');
+    }
   };
 
   return(
