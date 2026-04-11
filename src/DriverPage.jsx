@@ -9,9 +9,12 @@ import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
-import { getCurrentDriverView } from './adminDriverView-api';
+import { getCurrentDriverView, getDriverViewDashboard } from './adminDriverView-api';
+import { useNavigate } from 'react-router-dom';
+import { stopDriverView } from './adminDriverView-api';
 
 function DriverPage() {
+  const navigate = useNavigate();
   const [adminView, setAdminView] = useState(false);
   const [viewedDriver, setViewedDriver] = useState(null);
 
@@ -122,16 +125,10 @@ function DriverPage() {
       try {
         const stored = JSON.parse(raw);
         const sessionData = await getCurrentDriverView(stored.sessionId);
+        const dashboardData = await getDriverViewDashboard(stored.sessionId);
         setAdminView(true);
         setViewedDriver(sessionData);
-        setDriver((prev) => ({
-          ...prev,
-          username: sessionData.driverUsername || prev.username,
-          fullName: sessionData.driverName || prev.fullName,
-          email: '',
-          phoneNumber: '',
-          groups: ['Driver'],
-        }));
+        setDriver(dashboardData);
       } catch (error) {
         console.error(error);
         localStorage.removeItem('driverViewSession');
@@ -139,6 +136,20 @@ function DriverPage() {
     };
     loadAdminView();
   }, []);
+
+  const handleExitDriverView = async () => {
+    try {
+      const raw = localStorage.getItem('driverViewSession');
+      if (raw) {
+        const stored = JSON.parse(raw);
+        await stopDriverView(stored.sessionId);
+      }
+    } catch (error) {
+      console.error('Failed to stop driver view', error);
+    }
+    localStorage.removeItem('driverViewSession');
+    navigate('/AdminPage');
+  };
 
   return (
     <Container className="mt-4">
@@ -269,6 +280,7 @@ function DriverPage() {
             </Card>
           </Tab>
         </Tabs>
+        <Button style={{ width: "160px", height: "50px", marginTop: "20px" }} variant="secondary" className="me-2" onClick={handleExitDriverView}>Exit</Button>
       </div>
     </Container>
   );

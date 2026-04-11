@@ -154,6 +154,12 @@ driverViewCurrentPath.addMethod('GET', lambdaIntegration, {
   authorizer: cognitoAuth,
 });
 
+const driverViewDashboardPath = driverViewPath.addResource('dashboard');
+driverViewDashboardPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
 const driverViewStopPath = driverViewPath.addResource('stop');
 driverViewStopPath.addMethod('POST', lambdaIntegration, {
   authorizationType: AuthorizationType.COGNITO,

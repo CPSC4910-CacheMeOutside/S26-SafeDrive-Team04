@@ -59,6 +59,31 @@ export async function getCurrentDriverView(sessionId) {
   return data;
 }
 
+export async function getDriverViewDashboard(sessionId) {
+  const session = await fetchAuthSession();
+  const idToken = session.tokens?.idToken?.toString();
+
+  if (!idToken) {
+    throw new Error('Missing id token.');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/admin/driver-view/dashboard`, {
+    method: 'GET',
+    headers: {
+      Authorization: idToken,
+      'x-driver-view-session': sessionId,
+    },
+  });
+
+  const data = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to load driver dashboard.');
+  }
+
+  return data;
+}
+
 export async function stopDriverView(sessionId) {
   const session = await fetchAuthSession();
   const idToken = session.tokens?.idToken?.toString();

@@ -388,6 +388,124 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
+    if (event.httpMethod === 'GET' && path.endsWith('/admin/driver-view/dashboard')) {
+      const adminSub = getClaimSub(event);
+
+      if (!adminSub) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing admin identity' }),
+        };
+      }
+
+      const sessionId = getHeader(event, 'x-driver-view-session');
+
+      if (!sessionId) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing x-driver-view-session header' }),
+        };
+      }
+
+      const sessionResult = await ddb.send(
+        new GetCommand({
+          TableName: driverViewTable,
+          Key: { sessionId },
+        })
+      );
+
+      const session = sessionResult.Item as
+        | {
+            sessionId: string;
+            adminSub: string;
+            driverUsername: string;
+            driverSub?: string;
+            driverName?: string;
+            expiresAt: number;
+            active: boolean;
+          }
+        | undefined;
+
+      if (!session) {
+        return {
+          statusCode: 404,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Driver view session not found' }),
+        };
+      }
+
+      if (session.adminSub !== adminSub) {
+        return {
+          statusCode: 403,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Session does not belong to this admin' }),
+        };
+      }
+
+      if (!session.active || session.expiresAt < Date.now()) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Driver view session expired' }),
+        };
+      }
+
+      const driverResult = await cognito.send(
+        new AdminGetUserCommand({
+          UserPoolId: userPoolId,
+          Username: session.driverUsername,
+        })
+      );
+
+      const driverGroups = await cognito.send(
+        new AdminListGroupsForUserCommand({
+          UserPoolId: userPoolId,
+          Username: session.driverUsername,
+        })
+      );
+
+      const attrs = getAttributesMap(driverResult.UserAttributes);
+
+      const groups = (driverGroups.Groups ?? [])
+        .map((g) => g.GroupName)
+        .filter(Boolean) as string[];
+
+      const isDriverUser = groups.includes('Driver');
+
+      if (!isDriverUser) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Selected user is not a driver' }),
+        };
+      }
+
+      const fullName =
+        attrs.name ??
+        [attrs.given_name, attrs.family_name].filter(Boolean).join(' ') ??
+        '';
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          id: session.driverSub ?? attrs.sub ?? '',
+          subId: session.driverSub ?? attrs.sub ?? '',
+          username: session.driverUsername,
+          fullName: fullName || session.driverName || '',
+          name: fullName || session.driverName || '',
+          email: attrs.email ?? '',
+          phoneNumber: attrs.phone_number ?? '',
+          groups,
+          points: 0,
+          sponsors: [],
+          applications: [],
+        }),
+      };
+    }
+
     if (event.httpMethod === 'POST' && path.endsWith('/admin/driver-view/stop')) {
       const adminSub = getClaimSub(event);
       const body = JSON.parse(event.body || '{}');
