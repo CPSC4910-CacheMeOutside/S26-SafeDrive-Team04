@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getCurrentUser } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
 import { useLanguage } from './LanguageContext';
+
+const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
 
 const fieldDefs = [
   { id: "firstName", labelKey: "driverApp.fieldFirstName", type: "text", required: true, placeholder: "John" },
@@ -52,66 +55,29 @@ function getError(field, value, t) {
   return null;
 }
 
-const mockSubmittedApplications = [
-  {
-    id: 101,
-    sponsorName: "SafeDrive Co.",
-    submittedDate: "2026-01-10",
-    status: "pending",
-    rejectionReason: null,
-    driverAction: null,
-  },
-  {
-    id: 102,
-    sponsorName: "FastFleet Inc.",
-    submittedDate: "2026-01-20",
-    status: "accepted",
-    rejectionReason: null,
-    driverAction: null,
-  },
-  {
-    id: 103,
-    sponsorName: "RoadReady LLC",
-    submittedDate: "2026-02-01",
-    status: "denied",
-    rejectionReason: "Your license state is not currently supported in our operating region.",
-    driverAction: null,
-  },
-];
-
 export default function DriverApplicationForm() {
 
-  const {appliedSponsor} = useParams();
+  const { appliedSponsor } = useParams();
   const { t } = useLanguage();
 
   const fields = fieldDefs.map(f => ({ ...f, label: t(f.labelKey) }));
 
   const [values, setValues] = useState(
-    fieldDefs.reduce((acc, f) => ({ ...acc, [f.id]: "" }), {})
+    fieldDefs.reduce((acc, f) => ({
+      ...acc,
+      [f.id]: f.id === "sponsorName" && appliedSponsor ? appliedSponsor : ""
+    }), {})
   );
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [done, setDone] = useState(false);
   const [view, setView] = useState("form");
-  const [myApplications, setMyApplications] = useState(mockSubmittedApplications);
+  const [myApplications, setMyApplications] = useState([]);
   const [driverId, setDriverId] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    async function getUser() {
-      const { userId } = await getCurrentUser();
-      const { data: drivers } = await client.models.Driver.list({
-        filter: { userId: { eq: userId }}
-      });
-      const driver = drivers[0];
-      setDriverId(driver.driverId);
-    }
-    getUser();
-
-    async function fetchApplications() {
-      const { data } = await client.models.Application.list();
-      setMyApplications(data);
-    }
-    fetchApplications();
   }, []);
 
   const errors = {};
@@ -131,13 +97,18 @@ export default function DriverApplicationForm() {
   }
 
   async function handleSubmit(e) {
+    const client = generateClient();
     e.preventDefault();
+    setSubmitError(null);
 
     const allTouched = fieldDefs.reduce((acc, f) => ({ ...acc, [f.id]: true }), {});
     setTouched(allTouched);
     setSubmitted(true);
 
-    if (!hasErrors) {
+    if (hasErrors) return;
+
+    setIsSubmitting(true);
+    try {
       await client.models.Application.create({
         first: values.firstName,
         last: values.lastName,
@@ -146,17 +117,23 @@ export default function DriverApplicationForm() {
         licenseNo: values.licenseNumber,
         state: values.licenseState,
         expDate: values.licenseExpiry,
-        driverId: driverId,
-        sponsorId: "TBD",
+        driverId: "unlinked",   // placeholder until driver accounts are linked
+        sponsorId: "unlinked",  // placeholder until sponsor lookup is set up
         status: 0,
       });
+
       setDone(true);
+    } catch (err) {
+      console.error("Submission failed:", err);
+      setSubmitError("Something went wrong submitting your application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   function handleDriverAction(appId, action) {
     setMyApplications((prev) =>
-      prev.map((a) => (a.id === appId ? { ...a, driverAction: action } : a))
+      prev.map((a) => (a.appId === appId ? { ...a, driverAction: action } : a))
     );
   }
 
@@ -170,6 +147,7 @@ export default function DriverApplicationForm() {
             setDone(false);
             setSubmitted(false);
             setTouched({});
+            setSubmitError(null);
             setValues(fieldDefs.reduce((acc, f) => ({ ...acc, [f.id]: "" }), {}));
           }}
           style={btnStyle}
@@ -190,8 +168,12 @@ export default function DriverApplicationForm() {
           <h2 style={{ margin: 0 }}>{t('driverApp.myApplications')}</h2>
         </div>
 
+        {myApplications.length === 0 && (
+          <p style={{ color: "#999" }}>You haven't submitted any applications yet.</p>
+        )}
+
         {myApplications.map((app) => (
-          <div key={app.id} style={{ border: "1px solid #ddd", borderRadius: 4, padding: 16, marginBottom: 16 }}>
+          <div key={app.appId} style={{ border: "1px solid #ddd", borderRadius: 4, padding: 16, marginBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
               <strong>{app.sponsorName}</strong>
               <StatusBadge status={app.driverAction ? (app.driverAction === "accepted" ? "offer_accepted" : "offer_declined") : app.status} t={t} />
@@ -212,13 +194,13 @@ export default function DriverApplicationForm() {
                 </p>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
-                    onClick={() => handleDriverAction(app.id, "accepted")}
+                    onClick={() => handleDriverAction(app.appId, "accepted")}
                     style={{ ...btnStyle, background: "#28a745", padding: "7px 18px", fontSize: 13 }}
                   >
                     {t('driverApp.acceptOffer')}
                   </button>
                   <button
-                    onClick={() => handleDriverAction(app.id, "rejected")}
+                    onClick={() => handleDriverAction(app.appId, "rejected")}
                     style={{ ...btnStyle, background: "#dc3545", padding: "7px 18px", fontSize: 13 }}
                   >
                     {t('driverApp.declineOffer')}
@@ -286,8 +268,12 @@ export default function DriverApplicationForm() {
           ))}
         </div>
 
-        <button type="submit" style={{ ...btnStyle, width: "100%", marginTop: 16 }}>
-          {t('driverApp.submitApplication')}
+        {submitError && (
+          <p style={{ color: "red", textAlign: "center", marginTop: 8 }}>{submitError}</p>
+        )}
+
+        <button type="submit" disabled={isSubmitting} style={{ ...btnStyle, width: "100%", marginTop: 16, opacity: isSubmitting ? 0.7 : 1 }}>
+          {isSubmitting ? "Submitting..." : t('driverApp.submitApplication')}
         </button>
 
         {submitted && hasErrors && (
@@ -411,7 +397,6 @@ const btnStyle = {
   cursor: "pointer",
   fontSize: 15,
 };
-
 
 const sectionTitleStyle = {
   color: "#333",
