@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import useAmplifyAuth from './UseAmplifyAuth';
+import { updateUserAttributes, fetchUserAttributes } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "./LanguageContext";
@@ -12,6 +14,7 @@ import Form from "react-bootstrap/Form";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 
+
 import { fetchAuthSession } from "aws-amplify/auth";
 
 import { 
@@ -20,9 +23,24 @@ import {
 
 const client = generateClient();
 
-function SponsorPage() {
+function SponsorPage({ 
+  setProfilePic,
+  adminView = false,
+  targetDriverId = null
+}) {
+  const auth = useAmplifyAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  const [formData, setFormData] = useState({
+    authName: "",
+    authNickname: "",
+    authPhoneNum: "",
+    authEmail: ""
+  });
+
+  const [authRole, setAuthRole] = useState([]);
+
 
   const [relations, setRelations] = useState([]);
   const [selectedDriverSponsorId, setSelectedDriverSponsorId] = useState("");
@@ -30,7 +48,7 @@ function SponsorPage() {
   const [sortMode, setSortMode] = useState("name");
   const [description, setDescription] = useState("");
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState("");
 
   const [driverUsers, setDriverUsers] = useState([]);
@@ -48,8 +66,94 @@ function SponsorPage() {
   });
 
 
+
+
+  useEffect(() => {
+      const loadProfile = async () => {
+        if (auth.isLoading) return;
+        if (!auth.isAuthenticated) return;
+  
+        if (!adminView) {
+          const attrs = await fetchUserAttributes();
+          setFormData({
+            authName: attrs.name || "",
+            authNickname: attrs.nickname || "",
+            authPhoneNum: attrs.phone_number || "",
+            authEmail: attrs.email || "",
+          });
+  
+          setAuthRole(auth.groups || []);
+  
+          if (attrs.picture && setProfilePic) {
+            setProfilePic(attrs.picture);
+          }
+  
+          return;
+        }
+  
+        try {
+          setLoading(true);
+  
+          console.log("idToken exists:", !!auth.idToken);
+          console.log("groups:", auth.groups);
+          console.log("targetDriverId:", targetDriverId);
+          console.log("token issuer:", auth.profile?.iss);
+  
+          const restOperation = get({
+            apiName: "SafeDriveAPI",
+            path: `/admin/drivers/${encodeURIComponent(targetDriverId)}`,
+            options: {
+              headers: {Authorization: auth.idToken}
+            }
+          });
+  
+          const response = await restOperation.response;
+          const data = await response.body.json();
+  
+          setFormData({
+            authName: data.name || "",
+            authNickname: data.nickname || "",
+            authPhoneNum: data.phone_number || "",
+            authEmail: data.email || ""
+          });
+  
+          setAuthRole(data.groups || ["Driver"]);
+  
+          if (data.picture && setProfilePic) {
+            setProfilePic(data.picture);
+          }
+        } catch (error) {
+          console.error(error);
+          alert(t('editProfile.errorLoadingProfile'));
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      loadProfile();
+    }, [
+      auth.isLoading,
+      auth.isAuthenticated,
+      auth.profile,
+      auth.groups,
+      auth.idToken,
+      adminView,
+      targetDriverId
+    ]);
+  
+
   useEffect(() => {
     async function loadUser() {
+      if (!adminView) {
+              const attrs = await fetchUserAttributes();
+              setFormData({
+                authName: attrs.name || "",
+                authNickname: attrs.nickname || "",
+                authPhoneNum: attrs.phone_number || "",
+                authEmail: attrs.email || "",
+              });
+            }
+      
       try {
         const [session, assignmentData, users] = await Promise.all([
           fetchAuthSession(),
@@ -230,7 +334,7 @@ const getDriverLabel = (driverId) => {
                           >
                             <div className="d-flex justify-content-between">
                               <div>
-                                <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
+                                <div className="fw-semibold">{'editProfile.preferredName'}</div>
                                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                                   {rel.driverEmail || rel.driverId}                                </div>
                               </div>
