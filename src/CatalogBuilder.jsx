@@ -1,7 +1,6 @@
 import { use, useEffect, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import useAmplifyAuth from './UseAmplifyAuth';
-import { getProducts, PalatziQueryStruct } from './catalog/store-api';
 import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
@@ -18,17 +17,21 @@ export default function CatalogBuilder(sponsorId) {
     const auth = useAmplifyAuth();
     // The sponsor's data
     const [sponsoredUser, setSponsoredUser] = useState(null);
-
     // Modal to display filtering options
     const[showFilter, setShowFilter] = useState(false);
     const openFilter = () => setShowFilter(true);
     const closeFilter = () => setShowFilter(false);
-
-    // State trackers for various search queries
+    // The list of products from the table to show
     const [catalog, updateCatalog] = useState([]);
-    const [filter, updateFilter] = useState(new PalatziQueryStruct());
+    // Filters to curate the products shown on screen
     const [pName, updatePName] = useState('');
+    const [minPrice, updateMinPrice] = useState(0);
+    const [maxPrice, updateMaxPrice] = useState(null);
+    const [catagory, updateCatagory] = useState(null);
+    const [showInCatalog, setShowInCatalog] = useState(false);
+    // Controls for traversing the storefront
     const [perPage, updatePerPage] = useState(10);
+    const [storePages, updateStorePages] = useState([]); // A stack containing nextTokens
     
     // Load in the page. Contact the store api first and load the sponsor's data
     useEffect(() => {        
@@ -92,39 +95,21 @@ export default function CatalogBuilder(sponsorId) {
         loadSponsorData();
         console.log("Sponsor has been update to the following object: ", sponsoredUser);
         loadProducts();
-        console.log("Filters have been updated to: ", filter);
-    }, [filter, auth.isLoading, auth.isAuthenticated, auth.groups]);
+    }, [auth.isLoading, auth.isAuthenticated, auth.groups]);
 
-    // Applies the staged title change
-    function applyPName () {
-        updateFilter(filter.update({
-            title: String(pName),
-            offset: 0
-        }));
-    }
+    async function loadProducts() {
 
-    // Applies the staged per page change
-    function applyPerPage (newLimit) {
-        updateFilter(filter.update({
-            limit: Number(newLimit),
-            offset: 0
-        }));
-    }
 
-    // Applies the staged page selection
-    function applyOffset(newOffset) {
-        updateFilter(filter.update({
-            offset: Number(newOffset)
-        }))
-    }
 
-    // Applies all staged filters
-    function applyAllFilter() {
-        updateFilter(filter.update({
-            title: String(pName),
-            limit: Number(perPage),
-            offset: 0,
-        }))
+        const {data: productsTable, errors: ptErrors} = await client.models.Product.list({});
+
+        if (ptErrors) {
+            throw new Error("Error: Could not load products from table: ", ptErrors);
+        } else if (productsTable === null) {
+            throw new Error("Error: Nothing was retrieved from the products table");
+        }
+
+        
     }
 
     // Add the product to the sponsor's catalog
@@ -172,10 +157,19 @@ export default function CatalogBuilder(sponsorId) {
 
     // Contact the external store API and retrieve all product information
     async function loadProducts() {
+        let filter = [];
+
+        // Get the products from the table
         try {
-            let refinedCatalog = await getProducts(filter);
-            
-            updateCatalog(refinedCatalog)
+            console.log("Attempting to retrieve available products from backend...")
+            const {data: storeFront, errors: sfErrors} = await client.models.Product.list();
+
+            if (sfErrors) {
+                throw Error("Error: Failed to retrieve products from backend " + JSON.stringify(sfErrors))
+            } 
+
+            console.log("Updated displayed products: ", storeFront)
+            updateCatalog(storeFront)
         
         } catch (err) {
             console.log(err);
@@ -184,15 +178,15 @@ export default function CatalogBuilder(sponsorId) {
     }
     
     function FilterModal() {
-        const [min, setMin] = useState(filter.price_min);
-        const [max, setMax] = useState(filter.price_max);
-        const [category, setCategory] = useState(filter.categorySlug);
+        const [min, setMin] = useState(minPrice);
+        const [max, setMax] = useState(maxPrice);
+        const [category, setCategory] = useState(catagory);
 
         useEffect(() => {
             if (showFilter) {
-                setMin(filter.price_min);
-                setMax(filter.price_max);
-                setCategory(filter.categorySlug);
+                setMin(minPrice);
+                setMax(maxPrice);
+                setCategory(catagory);
             }
         }, [showFilter]);
 
@@ -201,17 +195,6 @@ export default function CatalogBuilder(sponsorId) {
             setMax(Number.MAX_SAFE_INTEGER);
             setCategory('')
             updateFilter(new PalatziQueryStruct())
-        }
-
-        function applyExtraFilter() {
-            updateFilter(filter.update({
-                title: String(pName),
-                limit: Number(perPage),
-                offset: 0,
-                price_min: min,
-                price_max: max,
-                categorySlug: category
-            }))
         }
 
         return (
@@ -226,7 +209,7 @@ export default function CatalogBuilder(sponsorId) {
                         <Form.Group controlId='productCategory'>
                             <Form.Label>{t('catalog.category')}</Form.Label>
                             <Form.Select onChange={e => setCategory(String(e.target.value))}
-                                defaultValue={filter.categorySlug}>
+                                defaultValue={catagory}>
                                 <option value="">{t('catalog.all')}</option>
                                 <option value="clothes">{t('catalog.clothing')}</option>
                                 <option value="furniture">{t('catalog.furniture')}</option>
@@ -239,13 +222,13 @@ export default function CatalogBuilder(sponsorId) {
                             <Form.Text>{t('catalog.from')}</Form.Text>
                             <Form.Control 
                                 onChange={e => setMin(Number(e.target.value))}
-                                defaultValue={filter.price_min}
+                                defaultValue={minPrice}
                                 type='text' 
                                 placeholder='0 - ...'/>
                             <Form.Text>{t('catalog.to')}</Form.Text>
                             <Form.Control
                                 onChange={e => setMax(Number(e.target.value))}
-                                defaultValue={filter.price_max}
+                                defaultValue={maxPrice}
                                 type='text' 
                                 placeholder='0 - ...'/>
                         </Form.Group>
@@ -394,24 +377,6 @@ export default function CatalogBuilder(sponsorId) {
                                     <ListGroup.Item key={'noSearch'} likeid={'noSearch'} className="text-muted mt-3">{t('catalog.noItemsMatch')}</ListGroup.Item>
                                 )}
                             </ListGroup>
-                            <ButtonGroup className="sm">
-                                <Form>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>{t('catalog.page')}</Form.Label>
-                                        <Form.Control type="text" onChange={(e) => {applyOffset(e.target.value)}} value={filter.offset}/>
-                                    </Form.Group>
-                                </Form>
-                                <Button onClick={() => { 
-                                    if (filter.offset > 0) {
-                                        applyOffset(filter.offset-1);
-                                    }
-                                }}><Image style={{height:'25px', width:'25px'}} src='leftArrowIco.png' fluid/></Button>
-                                <Button onClick={() => {
-                                    if (catalog.length === filter.limit) {
-                                        applyOffset(filter.offset+1);
-                                    }
-                                }}><Image style={{height:'25px', width:'25px'}} src='rightArrowIco.png' fluid/></Button>
-                            </ButtonGroup>
                         </Card>
                     </Col>
                     <Col sm={6}>
