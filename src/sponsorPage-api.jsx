@@ -1,5 +1,6 @@
 import { generateClient } from "aws-amplify/data";
 import { fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
+import { get } from "aws-amplify/api";
 
 const client = generateClient();
 
@@ -49,5 +50,15 @@ export async function fetchCurrentSponsorAssignments() {
     totalPoints,
     drivers,
   };
+}
+
+export async function fetchDriverUsers() {
+  const restOperation = get({
+    apiName: "SafeDriveAPI",
+    path: "/admin/users/group/Driver",
+  });
+
+  const { body } = await restOperation.response;
+  return await body.json();
 }
   

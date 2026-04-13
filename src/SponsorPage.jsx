@@ -13,12 +13,14 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
+import { get } from "aws-amplify/api";
 
 
 import { fetchAuthSession } from "aws-amplify/auth";
 
 import { 
   fetchCurrentSponsorAssignments,
+  fetchDriverUsers,
 } from "./sponsorPage-api";
 
 const client = generateClient();
@@ -144,21 +146,28 @@ function SponsorPage({
 
   useEffect(() => {
     async function loadUser() {
-      if (!adminView) {
-              const attrs = await fetchUserAttributes();
-              setFormData({
-                authName: attrs.name || "",
-                authNickname: attrs.nickname || "",
-                authPhoneNum: attrs.phone_number || "",
-                authEmail: attrs.email || "",
-              });
-            }
-      
       try {
-        const [session, assignmentData, users] = await Promise.all([
-          fetchAuthSession(),
-          fetchCurrentSponsorAssignments(),
-        ]);
+        setLoading(true);
+
+        if (!adminView) {
+          const attrs = await fetchUserAttributes();
+          setFormData({
+            authName: attrs.name || "",
+            authNickname: attrs.nickname || "",
+            authPhoneNum: attrs.phone_number || "",
+            authEmail: attrs.email || "",
+          });
+        }
+
+        const session = await fetchAuthSession();
+        const assignmentData = await fetchCurrentSponsorAssignments();
+
+        let users = [];
+        try {
+          users = await fetchDriverUsers();
+        } catch (err) {
+          console.error("fetchDriverUsers failed:", err);
+        }
 
         const idPayload = session.tokens?.idToken?.payload ?? {};
         const accessPayload = session.tokens?.accessToken?.payload ?? {};
@@ -168,16 +177,18 @@ function SponsorPage({
           accessPayload["cognito:groups"] ||
           [];
 
+        setDriverUsers(Array.isArray(users) ? users : []);
 
-        setRelations(
-          Array.isArray(assignmentData.drivers)
-            ? assignmentData.drivers
-            : []
-        );
+        const drivers = Array.isArray(assignmentData.drivers)
+          ? assignmentData.drivers
+          : [];
 
-        if(assignmentData.drivers?.length > 0) {
-          setSelectedDriverSponsorId(assignmentData.drivers[0].driverSponsorId);
+        setRelations(drivers);
+
+        if (drivers.length > 0) {
+          setSelectedDriverSponsorId(drivers[0].driverSponsorId);
         }
+
         setSponsor((prev) => ({
           ...prev,
           username: assignmentData.sponsorId || "",
@@ -186,38 +197,56 @@ function SponsorPage({
           phoneNumber: assignmentData.phoneNumber || "",
           groups: Array.isArray(groups) ? groups : [],
           points: assignmentData.totalPoints || 0,
-          drivers: Array.isArray(assignmentData.drivers) ? assignmentData.drivers : [],
+          drivers,
         }));
       } catch (error) {
         console.error("Failed to load Cognito user info:", error);
-      }
-      finally{
+        setPageError("Failed to load sponsor page data.");
+      } finally {
         setLoading(false);
       }
     }
 
     loadUser();
-  }, []);
+  }, [adminView]);
+
+
+
+const getDriverLabel = (driverId) => {
+  const match = driverUsers.find((u) => u.username === driverId);
+
+  if (!match) return driverId;
+
+  return (
+    match.preferred_username ||
+    match.nickname ||
+    match.name ||
+    match.email ||
+    match.username ||
+    driverId
+    );
+  };
 
 const filteredRelations = useMemo(() => {
   let list = [...relations];
 
   if (search) {
+    const q = search.toLowerCase();
     list = list.filter((r) =>
-      r.driverName?.toLowerCase().includes(search.toLowerCase())
+      getDriverLabel(r.driverId).toLowerCase().includes(q)
     );
   }
 
   if (sortMode === "points") {
-    list.sort((a, b) => b.points - a.points);
+    list.sort((a, b) => (b.points || 0) - (a.points || 0));
   } else {
     list.sort((a, b) =>
-      (a.driverName || "").localeCompare(b.driverName || "")
+      getDriverLabel(a.driverId).localeCompare(getDriverLabel(b.driverId))
     );
   }
 
   return list;
-}, [relations, search, sortMode]);
+  }, [relations, search, sortMode, driverUsers]);
 
 const selectedRelation = useMemo(() => {
   return relations.find(
@@ -255,19 +284,7 @@ const pointAdjust = async (delta) => {
 };
 
 
-const getDriverLabel = (driverId) => {
-  const match = driverUsers.find((u) => u.username === driverId);
 
-  if (!match) return driverId;
-
-  return (
-    match.preferred_username ||
-    match.name ||
-    match.email ||
-    match.username ||
-    driverId
-    );
-  };
 
   if (loading) {
     return (
@@ -334,7 +351,7 @@ const getDriverLabel = (driverId) => {
                           >
                             <div className="d-flex justify-content-between">
                               <div>
-                                <div className="fw-semibold">{'editProfile.preferredName'}</div>
+                                <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
                                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                                   {rel.driverEmail || rel.driverId}                                </div>
                               </div>
