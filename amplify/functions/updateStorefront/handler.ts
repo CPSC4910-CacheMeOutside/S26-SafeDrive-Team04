@@ -98,26 +98,32 @@ export const handler: EventBridgeHandler<
     const notInTable = storeFrontProducts.filter( (item) => !tableIds.has(item.pId));
 
     for (const prod of notInTable) {
-      const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
-        pId: prod.pId,
-        title: prod.title,
-        imgs: JSON.stringify(prod.imgs),
-        synop: prod.synop,
-        category: prod.category,
-        price: prod.price,
-        available: true,
-      });
+      // Filter out any product that might be a "test" product
+      if ( !( prod.title.includes('test') || prod.title.includes('Test')) || prod.title.includes('update') || prod.title.includes('Update')) {
+        // Add the product
+        const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
+          pId: prod.pId,
+          title: prod.title,
+          imgs: JSON.stringify(prod.imgs),
+          synop: prod.synop,
+          category: prod.category,
+          price: prod.price,
+          available: true,
+        });
 
-      if (apErrors) {  
-        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`)
+        if (apErrors) {  
+          console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`)
+        }
       }
     }
   }
   // If the product table is empty, add all products marked as available
   else {
     console.log(`No products in table. Adding all retrieved products...`)
-    for (const prod of storeFrontProducts) {
-      const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
+    for (const prod of storeFrontProducts) { 
+      // Ensure that the product is not a "test" product before being added
+      if ( !( prod.title.includes('test') || prod.title.includes('Test')) || prod.title.includes('update') || prod.title.includes('Update')) {
+        const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
         pId: prod.pId,
         title: prod.title,
         imgs: JSON.stringify(prod.imgs),
@@ -125,14 +131,15 @@ export const handler: EventBridgeHandler<
         category: prod.category,
         price: prod.price,
         available: true,
-      });
+        });
 
-      if (apErrors) {
-        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`);
-        return;
-      } else if (addedProduct === null ) {
-        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: Created null`);
-        return;
+        if (apErrors) {
+          console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`);
+          return;
+        } else if (addedProduct === null ) {
+          console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: Created null`);
+          return;
+        }
       }
     }
   }
