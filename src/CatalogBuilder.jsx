@@ -94,8 +94,11 @@ export default function CatalogBuilder(sponsorId) {
 
         loadSponsorData();
         console.log("Sponsor has been update to the following object: ", sponsoredUser);
-        loadProducts();
     }, [auth.isLoading, auth.isAuthenticated, auth.groups]);
+
+    useEffect(() => {
+        loadProducts();
+    }, [pName, minPrice, maxPrice, category, perPage, storePages])
 
     // Add the product to the sponsor's catalog
     async function addProduct(product) {
@@ -155,15 +158,15 @@ export default function CatalogBuilder(sponsorId) {
             lpFilter.price = { lt: maxPrice }
         }
         // Set category filter if present
-        if (category !== null) {
+        if (category) {
             lpFilter.category = { eq: category }
         }
         // Set name filter if present 
-        if (pName !== null) {
+        if (pName) {
             lpFilter.title = { contains: pName }
         }
         // Apply the filter if any of the above filters were set
-        if (lpFilter != {}) {
+        if (Object.keys(lpFilter).length > 0) {
             lpQuery.filter = lpFilter
             console.log("Filters have been found. Set the following filters: " + JSON.stringify(lpFilter))
         }
@@ -269,12 +272,10 @@ export default function CatalogBuilder(sponsorId) {
                     <Button variant="secondary" onClick={() => setShowFilter(false)} >{t('catalog.cancel')}</Button>
                     <Button variant="secondary" onClick={() => {
                         clearFilter();
-                        loadProducts();
                         setShowFilter(false);
                         }} >{t('catalog.clear')}</Button>
                     <Button variant="primary" onClick={() => {
                         applyLocalFilter();
-                        loadProducts();
                         setShowFilter(false);
                     }}>{t('catalog.apply')}</Button>
                 </Modal.Footer>
@@ -365,7 +366,7 @@ export default function CatalogBuilder(sponsorId) {
                     <Form className="d-flex gap-2 align-items-end">
                         <Col>
                             <Form.Control
-                                onChange={e => { updatePName(e.target.value); loadProducts() }}
+                                onChange={e => { updatePName(e.target.value)}}
                                 defaultValue={''}
                                 type='text'
                                 placeholder={t('catalog.searchPlaceholder')}
@@ -373,7 +374,7 @@ export default function CatalogBuilder(sponsorId) {
                         </Col>
                         <Col>
                             <Form.Select 
-                                onChange={e => { applyPerPage(e.target.value); loadProducts(); }}
+                                onChange={e => { updatePerPage(e.target.value)}}
                                 defaultValue={10}
                                 style={{ width: '5rem' }}>
                                 <option value={10}>10</option>
