@@ -25,9 +25,9 @@ export default function CatalogBuilder(sponsorId) {
     const [catalog, updateCatalog] = useState([]);
     // Filters to curate the products shown on screen
     const [pName, updatePName] = useState('');
-    const [minPrice, updateMinPrice] = useState(0);
+    const [minPrice, updateMinPrice] = useState(null);
     const [maxPrice, updateMaxPrice] = useState(null);
-    const [catagory, updateCatagory] = useState(null);
+    const [category, updateCategory] = useState('');
     const [showInCatalog, setShowInCatalog] = useState(false);
     // Controls for traversing the storefront
     const [perPage, updatePerPage] = useState(10);
@@ -97,21 +97,6 @@ export default function CatalogBuilder(sponsorId) {
         loadProducts();
     }, [auth.isLoading, auth.isAuthenticated, auth.groups]);
 
-    async function loadProducts() {
-
-
-
-        const {data: productsTable, errors: ptErrors} = await client.models.Product.list({});
-
-        if (ptErrors) {
-            throw new Error("Error: Could not load products from table: ", ptErrors);
-        } else if (productsTable === null) {
-            throw new Error("Error: Nothing was retrieved from the products table");
-        }
-
-        
-    }
-
     // Add the product to the sponsor's catalog
     async function addProduct(product) {
 
@@ -157,16 +142,50 @@ export default function CatalogBuilder(sponsorId) {
 
     // Contact the external store API and retrieve all product information
     async function loadProducts() {
-        let filter = [];
+        let lpFilter = {};
+        let lpQuery = {
+            limit: perPage
+        };
+        // Set price range filters if present
+        if (minPrice !== null && maxPrice !== null) {
+            lpFilter.price = { gt: minPrice, lt: maxPrice }
+        } else if (minPrice !== null) {
+            lpFilter.price = { gt: minPrice }
+        } else if (maxPrice !== null) {
+            lpFilter.price = { lt: maxPrice }
+        }
+        // Set category filter if present
+        if (category !== null) {
+            lpFilter.category = { eq: category }
+        }
+        // Set name filter if present 
+        if (pName !== null) {
+            lpFilter.title = { contains: pName }
+        }
+        // Apply the filter if any of the above filters were set
+        if (lpFilter != {}) {
+            lpQuery.filter = lpFilter
+            console.log("Filters have been found. Set the following filters: " + JSON.stringify(lpFilter))
+        }
 
         // Get the products from the table
         try {
             console.log("Attempting to retrieve available products from backend...")
-            const {data: storeFront, errors: sfErrors} = await client.models.Product.list();
+            const {data: rawStoreFront, errors: sfErrors} = await client.models.Product.list(lpQuery);
 
             if (sfErrors) {
                 throw Error("Error: Failed to retrieve products from backend " + JSON.stringify(sfErrors))
             } 
+
+            let storeFront = rawStoreFront.map( tp => ({
+                pId : tp.pId,
+                title: tp.title,
+                imgs: JSON.parse(tp.imgs),
+                synop: tp.synop,
+                category: tp.category,
+                price: tp.price,
+                available: tp.available
+            }))
 
             console.log("Updated displayed products: ", storeFront)
             updateCatalog(storeFront)
@@ -178,23 +197,34 @@ export default function CatalogBuilder(sponsorId) {
     }
     
     function FilterModal() {
-        const [min, setMin] = useState(minPrice);
-        const [max, setMax] = useState(maxPrice);
-        const [category, setCategory] = useState(catagory);
+        const [pmin, setMin] = useState(minPrice);
+        const [pmax, setMax] = useState(maxPrice);
+        const [pcategory, setCategory] = useState(category);
 
         useEffect(() => {
             if (showFilter) {
                 setMin(minPrice);
                 setMax(maxPrice);
-                setCategory(catagory);
+                setCategory(category);
             }
         }, [showFilter]);
 
         function clearFilter() {
-            setMin(0);
-            setMax(Number.MAX_SAFE_INTEGER);
+            // Update local states
+            setMin(null);
+            setMax(null);
             setCategory('')
-            updateFilter(new PalatziQueryStruct())
+            // Update global states
+            updatePName(null);
+            updateMinPrice(null);
+            updateMaxPrice(null);
+            updateCategory('');
+        }
+
+        function applyLocalFilter() {
+            updateMaxPrice(pmax);
+            updateMinPrice(pmin);
+            updateCategory(pcategory);
         }
 
         return (
@@ -209,7 +239,7 @@ export default function CatalogBuilder(sponsorId) {
                         <Form.Group controlId='productCategory'>
                             <Form.Label>{t('catalog.category')}</Form.Label>
                             <Form.Select onChange={e => setCategory(String(e.target.value))}
-                                defaultValue={catagory}>
+                                defaultValue={category}>
                                 <option value="">{t('catalog.all')}</option>
                                 <option value="clothes">{t('catalog.clothing')}</option>
                                 <option value="furniture">{t('catalog.furniture')}</option>
@@ -239,10 +269,12 @@ export default function CatalogBuilder(sponsorId) {
                     <Button variant="secondary" onClick={() => setShowFilter(false)} >{t('catalog.cancel')}</Button>
                     <Button variant="secondary" onClick={() => {
                         clearFilter();
+                        loadProducts();
                         setShowFilter(false);
                         }} >{t('catalog.clear')}</Button>
                     <Button variant="primary" onClick={() => {
-                        applyExtraFilter();
+                        applyLocalFilter();
+                        loadProducts();
                         setShowFilter(false);
                     }}>{t('catalog.apply')}</Button>
                 </Modal.Footer>
@@ -333,7 +365,7 @@ export default function CatalogBuilder(sponsorId) {
                     <Form className="d-flex gap-2 align-items-end">
                         <Col>
                             <Form.Control
-                                onChange={e => updatePName(e.target.value)}
+                                onChange={e => { updatePName(e.target.value); loadProducts() }}
                                 defaultValue={''}
                                 type='text'
                                 placeholder={t('catalog.searchPlaceholder')}
@@ -341,7 +373,7 @@ export default function CatalogBuilder(sponsorId) {
                         </Col>
                         <Col>
                             <Form.Select 
-                                onChange={e => applyPerPage(e.target.value)}
+                                onChange={e => { applyPerPage(e.target.value); loadProducts(); }}
                                 defaultValue={10}
                                 style={{ width: '5rem' }}>
                                 <option value={10}>10</option>
@@ -349,9 +381,9 @@ export default function CatalogBuilder(sponsorId) {
                                 <option value={50}>50</option>
                             </Form.Select>
                         </Col>
-                        <Col>
-                            <Button variant='primary' onClick={() => applyPName()}>{t('catalog.search')}</Button>
-                        </Col>
+                        {/* <Col>
+                            <Button variant='primary' onClick={() => loadProducts()}>{t('catalog.search')}</Button>
+                        </Col> */}
                     </Form>
                 </Col>
                 <Col>
