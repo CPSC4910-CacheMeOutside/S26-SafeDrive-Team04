@@ -18,10 +18,7 @@ import { get } from "aws-amplify/api";
 
 import { fetchAuthSession } from "aws-amplify/auth";
 
-import { 
-  fetchCurrentSponsorAssignments,
-  fetchDriverUsers,
-} from "./sponsorPage-api";
+import { fetchCurrentSponsorAssignments } from "./sponsorPage-api";
 
 const client = generateClient();
 
@@ -53,7 +50,6 @@ function SponsorPage({
   const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState("");
 
-  const [driverUsers, setDriverUsers] = useState([]);
 
 
   const [sponsor, setSponsor] = useState({
@@ -162,13 +158,6 @@ function SponsorPage({
         const session = await fetchAuthSession();
         const assignmentData = await fetchCurrentSponsorAssignments();
 
-        let users = [];
-        try {
-          users = await fetchDriverUsers();
-        } catch (err) {
-          console.error("fetchDriverUsers failed:", err);
-        }
-
         const idPayload = session.tokens?.idToken?.payload ?? {};
         const accessPayload = session.tokens?.accessToken?.payload ?? {};
 
@@ -176,8 +165,6 @@ function SponsorPage({
           idPayload["cognito:groups"] ||
           accessPayload["cognito:groups"] ||
           [];
-
-        setDriverUsers(Array.isArray(users) ? users : []);
 
         const drivers = Array.isArray(assignmentData.drivers)
           ? assignmentData.drivers
@@ -212,20 +199,14 @@ function SponsorPage({
 
 
 
-const getDriverLabel = (driverId) => {
-  const match = driverUsers.find((u) => u.username === driverId);
-
-  if (!match) return driverId;
-
+const getDriverLabel = (rel) => {
   return (
-    match.preferred_username ||
-    match.nickname ||
-    match.name ||
-    match.email ||
-    match.username ||
-    driverId
-    );
-  };
+    rel.driverNickname ||
+    rel.driverName ||
+    rel.driverEmail ||
+    rel.driverId
+  );
+};
 
 const filteredRelations = useMemo(() => {
   let list = [...relations];
@@ -233,7 +214,7 @@ const filteredRelations = useMemo(() => {
   if (search) {
     const q = search.toLowerCase();
     list = list.filter((r) =>
-      getDriverLabel(r.driverId).toLowerCase().includes(q)
+      getDriverLabel(r).toLowerCase().includes(q)
     );
   }
 
@@ -241,12 +222,12 @@ const filteredRelations = useMemo(() => {
     list.sort((a, b) => (b.points || 0) - (a.points || 0));
   } else {
     list.sort((a, b) =>
-      getDriverLabel(a.driverId).localeCompare(getDriverLabel(b.driverId))
+      getDriverLabel(a).localeCompare(getDriverLabel(b))
     );
   }
 
   return list;
-  }, [relations, search, sortMode, driverUsers]);
+  }, [relations, search, sortMode]);
 
 const selectedRelation = useMemo(() => {
   return relations.find(
@@ -270,8 +251,7 @@ const pointAdjust = async (delta) => {
     // update UI
     setRelations((prev) =>
       prev.map((r) =>
-        r.driverId === selectedRelation.driverId &&
-        r.sponsorId === selectedRelation.sponsorId
+        r.driverSponsorId === selectedRelation.driverSponsorId
           ? { ...r, points: newPoints }
           : r
       )
@@ -351,7 +331,7 @@ const pointAdjust = async (delta) => {
                           >
                             <div className="d-flex justify-content-between">
                               <div>
-                                <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
+                                <div className="fw-semibold">{getDriverLabel(rel)}</div>
                                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                                   {rel.driverEmail || rel.driverId}                                </div>
                               </div>
@@ -375,7 +355,7 @@ const pointAdjust = async (delta) => {
                     ) : (
                       <>
                         <p>
-                          {t("sponsor.driverLabel")}: <strong>{getDriverLabel(selectedRelation.driverId)}</strong>
+                          {t("sponsor.driverLabel")}: <strong>{getDriverLabel(selectedRelation)}</strong>
                           <br />
                           {t("sponsor.currentPoints")}: <strong>{selectedRelation.points}</strong>
                         </p>
@@ -421,7 +401,7 @@ const pointAdjust = async (delta) => {
                     ) : (
                       <>
                         <p className="mb-3">
-                          Selected driver: <strong>{getDriverLabel(selectedRelation.driverId)}</strong>
+                          Selected driver: <strong>{getDriverLabel(rel.driverName)}</strong>
                         </p>
                         <Button
                           variant="secondary"

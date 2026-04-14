@@ -47,6 +47,10 @@ function isAdmin(event: any): boolean {
   return getUserGroupsFromClaims(event).includes('Admin');
 }
 
+function isSponsor(event: any): boolean {
+  return getUserGroupsFromClaims(event).includes('Sponsor');
+}
+
 function getAttributesMap(attributes?: { Name?: string; Value?: string }[]) {
   return Object.fromEntries(
     (attributes ?? []).map((a) => [a.Name ?? '', a.Value ?? ''])
@@ -63,7 +67,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    if (!isAdmin(event)) {
+    if (!isAdmin(event) && !isSponsor(event)) {
       return {
         statusCode: 403,
         headers: corsHeaders,
