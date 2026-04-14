@@ -25,6 +25,13 @@ const { resourceConfig, libraryOptions } =
 Amplify.configure(resourceConfig, libraryOptions);
 const client = generateClient<AboutSchema>();
 
+const badNames = ["test", "Test", "UNIQPRODUCT", "update", "Update",
+  "user", "User", "product", "Product"
+];
+
+const approvedCategories = ["Clothes", "clothes", "Furniture", "furniture", "Shoes",
+  "shoes", "Technology", "technology"]
+
 export const handler: EventBridgeHandler<
   "Scheduled Event",
   null,
@@ -37,12 +44,18 @@ export const handler: EventBridgeHandler<
   const apiStr = "https://api.escuelajs.co/api/v1/products";
 
   const storeRequest = await fetch(apiStr);
-  const storeFront = (await storeRequest.json()) as palatziProduct[];
+  let storeFront = (await storeRequest.json()) as palatziProduct[];
 
   if (!Array.isArray(storeFront)) {
     console.log("API did not return an array");
     return;
   }
+
+  // Sanatize the inputs
+  // Remove products that have a bad name
+  storeFront = storeFront.filter( p => !badNames.some(name => p.title.includes(name)));
+  // Remove products that are not in one of the approved categories
+  storeFront = storeFront.filter( p => approvedCategories.some(category => p.category.name.includes(category)));
 
   // Store all products available on the storefront
   const storeFrontProducts = storeFront.map((rawProduct: palatziProduct) => ({
@@ -99,31 +112,9 @@ export const handler: EventBridgeHandler<
 
     for (const prod of notInTable) {
       // Filter out any product that might be a "test" product
-      if ( !( prod.title.includes('test') || prod.title.includes('Test')) || prod.title.includes('update') || prod.title.includes('Update')) {
-        // Add the product
-        const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
-          pId: prod.pId,
-          title: prod.title,
-          imgs: JSON.stringify(prod.imgs),
-          synop: prod.synop,
-          category: prod.category,
-          price: prod.price,
-          available: true,
-        });
-
-        if (apErrors) {  
-          console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`)
-        }
-      }
-    }
-  }
-  // If the product table is empty, add all products marked as available
-  else {
-    console.log(`No products in table. Adding all retrieved products...`)
-    for (const prod of storeFrontProducts) { 
-      // Ensure that the product is not a "test" product before being added
-      if ( !( prod.title.includes('test') || prod.title.includes('Test')) || prod.title.includes('update') || prod.title.includes('Update')) {
-        const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
+  
+      // Add the product
+      const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
         pId: prod.pId,
         title: prod.title,
         imgs: JSON.stringify(prod.imgs),
@@ -131,16 +122,38 @@ export const handler: EventBridgeHandler<
         category: prod.category,
         price: prod.price,
         available: true,
-        });
+      });
 
-        if (apErrors) {
-          console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`);
-          return;
-        } else if (addedProduct === null ) {
-          console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: Created null`);
-          return;
-        }
+      if (apErrors) {  
+        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`)
       }
+      
+    }
+  }
+  // If the product table is empty, add all products marked as available
+  else {
+    console.log(`No products in table. Adding all retrieved products...`)
+    for (const prod of storeFrontProducts) { 
+      // Ensure that the product is not a "test" product before being added
+     
+      const {data: addedProduct, errors: apErrors} = await client.models.Product.create({
+      pId: prod.pId,
+      title: prod.title,
+      imgs: JSON.stringify(prod.imgs),
+      synop: prod.synop,
+      category: prod.category,
+      price: prod.price,
+      available: true,
+      });
+
+      if (apErrors) {
+        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: ${JSON.stringify(apErrors)}`);
+        return;
+      } else if (addedProduct === null ) {
+        console.log(`Storefront Error: Could not add product:${JSON.stringify(prod)} to table: Created null`);
+        return;
+      }
+      
     }
   }
   console.log("Lambda updateStorefront completed!");
