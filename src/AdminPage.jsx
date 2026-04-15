@@ -62,6 +62,7 @@ function AdminPage(){
   const [relationships, setRelationships] = useState([]);
   const [loadingRelationships, setLoadingRelationships] = useState(false);
   const [relationshipMessage, setRelationshipMessage] = useState("");
+  const [relationshipError, setRelationshipError] = useState("");
 
 
 
