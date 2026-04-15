@@ -401,7 +401,7 @@ const pointAdjust = async (delta) => {
                     ) : (
                       <>
                         <p className="mb-3">
-                          Selected driver: <strong>{getDriverLabel(rel.driverName)}</strong>
+                          Selected driver: <strong>{getDriverLabel(selectedRelation)}</strong>
                         </p>
                         <Button
                           variant="secondary"
