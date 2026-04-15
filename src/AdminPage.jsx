@@ -12,6 +12,7 @@ import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
 import Alert from "react-bootstrap/Alert"
 import { ListGroupItem } from 'react-bootstrap';
+import UpdateAbout from './UpdateAbout';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 import { fetchDriverUsers, fetchSponsorUsers } from './adminUpdateDriverInfo-api';
 import { generateClient } from 'aws-amplify/data';
@@ -583,6 +584,10 @@ function AdminPage(){
                 </Card>
               </Col>
             </Row>
+          </Tab>
+
+          <Tab eventKey="updateAbout" title="Update About">
+            <UpdateAbout />
           </Tab>
 
           <Tab eventKey="audit" title={t('admin.logsReports')}>

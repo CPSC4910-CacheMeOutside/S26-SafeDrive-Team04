@@ -96,7 +96,6 @@ function App() {
               <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="me-auto">
                 {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>}
-                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
                
                 {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
 
