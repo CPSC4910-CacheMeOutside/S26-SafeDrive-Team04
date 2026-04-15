@@ -4,7 +4,7 @@ import useAmplifyAuth from './UseAmplifyAuth';
 import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import StarRating from "./StarRating";
 import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
-    Button, Image, Card, ListGroupItem, Form} from 'react-bootstrap';
+    Button, Image, Card, ListGroupItem, Form, ButtonToolbar} from 'react-bootstrap';
 import { useLanguage } from './LanguageContext';
 
 export default function CatalogBuilder(sponsorId) {
@@ -32,6 +32,8 @@ export default function CatalogBuilder(sponsorId) {
     // Controls for traversing the storefront
     const [perPage, updatePerPage] = useState(10);
     const [storePages, updateStorePages] = useState([]); // A stack containing nextTokens
+    const [currentPageIndex, setCurrentPageIndex] = useState(1); // index of the current page
+    const [hasMorePages, setHasMorePages] = useState(true); // if true, theres a next page
     
     // Load in the page. Contact the store api first and load the sponsor's data
     useEffect(() => {        
@@ -98,7 +100,12 @@ export default function CatalogBuilder(sponsorId) {
 
     useEffect(() => {
         loadProducts();
-    }, [pName, minPrice, maxPrice, category, perPage, storePages])
+    }, [pName, minPrice, maxPrice, category, perPage, currentPageIndex])
+
+    useEffect(() => {
+        setCurrentPageIndex(1);
+        updateStorePages([]);
+    }, [pName, minPrice, maxPrice, category, perPage]);
 
     // Add the product to the sponsor's catalog
     async function addProduct(product) {
@@ -170,15 +177,21 @@ export default function CatalogBuilder(sponsorId) {
             lpQuery.filter = lpFilter
             console.log("Filters have been found. Set the following filters: " + JSON.stringify(lpFilter))
         }
+        // Apply the target page if its not the first
+        if (currentPageIndex !== 1) {
+            lpQuery.nextToken = storePages[currentPageIndex - 1]
+        }
 
         // Get the products from the table
         try {
             console.log("Attempting to retrieve available products from backend...")
-            const {data: rawStoreFront, errors: sfErrors} = await client.models.Product.list(lpQuery);
+            const {data: rawStoreFront, nextToken: nextPage, errors: sfErrors} = await client.models.Product.list(lpQuery);
 
             if (sfErrors) {
                 throw Error("Error: Failed to retrieve products from backend " + JSON.stringify(sfErrors))
             } 
+
+            // TODO: Add the next page
 
             let storeFront = rawStoreFront.map( tp => ({
                 pId : tp.pId,
@@ -223,6 +236,9 @@ export default function CatalogBuilder(sponsorId) {
             updateMinPrice(null);
             updateMaxPrice(null);
             updateCategory('');
+            // Reset the page to the first
+            setCurrentPageIndex(1);
+            updateStorePages([]);
         }
 
         function applyLocalFilter() {
@@ -383,9 +399,6 @@ export default function CatalogBuilder(sponsorId) {
                                 <option value={50}>50</option>
                             </Form.Select>
                         </Col>
-                        {/* <Col>
-                            <Button variant='primary' onClick={() => loadProducts()}>{t('catalog.search')}</Button>
-                        </Col> */}
                     </Form>
                 </Col>
                 <Col>
@@ -412,6 +425,21 @@ export default function CatalogBuilder(sponsorId) {
                                 )}
                             </ListGroup>
                         </Card>
+                        <ButtonToolbar aria-label="Catalog Page Controls">
+                            <h3>Page: </h3>
+                            <ButtonGroup className="" aria-label="Catalog Page Controls">
+                                <Button><Image width={30} src='leftArrowIco.png' onClick={() => {
+                                    if (currentPageIndex > 1) {
+                                        setCurrentPageIndex(currentPageIndex-1);
+                                    }
+                                }}/></Button>
+                                <Button><Image width={30} src='rightArrowIco.png' onClick={() => {
+                                    if (hasMorePages) {
+                                        setCurrentPageIndex(currentPageIndex+1);
+                                    }
+                                }}/></Button>
+                            </ButtonGroup>
+                        </ButtonToolbar>
                     </Col>
                     <Col sm={6}>
                         <Tab.Content style={{ maxHeight: '60vh', overflowY: 'auto' }}>
