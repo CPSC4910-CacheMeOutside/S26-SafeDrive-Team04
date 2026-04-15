@@ -9,82 +9,65 @@ import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
+import { fetchCurrentDriverAssignments } from "./driverPage-api";
+import { fetchNotificationsForUser } from "./notification-api";
+import { useNotifications } from "./NotificationContext";
 
 function DriverPage() {
+  const { addNotification, notifications, closeNotification } = useNotifications();
+  const activeNotifications = notifications.filter((n) => !n.closed);
   const [driver, setDriver] = useState({
-    id: 1,
-    subId: "",
     username: "",
-    name: "",
+    fullName: "",
     email: "",
     phoneNumber: "",
     groups: [],
-    points: 200,
-    sponsors: [
-      {
-        id: "SPUser1",
-        name: "East Bound and Down",
-        status: "active",
-        joinedDate: "2026-03-31"
-      },
-      {
-        id: "SPUser3",
-        name: "DriversCo",
-        status: "active",
-        joinedDate: "2026-03-20"
-      }
-    ],
-    applications: [
-      {
-        id: "APP1",
-        sponsorId: "SPUser2",
-        sponsorName: "Get Your Kicks on Rt 66",
-        status: "rejected",
-        submittedAt: "2026-03-30"
-      },
-      {
-        id: "APP2",
-        sponsorId: "SPUser4",
-        sponsorName: "Convoy Boys",
-        status: "pending",
-        submittedAt: "2026-03-25"
-      }
-    ]
+    points: 0,
+    sponsors: [], 
+    applications: [],
   });
 
   useEffect(() => {
     async function loadUser() {
       try {
-        const [session, currentUser, attributes] = await Promise.all([
+        const [session, assignmentData] = await Promise.all([
           fetchAuthSession(),
-          getCurrentUser(),
-          fetchUserAttributes()
+          fetchCurrentDriverAssignments(),
         ]);
 
         const idPayload = session.tokens?.idToken?.payload ?? {};
         const accessPayload = session.tokens?.accessToken?.payload ?? {};
 
-        const fullName =
-        attributes.name ||
-        [attributes.given_name, attributes.family_name].filter(Boolean).join(" ") ||
-        "";
-
         const groups =
           idPayload["cognito:groups"] ||
           accessPayload["cognito:groups"] ||
           [];
+        const backendNotifications = await fetchNotificationsForUser(
+          assignmentData.driverId
+        );
+
+        backendNotifications.forEach((n) => {
+          addNotification({
+            id: n.nId,
+            description: n.content,
+            timestamp: Date.now(),
+          });
+        });
 
         setDriver((prev) => ({
           ...prev,
-          username: currentUser.username ?? "",
-          fullName,
-          email: attributes.email ?? "",
-          phoneNumber: attributes.phone_number ?? "",
-          groups
+          username: assignmentData.driverId || "",
+          fullName: assignmentData.fullName || "",
+          email: assignmentData.email || "",
+          phoneNumber: assignmentData.phoneNumber || "",
+          groups: Array.isArray(groups) ? groups : [],
+          points: assignmentData.totalPoints || 0,
+          sponsors: Array.isArray(assignmentData.sponsors) ? assignmentData.sponsors : [],
         }));
       } catch (error) {
         console.error("Failed to load Cognito user info:", error);
       }
+      
     }
 
     loadUser();
@@ -96,6 +79,7 @@ function DriverPage() {
       approved: driver.applications.filter((app) => app.status === "approved"),
     };
   }, [driver.applications]);
+
 
   const getBadgeVariant = (status) => {
     switch (status) {
@@ -110,6 +94,28 @@ function DriverPage() {
         return "secondary";
     }
   };
+function parseNotification(content) {
+  if (!content) return "";
+
+  const parts = content.split(":");
+
+  if (parts[0] === "POINTS") {
+    const action = parts[1];
+    const amount = parts[2];
+    const total = parts[3];
+    const reason = parts.slice(4).join(":");
+
+    return action === "ADD"
+      ? `+${amount} points added. New total: ${total}. Reason: ${reason}`
+      : `-${amount} points deducted. New total: ${total}. Reason: ${reason}`;
+  }
+
+  if (parts[0] === "MESSAGE") {
+    return parts.slice(1).join(":");
+  }
+
+  return content;
+}
 
   return (
     <Container className="mt-4">
@@ -178,11 +184,14 @@ function DriverPage() {
                       <ListGroup.Item key={sponsor.id}>
                         <div className="d-flex justify-content-between align-items-center">
                           <div>
-                            <strong>{sponsor.name}</strong>
-                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                              Joined: {sponsor.joinedDate}
+                              <strong>{sponsor.name}</strong>
+                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                Sponsor ID: {sponsor.id}
+                              </div>
+                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                Points: {sponsor.points ?? 0}
+                              </div>
                             </div>
-                          </div>
                           <Badge bg={getBadgeVariant(sponsor.status)}>
                             {sponsor.status}
                           </Badge>
@@ -225,6 +234,34 @@ function DriverPage() {
                             </Badge>
 
                           </div>
+                        </div>
+                      </ListGroup.Item>
+                    ))}
+                  </ListGroup>
+                )}
+              </Card.Body>
+            </Card>
+          </Tab>
+          <Tab eventKey="notifications" title="Notifications">
+            <Card className="mt-3">
+              <Card.Body>
+                <Card.Title>Notifications</Card.Title>
+
+                {activeNotifications.length === 0 ? (
+                  <div className="text-muted">No notifications</div>
+                ) : (
+                  <ListGroup>
+                    {activeNotifications.map((n) => (
+                      <ListGroup.Item key={n.id}>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span>{parseNotification(n.description)}</span>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => closeNotification(n.id)}
+                          >
+                            ✕
+                          </Button>
                         </div>
                       </ListGroup.Item>
                     ))}

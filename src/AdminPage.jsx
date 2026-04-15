@@ -18,9 +18,24 @@ import { generateClient } from 'aws-amplify/data';
 
 const client = generateClient();
 const DEFAULT_RATIO = 0.10;
+import {
+  fetchSponsorRelationships,
+  assignDriverToSponsor,
+  removeDriverFromSponsor,
+  ensureSponsorRecord,
+  ensureDriverRecord,
+  ensureDriverRecords,
+  updateDriverSponsorPoints,
+} from "./adminDriverSponsor-api";
+
+import {
+  fetchDriverUsers,
+  fetchSponsorGroupUsers,
+} from "./adminUpdateDriverInfo-api";
 
 function AdminPage(){
-
+  const [editingPoints, setEditingPoints] = useState({});
+  const [savingPoints, setSavingPoints] = useState(false);
   const [unassignedUsers, setUnassignedUsers] = useState([]);
   const [selectedPendingUsername, setSelectedPendingUsername] = useState("");
   const [selectedRole, setSelectedRole] = useState("Driver");
@@ -41,31 +56,29 @@ function AdminPage(){
   const [sponsorRatioError, setSponsorRatioError] = useState("");
   const [sponsorRatioSuccess, setSponsorRatioSuccess] = useState("");
   const [savingRatio, setSavingRatio] = useState(false);
+  const [sponsors, setSponsors] = useState([]);
+  const [relationshipDrivers, setRelationshipDrivers] = useState([]);
+  const [selectedSponsorId, setSelectedSponsorId] = useState("");
+  const [selectedRelationshipDriverId, setSelectedRelationshipDriverId] = useState("");
+  const [relationships, setRelationships] = useState([]);
+  const [loadingSponsors, setLoadingSponsors] = useState(false);
+  const [loadingRelationships, setLoadingRelationships] = useState(false);
+  const [relationshipMessage, setRelationshipMessage] = useState("");
+  const [relationshipError, setRelationshipError] = useState("");
+
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
     [driverUsers, selectedDriverUsername]
   );
 
-  const loadDriverUsers = async () => {
-    try {
-      setLoadingDriverUsers(true);
-      setDriverUsersError("");
+  const safeArray = (value) => (Array.isArray(value) ? value : []);
 
-      const data = await fetchDriverUsers();
-      const users = Array.isArray(data) ? data : [];
-
-      setDriverUsers(users);
-      setSelectedDriverUsername((prev) => {
-        if (prev && users.some((u) => u.username === prev)) return prev;
-        return users[0]?.username ?? "";
-      });
-    } catch (error) {
-      console.error(error);
-      setDriverUsersError("Failed to load drivers.");
-    } finally {
-      setLoadingDriverUsers(false);
+  const pickSelected = (items, currentValue, key) => {
+    if (currentValue && items.some((item) => item[key] === currentValue)) {
+      return currentValue;
     }
+    return items[0]?.[key] || "";
   };
 
   const loadSponsorUsers = async () => {
@@ -126,23 +139,28 @@ function AdminPage(){
       setSavingRatio(false);
     }
   };
+  const clearRoleStatus = () => {
+    setRoleCardError("");
+    setRoleCardMessage("");
+  };
+
+  const clearRelationshipStatus = () => {
+    setRelationshipError("");
+    setRelationshipMessage("");
+  };
+
 
   const selectedPendingUser = useMemo(() => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null, [unassignedUsers, selectedPendingUsername]);
   
   const loadUnassignedUsers = async () => {
     try {
       setLoadingPendingUsers(true);
-      setRoleCardError("");
-      setRoleCardMessage("");
+      clearRoleStatus();
 
-      const data = await fetchUnassignedUsers();
-      const users = Array.isArray(data) ? data : [];
+      const users = safeArray(await fetchUnassignedUsers());
 
       setUnassignedUsers(users);
-      setSelectedPendingUsername((prev) => {
-        if (prev && users.some((u) => u.username === prev)) return prev;
-        return users[0]?.username ?? "";
-      });
+      setSelectedPendingUsername((prev) => pickSelected(users, prev, "username"));
     } catch (error) {
       console.error(error);
       setRoleCardError("Failed to load unassigned users.");
@@ -151,7 +169,20 @@ function AdminPage(){
     }
   };
 
-  useEffect(() => {loadDriverUsers(); loadUnassignedUsers(); loadSponsorUsers();}, []);
+  useEffect(() => {
+  loadDriverUsers();
+  loadUnassignedUsers();
+  loadSponsors();
+  loadRelationshipDrivers();
+  }, []);
+
+  useEffect(() => {
+  if (selectedSponsorId) {
+    loadRelationships(selectedSponsorId);
+  } else {
+    setRelationships([]);
+  }
+  }, [selectedSponsorId]);
 
   const handleAssignRole = async () => {
     if (!selectedPendingUser) return;
@@ -162,6 +193,17 @@ function AdminPage(){
       setRoleCardMessage("");
 
       await assignUserGroup(selectedPendingUser.username, selectedRole);
+
+      if (selectedRole === "Sponsor") {
+        await ensureSponsorRecord(selectedPendingUser);
+        await loadSponsors();
+      }
+
+      if (selectedRole === "Driver") {
+        await ensureDriverRecord(selectedPendingUser);
+        await loadRelationshipDrivers();
+        await loadDriverUsers();
+      }
 
       setRoleCardMessage(
         `${selectedPendingUser.name || selectedPendingUser.username} assigned to ${selectedRole}.`
@@ -192,103 +234,6 @@ function AdminPage(){
   };
 
   const { t } = useLanguage();
-
-  const [SponsoredUsers, setSponsUser] = useState([
-    {id: "SPUser1", name: "SPUser1", 
-      drivers: [
-        {id: 5, name: "Jerry Reed", points: 300},
-        {id: 4, name: "Burt Reynolds", points: 330}
-     ],
-      logs: [],
-    },
-
-    {id: "SPUser2", name: "SPUser2",
-      drivers: [
-        {id: 1, name: "Bo Darvilel", points: 200},
-        {id: 2, name: "Cledus Snow", points: 156},
-        {id: 3, name: "Hot-Pants Hillard", points: 186}
-      ],
-      logs: [],
-    },
-
-    {id: "SPUser3", name: "SPUser3", 
-      drivers: [
-        {id: 6, name: "Johnny Cash", points: 400 },
-        {id: 7, name: "Willie Nelson", points: 450},
-        {id: 8, name: "Waylon Jennings", points: 500},
-        {id: 9, name: "Kris Kristofferson", points: 400}
-      ],
-      logs: [],
-    },
-  ]);
-
-  const [selectedSponsUserId, setSelectedSponsUserId] = useState(SponsoredUsers[0]?.id ?? "");
-  const [selectedDriverId, setSelectedDriverId] = useState(null);
-  const [amount, setAmount] = useState(10);
-  const [sortMode, setSortMode] = useState("id");
-  const [description, setDescription] = useState("");
- 
-  const selectedSponsUser = useMemo(
-    () => SponsoredUsers.find((c) => c.id === selectedSponsUserId),
-    [SponsoredUsers, selectedSponsUserId]
-
-  );
-
-  const SponsUserDrivers = selectedSponsUser?.drivers ?? [];
-  const SponsUserLogs = selectedSponsUser?.logs ?? [];
- 
-  const validDriver = useMemo(() => {
-    if (!SponsUserDrivers.length) return null;
-    if(selectedDriverId == null) return SponsUserDrivers[0].id;
-    const driverLoc = SponsUserDrivers.some((d) => d.id === selectedDriverId);
-    return driverLoc ? selectedDriverId : SponsUserDrivers[0].id;
-
-  }, [SponsUserDrivers, selectedDriverId]);
-
-  const selectedDriver = useMemo(
-    () => SponsUserDrivers.find((d) => d.id === validDriver) ?? null,
-    [SponsUserDrivers, validDriver]
-  );
-
-  const sortedDrivers = useMemo(() => {
-    const copy = [...SponsUserDrivers];
-    copy.sort((a,b) => {
-      if (sortMode === "points") return b.points - a.points;
-      if (sortMode === "id") return a.id - b.id;
-      return 0;
-    });
-    return copy;
-  }, [SponsUserDrivers, sortMode]);
-  
-  
-  const pointAdjust = (value) => {
-    if(!selectedSponsUser || !selectedDriver) return;
-    const timestamp = new Date().toLocaleString();
-    const reason = description?.trim() ? description.trim() : "No Reason Provided"
-    setSponsUser(prev =>
-      prev.map((SponsUser) => {
-        if(SponsUser.id !== selectedSponsUserId) return SponsUser;
-
-        const updatedDrivers = SponsUser.drivers.map((d) =>
-          d.id === selectedDriver.id ? { ...d, points: d.points + value} : d
-        );
-        const newLog = {
-          driverId: selectedDriver.id,
-          driver: selectedDriver.name,
-          change: value,
-          reason,
-          time: timestamp,
-        };
-
-        return{
-          ...SponsUser,
-          drivers: updatedDrivers,
-          logs: [newLog, ...SponsUser.logs],
-        };
-      })
-    );
-    setDescription("");
-  };
     /*setLogs(prev => [
       {
         driver: selectedDriver.name,
@@ -304,129 +249,217 @@ function AdminPage(){
   const navigate = useNavigate();
 
   const handleAdminAccountTakeover = () => {
-    if (!selectedDriver) return;
-    navigate(`/admin/drivers/${selectedDriver.id}/edit`);
+  if (!selectedDriverUser) return;
+  navigate(`/admin/drivers/${selectedDriverUser.username}/edit`);
   };
+
+
+    //Driver Handlers
+  const loadDriverUsers = async () => {
+    try {
+      setLoadingDriverUsers(true);
+      setDriverUsersError("");
+
+      const users = safeArray(await fetchDriverUsers());
+
+      setDriverUsers(users);
+      setSelectedDriverUsername((prev) => pickSelected(users, prev, "username"));
+    } catch (error) {
+      console.error(error);
+      setDriverUsersError("Failed to load drivers.");
+    } finally {
+      setLoadingDriverUsers(false);
+    }
+  };
+
+  //Sponsor User Handlers
+  const loadSponsors = async () => {
+    try {
+      setLoadingSponsors(true);
+      setRelationshipError("");
+
+      const sponsorUsers = safeArray(await fetchSponsorGroupUsers());
+      const ensuredSponsors = [];
+
+      for (const user of sponsorUsers) {
+        const sponsorRecord = await ensureSponsorRecord(user);
+        if (sponsorRecord) ensuredSponsors.push(sponsorRecord);
+      }
+
+      setSponsors(ensuredSponsors);
+      setSelectedSponsorId((prev) => pickSelected(ensuredSponsors, prev, "sponsorId"));
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to load sponsors.");
+    } finally {
+      setLoadingSponsors(false);
+    }
+  };
+
+  const loadRelationshipDrivers = async () => {
+    try {
+      setRelationshipError("");
+
+      const cognitoDrivers = safeArray(await fetchDriverUsers());
+      const ensuredDrivers = await ensureDriverRecords(cognitoDrivers);
+
+      setRelationshipDrivers(ensuredDrivers);
+      setSelectedRelationshipDriverId((prev) =>
+        pickSelected(ensuredDrivers, prev, "driverId")
+      );
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to load drivers for relationships.");
+    }
+  };
+
+  const loadRelationships = async (sponsorId) => {
+    if (!sponsorId) {
+      setRelationships([]);
+      return;
+    }
+
+    try {
+      setLoadingRelationships(true);
+      setRelationshipError("");
+
+      const data = await fetchSponsorRelationships(sponsorId);
+      const relationshipList = Array.isArray(data) ? data : [];
+
+      setRelationships(relationshipList);
+
+      const nextEditingPoints = {};
+      relationshipList.forEach((rel) => {
+        nextEditingPoints[`${rel.driverId}-${rel.sponsorId}`] = rel.points ?? 0;
+      });
+      setEditingPoints(nextEditingPoints);
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to load sponsor relationships.");
+    } finally {
+      setLoadingRelationships(false);
+    }
+  };
+
+
+
+
+  //Relationship Handlers
+  const handleAssignDriverToSponsor = async () => {
+    if (!selectedSponsorId || !selectedRelationshipDriverId) {
+      setRelationshipError("Please select both a sponsor and a driver.");
+      return;
+    }
+
+    try {
+      setRelationshipError("");
+      setRelationshipMessage("");
+
+      // optional local duplicate check for friendlier UX
+      const alreadyAssigned = relationships.some(
+        (rel) =>
+          rel.driverId === selectedRelationshipDriverId &&
+          rel.sponsorId === selectedSponsorId
+      );
+
+      if (alreadyAssigned) {
+        setRelationshipMessage("Driver is already assigned to this sponsor.");
+        return;
+      }
+
+      await assignDriverToSponsor(selectedRelationshipDriverId, selectedSponsorId);
+
+      setRelationshipMessage("Driver assigned to sponsor.");
+      await loadRelationships(selectedSponsorId);
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to assign driver to sponsor.");
+    }
+  };
+
+  const handleRemoveRelationship = async (driverId, sponsorId) => {
+    try {
+      setRelationshipError("");
+      setRelationshipMessage("");
+
+      await removeDriverFromSponsor(driverId, sponsorId);
+
+      setRelationshipMessage("Driver removed from sponsor.");
+      await loadRelationships(sponsorId);
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to remove relationship.");
+    }
+  };
+
+  const handleSaveRelationshipPoints = async (driverId, sponsorId) => {
+    const key = `${driverId}-${sponsorId}`;
+    const rawValue = editingPoints[key];
+
+    if (rawValue === undefined || rawValue === "") {
+      setRelationshipError("Please enter a points value.");
+      return;
+    }
+
+    const parsedPoints = Number(rawValue);
+
+    if (Number.isNaN(parsedPoints)) {
+      setRelationshipError("Points must be a valid number.");
+      return;
+    }
+
+    try {
+      setSavingPoints(true);
+      setRelationshipError("");
+      setRelationshipMessage("");
+
+      await updateDriverSponsorPoints(driverId, sponsorId, parsedPoints);
+
+      setRelationshipMessage("Points updated successfully.");
+      await loadRelationships(selectedSponsorId);
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to update points.");
+    } finally {
+      setSavingPoints(false);
+    }
+  };
+
+
+
+
+
+  //Handlers for reading proper lables for Drivers and Sponsors
+  const getDriverLabel = (driverId) => {
+  const match = driverUsers.find((u) => u.username === driverId);
+
+  if (!match) return driverId;
+
+  return (
+    match.preferred_username ||
+    match.name ||
+    match.email ||
+    match.username ||
+    driverId
+    );
+  };
+
+  const getSponsorLabel = (sponsorId) => {
+  const match = sponsors.find((s) => s.sponsorId === sponsorId);
+
+  if (!match) return sponsorId;
+
+  return match.affiliation || sponsorId;
+  };
+
 
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         <h1><strong>{t('admin.title')}</strong></h1>
-
-        <Tabs defaultActiveKey="manage" className="mb-4">
-          <Tab eventKey="manage" title={t('admin.manageDrivers')}>
-            <Row>
-              {/* <Col md={3}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
-                    <ListGroup>
-                      {SponsoredUsers.map((c) => (
-                        <ListGroupItem
-                          key={c.id}
-                          action
-                          active={c.id === selectedSponsUserId}
-                          onClick={() => {
-                            setSelectedSponsUserId(c.id);
-                            setSelectedDriverId(null);
-                          }}
-                        >
-                        {c.name}
-                        </ListGroupItem>
-                      ))}
-                    </ListGroup>
-                  </Card.Body>
-                </Card>
-              </Col> */}
-
-              <Col md={4}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title>Drivers</Card.Title>
-                      {loadingDriverUsers ? (<div className="text-muted">Loading drivers...</div>) : !driverUsers.length ? (<div className="text-muted">No drivers found.</div>) : (<>
-                      <ListGroup className="mb-3">
-                        {driverUsers.map((user) => (
-                          <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)}>
-                            <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
-                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
-                          </ListGroupItem>
-                        ))}
-                      </ListGroup>
-                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
-                      </>
-                      )}
-                  </Card.Body>
-                </Card>
-              </Col>
-
-              <Col md={5}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title>{t('admin.adjustPoints')}</Card.Title>
-
-                    {!selectedDriver ? (
-                      <div className="text-muted">{t('admin.selectDriverToAdjust')}</div>
-                    ) : (
-                      <>
-                      <p>
-                        {t('admin.sponsoredUser')}: <strong>{selectedSponsUser?.name}</strong>
-                        <br />
-                        {t('admin.driver')}: <strong>{selectedDriver.name}</strong>
-                        <br />
-                        {t('admin.currentPoints')}: <strong>{selectedDriver.points}</strong>
-                      </p>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>{t('admin.amount')}</Form.Label>
-                      <Form.Control
-                        type="number"
-                        value={amount}
-                        min={1}
-                        onChange={(e) => setAmount(Number(e.target.value))}
-                      />
-                    </Form.Group>
-                      <Form.Group className="mb-3">
-                        <Form.Label>{t('admin.reasonForAdjustment')}</Form.Label>
-                        <Form.Control
-                          type="text"
-                          placeholder={t('admin.descriptionPlaceholder')}
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                      />
-                    </Form.Group>
-                    <div className="d-flex gap-2">
-                      <Button variant="success" onClick={() => pointAdjust(amount)}>
-                        {t('admin.addPoints')}
-                      </Button>
-                      <Button variant="danger" onClick={() => pointAdjust(-amount)}>
-                        {t('admin.subtractPoints')}
-                      </Button>
-                      <Button variant="secondary" onClick={handleAdminAccountTakeover}>
-                        {t('admin.manageAccount')}
-                      </Button>
-                    </div>
-                  </>
-                  )}
-                  </Card.Body>
-                </Card>
-          
-                <Card className="mt-4">
-                  <Card.Body>
-                    <Card.Title>Edit Driver Account</Card.Title>
-                      {!selectedDriverUser ? (
-                        <div className="text-muted">Select a driver to manage their account.</div>
-                        ) : (<>
-                          <p className="mb-3">Manage account information for{" "}<strong>{selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</strong>.</p>
-                          <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit Account</Button>
-                        </>
-                      )}
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          </Tab>
-
+          <Tabs defaultActiveKey="pendingUsers" className="mb-4">
           <Tab eventKey="pendingUsers" title="Pending Users">
+            <Row>
             <Col md={5}>
                 <Card className="mb-4">
                   <Card.Body>
@@ -489,162 +522,157 @@ function AdminPage(){
                   </Card.Body>
                 </Card>
               </Col>
-          </Tab>
-
-          <Tab eventKey="sponsors" title="Manage Sponsors">
-            <Row>
-              <Col md={4}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title>Sponsors</Card.Title>
-                    {loadingSponsors ? (
-                      <div className="text-muted">Loading sponsors...</div>
-                    ) : !sponsorUsers.length ? (
-                      <div className="text-muted">No sponsors found.</div>
-                    ) : (
-                      <>
-                        <ListGroup className="mb-3">
-                          {sponsorUsers.map((user) => (
-                            <ListGroupItem
-                              key={user.username}
-                              action
-                              active={user.username === selectedSponsorUsername}
-                              onClick={() => handleSponsorSelect(user.username)}
-                            >
-                              <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
-                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
-                            </ListGroupItem>
-                          ))}
-                        </ListGroup>
-                        <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadSponsorUsers} disabled={loadingSponsors}>Refresh</Button>
-                      </>
-                    )}
-                  </Card.Body>
-                </Card>
-              </Col>
-
-              <Col md={5}>
-                <Card>
-                  <Card.Body>
-                    <Card.Title>Point to Dollar Conversion Ratio</Card.Title>
-                    {!selectedSponsorUsername ? (
-                      <div className="text-muted">Select a sponsor to manage their ratio.</div>
-                    ) : (
-                      <>
-                        <p style={{ fontSize: 14, opacity: 0.7 }}>
-                          Set how many dollars each point is worth for this sponsor's drivers.
-                        </p>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Dollars per Point</Form.Label>
-                          <Form.Control
-                            type="number"
-                            step="0.001"
-                            min="0.001"
-                            max="1.0"
-                            value={sponsorRatioInput}
-                            onChange={(e) => {
-                              setSponsorRatioInput(e.target.value);
-                              setSponsorRatioError("");
-                              setSponsorRatioSuccess("");
-                            }}
-                            isInvalid={!!sponsorRatioError}
-                          />
-                          <Form.Text className="text-muted">
-                            Enter value between 0.001 and 1.0 (e.g., 0.10 means 10 points = $1)
-                          </Form.Text>
-                          {sponsorRatioError && (
-                            <Form.Control.Feedback type="invalid" style={{ display: 'block' }}>
-                              {sponsorRatioError}
-                            </Form.Control.Feedback>
-                          )}
-                        </Form.Group>
-
-                        {sponsorRatioSuccess && <Alert variant="success">{sponsorRatioSuccess}</Alert>}
-
-                        <div className="mb-3" style={{ padding: 10, backgroundColor: '#f8f9fa', borderRadius: 5 }}>
-                          <strong>Preview:</strong>
-                          <ul style={{ marginTop: 10, marginBottom: 0 }}>
-                            <li>100 points = ${(100 * (parseFloat(sponsorRatioInput) || DEFAULT_RATIO)).toFixed(2)}</li>
-                            <li>1000 points = ${(1000 * (parseFloat(sponsorRatioInput) || DEFAULT_RATIO)).toFixed(2)}</li>
-                          </ul>
-                        </div>
-
-                        <div className="d-flex gap-2">
-                          <Button variant="primary" onClick={handleSaveRatio} disabled={savingRatio || !!sponsorRatioError}>
-                            {savingRatio ? "Saving..." : "Save Changes"}
-                          </Button>
-                          <Button variant="secondary" onClick={() => { setSponsorRatioInput(DEFAULT_RATIO.toString()); setSponsorRatioError(""); setSponsorRatioSuccess(""); }}>
-                            Reset to Default
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </Card.Body>
-                </Card>
-              </Col>
             </Row>
           </Tab>
+            <Tab eventKey="relationships" title="Sponsor Assignments">
+              <Row>
+                <Col md={5}>
+                  <Card className="mb-4">
+                    <Card.Body>
+                      <Card.Title>Assign Driver to Sponsor</Card.Title>
 
-          <Tab eventKey="audit" title={t('admin.logsReports')}>
-            <Row>
-            <Col md={4}>
-            <Card>
-              <Card.Body>
-                <Card.Title>{t('admin.sponsoredUsers')}</Card.Title>
-                <ListGroup>
-                  {SponsoredUsers.map((c) => (
-                    <ListGroup.Item
-                      key={c.id}
-                      action
-                      active={c.id === selectedSponsUserId}
-                      onClick={() => {
-                        setSelectedSponsUserId(c.id);
-                        setSelectedDriverId(null);
-                      }}
-                    >
-                    {c.name}
+                      {relationshipError && (
+                        <div className="alert alert-danger py-2">{relationshipError}</div>
+                      )}
 
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              </Card.Body>
-            </Card>
-          </Col>
+                      {relationshipMessage && (
+                        <div className="alert alert-success py-2">{relationshipMessage}</div>
+                      )}
 
-          <Col md={8}>
-            <Card>
-              <Card.Body>
-                <Card.Title>
-                  {t('admin.logs')} {selectedSponsUser ? `(${selectedSponsUser.name})` :""}
-                  </Card.Title>
-                  {!SponsUserLogs.length ? (
-                    <div className="text-muted mt-3">{t('admin.noAdjustmentsLogged')}</div>
-                ) : (
-                  <ListGroup>
-                    {SponsUserLogs.map((log,index) => (
-                      <ListGroupItem key={index}>
-                        <div>
-                          <strong>{log.driver}</strong>
-                        </div>
-                        <div>
-                          {t('admin.change')}:{" "}
-                          <span className={log.change >= 0 ? "text-success" : "text-danger"}>
-                            {log.change >= 0 ? `+${log.change}` : log.change}
-                          </span>
-                        </div>
-                          <div>{t('admin.reason')}: {log.reason}</div>
-                          <div className="text-muted" style={{ fontSize: "0.9rem"}}>
-                            {log.time}
+                      {loadingSponsors ? (
+                        <div className="text-muted">Loading sponsors...</div>
+                      ) : !sponsors.length ? (
+                        <div className="text-muted">No sponsors found.</div>
+                      ) : (
+                        <>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Select Sponsor</Form.Label>
+                            <Form.Select
+                              value={selectedSponsorId}
+                              onChange={(e) => setSelectedSponsorId(e.target.value)}
+                            >
+                              <option value="">Choose a sponsor</option>
+                              {sponsors.map((sponsor) => (
+                                <option key={sponsor.sponsorId} value={sponsor.sponsorId}>
+                                  {sponsor.affiliation || sponsor.sponsorId}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>Select Driver</Form.Label>
+                            <Form.Select
+                              value={selectedRelationshipDriverId}
+                              onChange={(e) => setSelectedRelationshipDriverId(e.target.value)}
+                            >
+                              <option value="">Choose a driver</option>
+                              {relationshipDrivers.map((driver) => (
+                                <option key={driver.driverId} value={driver.driverId}>
+                                  {getDriverLabel(driver.driverId)}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </Form.Group>
+
+                          <div className="d-flex gap-2">
+                            <Button onClick={handleAssignDriverToSponsor}>
+                              Assign Driver
+                            </Button>
+                            <Button
+                              variant="outline-secondary"
+                              onClick={() => {
+                                loadSponsors();
+                                loadRelationshipDrivers();
+                                if (selectedSponsorId) loadRelationships(selectedSponsorId);
+                              }}
+                            >
+                              Refresh
+                            </Button>
                           </div>
-                      </ListGroupItem>
-                    ))}
-                  </ListGroup>
-                )}
-              </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Tab>
+                        </>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                <Col md={7}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title>
+                        Current Relationships
+                        {selectedSponsorId ? ` (${getSponsorLabel(selectedSponsorId)})` : ""}
+                      </Card.Title>
+
+                      {loadingRelationships ? (
+                        <div className="text-muted">Loading relationships...</div>
+                      ) : !selectedSponsorId ? (
+                        <div className="text-muted">Select a sponsor to view assignments.</div>
+                      ) : !relationships.length ? (
+                        <div className="text-muted">No drivers assigned to this sponsor yet.</div>
+                      ) : (
+                        <ListGroup>
+                          {relationships.map((rel) => {
+                            const key = `${rel.driverId}-${rel.sponsorId}`;
+
+                            return (
+                              <ListGroupItem
+                                key={key}
+                                className="d-flex justify-content-between align-items-center"
+                              >
+                                <div style={{ flex: 1 }}>
+                                  <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
+                                  <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                    ID: {rel.driverId}
+                                  </div>
+                                  <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                    Current Points: {rel.points ?? 0}
+                                  </div>
+                                </div>
+
+                                <div className="d-flex align-items-center gap-2">
+                                  <Form.Control
+                                    type="number"
+                                    style={{ width: "100px" }}
+                                    value={editingPoints[key] ?? 0}
+                                    onChange={(e) =>
+                                      setEditingPoints((prev) => ({
+                                        ...prev,
+                                        [key]: e.target.value,
+                                      }))
+                                    }
+                                  />
+
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleSaveRelationshipPoints(rel.driverId, rel.sponsorId)
+                                    }
+                                    disabled={savingPoints}
+                                  >
+                                    Save
+                                  </Button>
+
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleRemoveRelationship(rel.driverId, rel.sponsorId)
+                                    }
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </ListGroupItem>
+                            );
+                          })}
+                        </ListGroup>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </Tab>
   </Tabs>
  </div>
 </Container>
