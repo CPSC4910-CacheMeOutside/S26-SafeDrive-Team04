@@ -88,7 +88,8 @@ export default function CatalogBuilder(sponsorId) {
             // Populate the sponsor data into the state
             const userData = {
                 id: cogData.sponsorId,
-                drivers: await dbData.drivers()
+                drivers: await dbData.drivers(),
+                catalog: await dbData.catalog().products().map(p => p.pId)
             }
 
             setSponsoredUser(userData)
@@ -374,15 +375,13 @@ export default function CatalogBuilder(sponsorId) {
 
     function UpdateCatalogButton({product}) {
 
-        useEffect(() => {
-            
-        })
+        const {inCatalog, setInCatalog} = useState(() => {});
 
-        if (product.inCatalog) {
-            return (<span onClick={ () => {removeProduct(product.pId);
+        if (inCatalog) {
+            return (<span onClick={ () => {removeProduct(product.pId); setInCatalog(false);
             }} className="btn btn-danger">{t('catalog.remove')}</span>);
         } else {
-            return (<span onClick={ () => {addProduct(product.pId);
+            return (<span onClick={ () => {addProduct(product.pId); setInCatalog(true);
             }} className="btn btn-primary">{t('catalog.addToCatalog')}</span>);
         }
     } 
