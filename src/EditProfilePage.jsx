@@ -2,9 +2,20 @@ import { useState, useEffect } from 'react';
 import useAmplifyAuth from './UseAmplifyAuth';
 import { Form, Button, Container, Row, Col, Image, Alert } from 'react-bootstrap';
 import { get, put } from 'aws-amplify/api';
-import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
+import { updateUserAttributes, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/data';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
+
+const client = generateClient();
+
+const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'
+];
 
 function EditProfilePage({
   profilePic,
@@ -24,6 +35,13 @@ function EditProfilePage({
     authEmail: ""
   });
 
+  const [licenseData, setLicenseData] = useState({
+    licenseNo: "",
+    expDate: "",
+    state: ""
+  });
+
+  const [isDriver, setIsDriver] = useState(false);
   const [authRole, setAuthRole] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -41,10 +59,29 @@ function EditProfilePage({
           authEmail: attrs.email || "",
         });
 
-        setAuthRole(auth.groups || []);
+        const groups = auth.groups || [];
+        setAuthRole(groups);
 
         if (attrs.picture && setProfilePic) {
           setProfilePic(attrs.picture);
+        }
+
+        if (groups.includes('Driver')) {
+          setIsDriver(true);
+          try {
+            const currentUser = await getCurrentUser();
+            const driverId = currentUser.username;
+            const { data: driverRecord } = await client.models.Driver.get({ driverId });
+            if (driverRecord) {
+              setLicenseData({
+                licenseNo: driverRecord.licenseNo || "",
+                expDate: driverRecord.expDate || "",
+                state: driverRecord.state || ""
+              });
+            }
+          } catch (err) {
+            console.error("Failed to load driver license info:", err);
+          }
         }
 
         return;
@@ -108,6 +145,13 @@ function EditProfilePage({
     });
   };
 
+  const handleLicenseChange = (e) => {
+    setLicenseData({
+      ...licenseData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file || !setProfilePic) return;
@@ -137,6 +181,29 @@ function EditProfilePage({
         });
 
         console.log("update result", result);
+
+        if (isDriver) {
+          const currentUser = await getCurrentUser();
+          const driverId = currentUser.username;
+
+          const { data: existing } = await client.models.Driver.get({ driverId });
+
+          if (existing) {
+            await client.models.Driver.update({
+              driverId,
+              licenseNo: licenseData.licenseNo || null,
+              expDate: licenseData.expDate || null,
+              state: licenseData.state || null
+            });
+          } else {
+            await client.models.Driver.create({
+              driverId,
+              licenseNo: licenseData.licenseNo || null,
+              expDate: licenseData.expDate || null,
+              state: licenseData.state || null
+            });
+          }
+        }
 
         const latest = await fetchUserAttributes();
 
@@ -246,6 +313,54 @@ function EditProfilePage({
                   {authRole.length > 0 ? authRole.join(", ") : <span>{t('common.na')}</span>}
                 </Col>
               </Form.Group>
+
+              {isDriver && !adminView && (
+                <>
+                  <hr />
+                  <h5 className="mb-3">Driver License Information</h5>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>License Number</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        name="licenseNo"
+                        value={licenseData.licenseNo}
+                        onChange={handleLicenseChange}
+                        placeholder="Enter license number"
+                      />
+                    </Col>
+                  </Form.Group>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>License Expiration Date</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        type="date"
+                        name="expDate"
+                        value={licenseData.expDate}
+                        onChange={handleLicenseChange}
+                      />
+                    </Col>
+                  </Form.Group>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>State</Form.Label>
+                    <Col sm={6}>
+                      <Form.Select
+                        name="state"
+                        value={licenseData.state}
+                        onChange={handleLicenseChange}
+                      >
+                        <option value="">Select state...</option>
+                        {US_STATES.map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </Form.Select>
+                    </Col>
+                  </Form.Group>
+                  <hr />
+                </>
+              )}
 
               <Form.Group as={Row} className="mb-3 align-items-center">
                 <Form.Label column sm={3}>{t('editProfile.profilePicture')}</Form.Label>
