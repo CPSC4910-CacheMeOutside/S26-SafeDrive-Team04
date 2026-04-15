@@ -13,7 +13,6 @@ import Tab from"react-bootstrap/Tab"
 import Alert from "react-bootstrap/Alert"
 import { ListGroupItem } from 'react-bootstrap';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
-import { fetchDriverUsers, fetchSponsorUsers } from './adminUpdateDriverInfo-api';
 import { generateClient } from 'aws-amplify/data';
 
 const client = generateClient();
@@ -30,7 +29,7 @@ import {
 
 import {
   fetchDriverUsers,
-  fetchSponsorGroupUsers,
+  fetchSponsorUsers,
 } from "./adminUpdateDriverInfo-api";
 
 function AdminPage(){
@@ -61,10 +60,9 @@ function AdminPage(){
   const [selectedSponsorId, setSelectedSponsorId] = useState("");
   const [selectedRelationshipDriverId, setSelectedRelationshipDriverId] = useState("");
   const [relationships, setRelationships] = useState([]);
-  const [loadingSponsors, setLoadingSponsors] = useState(false);
   const [loadingRelationships, setLoadingRelationships] = useState(false);
   const [relationshipMessage, setRelationshipMessage] = useState("");
-  const [relationshipError, setRelationshipError] = useState("");
+
 
 
   const selectedDriverUser = useMemo(
@@ -278,7 +276,7 @@ function AdminPage(){
       setLoadingSponsors(true);
       setRelationshipError("");
 
-      const sponsorUsers = safeArray(await fetchSponsorGroupUsers());
+      const sponsorUsers = safeArray(await fetchSponsorUsers());
       const ensuredSponsors = [];
 
       for (const user of sponsorUsers) {

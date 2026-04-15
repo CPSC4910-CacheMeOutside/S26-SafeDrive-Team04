@@ -4,7 +4,7 @@ import { updateUserAttributes, fetchUserAttributes } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "./LanguageContext";
-import useAmplifyAuth from "./UseAmplifyAuth";
+
 
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
