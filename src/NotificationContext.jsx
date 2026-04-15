@@ -9,19 +9,22 @@ export default function NotificationProvider({ children }) {
     return stored ? JSON.parse(stored) : [];
   });
 
-  const addNotification = (description) => {
+  const addNotification = (notification) => {
+    const exists = notifications.some(n => n.id === notification.id);
+    if (exists) return;
+
     const newNotification = {
-      id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-      description: description.trim(),
-      timestamp: Date.now(),
+      id: notification.id || Date.now(),
+      description: notification.description,
+      timestamp: notification.timestamp || Date.now(),
       closed: false,
       starred: false,
-      pinned: false   // new field: only one notification can be pinned at a time
+      pinned: false
     };
 
-    const updatedNotifications = [...notifications, newNotification];
-    setNotifications(updatedNotifications);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotifications));
+    const updated = [...notifications, newNotification];
+    setNotifications(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   };
 
   const closeNotification = (id) => {

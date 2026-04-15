@@ -2,8 +2,9 @@ import { Container, Card, Form, Button, Alert, ListGroup, Badge } from 'react-bo
 import { useState } from 'react';
 import { useNotifications } from './NotificationContext';
 import { useLanguage } from './LanguageContext';
+import { sendNotification } from './notification-api';
+import { fetchCurrentSponsorAssignments } from './sponsorPage-api';
 
-// Page for sponsors to compose and send notifications to drivers
 export default function SponsorNotificationsPage() {
   const { notifications, addNotification } = useNotifications();
   const { t } = useLanguage();
@@ -18,25 +19,64 @@ export default function SponsorNotificationsPage() {
     setMessageSuccess('');
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = message.trim();
 
     if (!trimmed) {
       setMessageError(t('sponsorNotif.emptyError'));
       return;
     }
+
     if (trimmed.length < 3) {
       setMessageError(t('sponsorNotif.minCharsError'));
       return;
     }
 
-    addNotification(trimmed);
-    setMessage('');
-    setMessageSuccess(t('sponsorNotif.sentSuccess'));
-    setTimeout(() => setMessageSuccess(''), 3000);
+    try {
+      setMessageError('');
+      setMessageSuccess('');
+
+      const assignmentData = await fetchCurrentSponsorAssignments();
+      console.log("assignmentData:", assignmentData);
+
+      const drivers = Array.isArray(assignmentData.drivers)
+        ? assignmentData.drivers
+        : [];
+
+      console.log("drivers:", drivers);
+
+      if (!drivers.length) {
+        setMessageError('No associated drivers found.');
+        return;
+      }
+
+      const results = await Promise.all(
+        drivers.map((driver) =>
+          sendNotification({
+            senderId: assignmentData.sponsorId,
+            recipientId: driver.driverId,
+            content: `MESSAGE:${trimmed}`,
+          })
+        )
+      );
+
+      console.log("send results:", results);
+
+      addNotification({
+        id: `local-${Date.now()}`,
+        description: trimmed,
+        timestamp: Date.now(),
+      });
+
+      setMessage('');
+      setMessageSuccess(t('sponsorNotif.sentSuccess'));
+      setTimeout(() => setMessageSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to send sponsor notification:', err);
+      setMessageError(err?.message || 'Failed to send notification.');
+    }
   };
 
-  // Count how many sent notifications are still active (not dismissed by driver)
   const activeCount = notifications.filter(n => !n.closed).length;
   const totalCount = notifications.length;
 
@@ -77,7 +117,6 @@ export default function SponsorNotificationsPage() {
         </Card.Body>
       </Card>
 
-      {/* History of all sent notifications */}
       <Card style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-2">

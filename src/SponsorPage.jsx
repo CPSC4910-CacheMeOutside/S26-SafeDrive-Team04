@@ -15,6 +15,7 @@ import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import { get } from "aws-amplify/api";
 
+import { sendNotification } from "./notification-api";
 
 import { fetchAuthSession } from "aws-amplify/auth";
 
@@ -197,6 +198,7 @@ function SponsorPage({
     loadUser();
   }, [adminView]);
 
+  
 
 
 const getDriverLabel = (rel) => {
@@ -240,7 +242,11 @@ const pointAdjust = async (delta) => {
   if (!selectedRelation) return;
 
   try {
-    const newPoints = Math.max(0, (selectedRelation.points || 0) + delta);
+    const currentPoints = selectedRelation.points || 0;
+    const changeAmount = Math.abs(delta);
+    const newPoints = Math.max(0, currentPoints + delta);
+    const action = delta > 0 ? "ADD" : "SUB";
+    const reason = description.trim() || "No reason provided";
 
     await client.models.DriverSponsor.update({
       driverId: selectedRelation.driverId,
@@ -248,7 +254,12 @@ const pointAdjust = async (delta) => {
       points: newPoints,
     });
 
-    // update UI
+    await sendNotification({
+      senderId: selectedRelation.sponsorId,
+      recipientId: selectedRelation.driverId,
+      content: `POINTS:${action}:${changeAmount}:${newPoints}:${reason}`,
+    });
+
     setRelations((prev) =>
       prev.map((r) =>
         r.driverSponsorId === selectedRelation.driverSponsorId
@@ -257,6 +268,7 @@ const pointAdjust = async (delta) => {
       )
     );
 
+    setDescription("");
   } catch (err) {
     console.error("Failed to update points:", err);
     setPageError("Failed to update points.");
