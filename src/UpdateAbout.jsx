@@ -14,24 +14,29 @@ export default function UpdateAbout() {
     var [name, setName] = useState('Safe Drive');
     var [desc, setDesc] = useState('')
 
-    // Client
-    const client = generateClient();
+    // Client — must use apiKey auth since AboutInfo only allows publicApiKey
+    const client = generateClient({ authMode: 'apiKey' });
 
     // Submission Logic
     const createAbout = async () => {
         await client.models.AboutInfo.delete({
             sprintNo: Number(sprint)
-        })
-        
-        const writeStatus = await client.models.AboutInfo.create({
+        });
+
+        const { data: writeData, errors } = await client.models.AboutInfo.create({
             sprintNo: Number(sprint),
             releaseDate: date,
             teamName: team,
             productName: name,
             desc: desc
-        })
+        });
 
-        console.log(writeStatus);
+        if (errors && errors.length > 0) {
+            console.log(errors);
+            throw new Error(errors[0].message);
+        }
+
+        console.log(writeData);
     }
 
     const handleSubmit = async (event) => {

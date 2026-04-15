@@ -10,8 +10,8 @@ import Col from "react-bootstrap/Col"
 import Form from "react-bootstrap/Form"
 import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
-import Alert from "react-bootstrap/Alert"
 import { ListGroupItem } from 'react-bootstrap';
+import UpdateAbout from './UpdateAbout';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 import { generateClient } from 'aws-amplify/data';
 
@@ -522,8 +522,15 @@ function AdminPage(){
                 </Card>
               </Col>
             </Row>
+          </Tab>          <Tab eventKey="updateAbout" title="Update About">
+            <UpdateAbout />
           </Tab>
-            <Tab eventKey="relationships" title="Sponsor Assignments">
+
+          <Tab eventKey="audit" title={t('admin.logsReports')}>
+            <div className="text-muted p-3">Audit log coming soon.</div>
+          </Tab>
+
+          <Tab eventKey="relationships" title="Sponsor Assignments">
               <Row>
                 <Col md={5}>
                   <Card className="mb-4">
