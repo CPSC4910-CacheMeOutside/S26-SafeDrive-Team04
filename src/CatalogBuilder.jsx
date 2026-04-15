@@ -179,7 +179,7 @@ export default function CatalogBuilder(sponsorId) {
         }
         // Apply the target page if its not the first
         if (currentPageIndex !== 1) {
-            lpQuery.nextToken = storePages[currentPageIndex - 1]
+            lpQuery.nextToken = storePages[currentPageIndex - 2]
         }
 
         // Get the products from the table
@@ -191,7 +191,21 @@ export default function CatalogBuilder(sponsorId) {
                 throw Error("Error: Failed to retrieve products from backend " + JSON.stringify(sfErrors))
             } 
 
-            // TODO: Add the next page
+            // Add the next page
+            if (nextPage !== null ) {
+                // If the next page doesn't already have a token, add it
+                if (!storePages[currentPageIndex]) {
+                    updateStorePages(prev => {
+                        if (prev[currentPageIndex] == null) {
+                            return [...prev, nextPage];
+                        }
+                        return prev;
+                    });
+                }
+                setHasMorePages(true);
+            } else {
+                setHasMorePages(false);
+            }
 
             let storeFront = rawStoreFront.map( tp => ({
                 pId : tp.pId,
@@ -391,7 +405,7 @@ export default function CatalogBuilder(sponsorId) {
                         </Col>
                         <Col>
                             <Form.Select 
-                                onChange={e => { updatePerPage(e.target.value)}}
+                                onChange={e => updatePerPage(Number(e.target.value))}
                                 defaultValue={10}
                                 style={{ width: '5rem' }}>
                                 <option value={10}>10</option>
@@ -429,14 +443,16 @@ export default function CatalogBuilder(sponsorId) {
                             <h3>Page: </h3>
                             <ButtonGroup className="" aria-label="Catalog Page Controls">
                                 <Button><Image width={30} src='leftArrowIco.png' onClick={() => {
-                                    if (currentPageIndex > 1) {
-                                        setCurrentPageIndex(currentPageIndex-1);
-                                    }
+                                    setCurrentPageIndex(prev => {
+                                        if (prev > 1) return prev - 1;
+                                        return prev;
+                                    });
                                 }}/></Button>
                                 <Button><Image width={30} src='rightArrowIco.png' onClick={() => {
-                                    if (hasMorePages) {
-                                        setCurrentPageIndex(currentPageIndex+1);
-                                    }
+                                    setCurrentPageIndex(prev => {
+                                    if (hasMorePages) return prev + 1;
+                                        return prev;
+                                    });
                                 }}/></Button>
                             </ButtonGroup>
                         </ButtonToolbar>
