@@ -37,13 +37,13 @@ export default function SponsorNotificationsPage() {
       setMessageSuccess('');
 
       const assignmentData = await fetchCurrentSponsorAssignments();
-      console.log("assignmentData:", assignmentData);
+      console.log('assignmentData:', assignmentData);
 
       const drivers = Array.isArray(assignmentData.drivers)
         ? assignmentData.drivers
         : [];
 
-      console.log("drivers:", drivers);
+      console.log('drivers:', drivers);
 
       if (!drivers.length) {
         setMessageError('No associated drivers found.');
@@ -51,25 +51,42 @@ export default function SponsorNotificationsPage() {
       }
 
       const results = await Promise.all(
-        drivers.map((driver) =>
-          sendNotification({
-            senderId: assignmentData.sponsorId,
-            recipientId: driver.driverId,
-            content: `MESSAGE:${trimmed}`,
-          })
-        )
+        drivers.map(async (driver) => {
+          try {
+            const result = await sendNotification({
+              senderId: assignmentData.sponsorId,
+              recipientId: driver.driverId,
+              content: `MESSAGE:${trimmed}`,
+            });
+
+            console.log('send success for driver:', driver.driverId, result);
+            return { ok: true, driverId: driver.driverId, result };
+          } catch (err) {
+            console.error('send failed for driver:', driver.driverId, err);
+            return { ok: false, driverId: driver.driverId, error: err };
+          }
+        })
       );
 
-      console.log("send results:", results);
+      console.log('all send results:', results);
 
+      const successCount = results.filter(r => r.ok).length;
+
+      if (successCount === 0) {
+        setMessageError('Notification send failed for all drivers.');
+        return;
+      }
+
+      // temporary local display so you can still see something on sponsor side
       addNotification({
         id: `local-${Date.now()}`,
-        description: trimmed,
+        description: `MESSAGE:${trimmed}`,
         timestamp: Date.now(),
+        closed: false,
       });
 
       setMessage('');
-      setMessageSuccess(t('sponsorNotif.sentSuccess'));
+      setMessageSuccess(`Sent to ${successCount} driver(s).`);
       setTimeout(() => setMessageSuccess(''), 3000);
     } catch (err) {
       console.error('Failed to send sponsor notification:', err);
