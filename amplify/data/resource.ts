@@ -202,6 +202,7 @@ const SafeDriveSchema = a.schema({
     synop: a.string(),
     category: a.string(),
     price: a.float(),
+    desc: a. string(),
     available: a.boolean(),
 
     carts: a.hasMany("CartProduct", "pId"),

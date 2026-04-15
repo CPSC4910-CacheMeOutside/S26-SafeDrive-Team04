@@ -186,6 +186,7 @@ export default function CatalogBuilder(sponsorId) {
                 imgs: JSON.parse(tp.imgs),
                 synop: tp.synop,
                 category: tp.category,
+                desc: tp.desc,
                 price: tp.price,
                 available: tp.available
             }))
@@ -244,10 +245,10 @@ export default function CatalogBuilder(sponsorId) {
                             <Form.Select onChange={e => setCategory(String(e.target.value))}
                                 defaultValue={category}>
                                 <option value="">{t('catalog.all')}</option>
-                                <option value="clothes">{t('catalog.clothing')}</option>
-                                <option value="furniture">{t('catalog.furniture')}</option>
-                                <option value="shoes">{t('catalog.shoes')}</option>
-                                <option value="technology">{t('catalog.technology')}</option>
+                                <option value="Clothes">{t('catalog.clothing')}</option>
+                                <option value="Furniture">{t('catalog.furniture')}</option>
+                                <option value="Shoes">{t('catalog.shoes')}</option>
+                                <option value="Technology">{t('catalog.technology')}</option>
                             </Form.Select>
                         </Form.Group>
                         <Form.Group controlId='priceRange'>
