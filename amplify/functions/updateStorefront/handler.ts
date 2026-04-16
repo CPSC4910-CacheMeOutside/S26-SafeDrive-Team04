@@ -121,6 +121,7 @@ export const handler: EventBridgeHandler<
         synop: prod.synop,
         category: prod.category,
         price: prod.price,
+        desc: prod.desc,
         available: true,
       });
 
@@ -143,6 +144,7 @@ export const handler: EventBridgeHandler<
       synop: prod.synop,
       category: prod.category,
       price: prod.price,
+      desc: prod.desc,
       available: true,
       });
 
