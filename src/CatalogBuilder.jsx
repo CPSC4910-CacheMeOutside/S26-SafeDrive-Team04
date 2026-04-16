@@ -381,7 +381,7 @@ export default function CatalogBuilder(sponsorId) {
 
     function UpdateCatalogButton({product}) {
 
-        const {inCatalog, setInCatalog} = useState(() => {});
+        const {inCatalog, setInCatalog} = useState(false);
 
         if (inCatalog) {
             return (<span onClick={ () => {removeProduct(product.pId); setInCatalog(false);
