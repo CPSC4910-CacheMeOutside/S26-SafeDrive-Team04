@@ -30,7 +30,7 @@ const badNames = ["test", "Test", "UNIQPRODUCT", "update", "Update",
 ];
 
 const approvedCategories = ["Clothes", "clothes", "Furniture", "furniture", "Shoes",
-  "shoes", "Technology", "technology"]
+  "shoes", "Technology", "technology", "Miscellaneous", "miscellaneous"]
 
 export const handler: EventBridgeHandler<
   "Scheduled Event",

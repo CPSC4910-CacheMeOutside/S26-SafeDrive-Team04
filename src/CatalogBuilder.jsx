@@ -286,6 +286,7 @@ export default function CatalogBuilder(sponsorId) {
                                 <option value="Furniture">{t('catalog.furniture')}</option>
                                 <option value="Shoes">{t('catalog.shoes')}</option>
                                 <option value="Technology">{t('catalog.technology')}</option>
+                                <option value="Miscellaneous">{t('catalog.miscellaneous')}</option>
                             </Form.Select>
                         </Form.Group>
                         <Form.Group controlId='priceRange'>
