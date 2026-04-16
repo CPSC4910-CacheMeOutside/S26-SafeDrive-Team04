@@ -84,19 +84,25 @@ export default function CatalogBuilder(sponsorId) {
             // Get the sponsored user's data
             const cogData = await getCog();
             const dbData = await getAmpData(cogData.sub);
+            const dbDataDrivers = await dbData.drivers();
+            const {data: dProducts, errors: dpErrors} = await client.models.CatalogProduct.list({
+                filter: {
+                    sponsorId: { eq: cogData.sponsorId}
+                }
+            })
 
             // Populate the sponsor data into the state
             const userData = {
-                id: cogData.sponsorId,
-                drivers: await dbData.drivers(),
-                catalog: await dbData.catalog().products().map(p => p.pId)
+                id: cogData.sub,
+                drivers: dbDataDrivers,
+                catalog: dProducts.map(p => p.pId)
             }
 
             setSponsoredUser(userData)
+            console.log("Sponsor has been update to the following object: ", userData);
         }
 
         loadSponsorData();
-        console.log("Sponsor has been update to the following object: ", sponsoredUser);
     }, [auth.isLoading, auth.isAuthenticated, auth.groups]);
 
     useEffect(() => {
