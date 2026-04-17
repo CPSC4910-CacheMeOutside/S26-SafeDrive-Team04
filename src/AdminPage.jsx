@@ -75,6 +75,15 @@ function AdminPage(){
   const [removeMessage, setRemoveMessage] = useState("");
   const [removeError, setRemoveError] = useState("");
 
+  const [awardPointsAmount, setAwardPointsAmount] = useState("");
+  const [deductPointsAmount, setDeductPointsAmount] = useState("");
+  const [awardMessage, setAwardMessage] = useState("");
+  const [awardError, setAwardError] = useState("");
+  const [deductMessage, setDeductMessage] = useState("");
+  const [deductError, setDeductError] = useState("");
+  const [updatingDriverPoints, setUpdatingDriverPoints] = useState(false);
+  const [selectedDriverRecord, setSelectedDriverRecord] = useState(null);
+
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
     [driverUsers, selectedDriverUsername]
@@ -196,6 +205,20 @@ function AdminPage(){
     }
   };
 
+  const loadSelectedDriverRecord = async (driverId) => {
+    if (!driverId) {
+      setSelectedDriverRecord(null);
+      return;
+    }
+    try {
+      const result = await client.models.Driver.get({ driverId });
+      setSelectedDriverRecord(result?.data ?? null);
+    } catch (error) {
+      console.error(error);
+      setSelectedDriverRecord(null);
+    }
+  };
+
   //Sponsor User Handlers
   const loadSponsors = async () => {
     try {
@@ -228,47 +251,49 @@ function AdminPage(){
   }, []);
 
   const loadDriverRelationships = async (driverId) => {
-  if (!driverId) {
-    setRelationships([]);
-    return;
-  }
+    if (!driverId) {
+      setRelationships([]);
+      return;
+    }
+    try {
+      setLoadingRelationships(true);
+      setRelationshipError("");
+      const data = await client.models.DriverSponsor.list({
+        filter: { driverId: { eq: driverId } },
+      });
+      const relationshipList = Array.isArray(data?.data) ? data.data : [];
+      setRelationships(relationshipList);
+      const nextEditingPoints = {};
+      relationshipList.forEach((rel) => {
+        nextEditingPoints[`${rel.driverId}-${rel.sponsorId}`] = rel.points ?? 0;
+      });
+      setEditingPoints(nextEditingPoints);
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to load driver sponsors.");
+    } finally {
+      setLoadingRelationships(false);
+    }
+  };
 
-  try {
-    setLoadingRelationships(true);
-    setRelationshipError("");
+  useEffect(() => {
+    if (selectedDriverUser?.username) {
+      loadDriverRelationships(selectedDriverUser.username);
+    } else {
+      setRelationships([]);
+    }
+  }, [selectedDriverUser]);
 
-    const data = await client.models.DriverSponsor.list({
-      filter: { driverId: { eq: driverId } },
-    });
-
-    const relationshipList = Array.isArray(data?.data) ? data.data : [];
-
-    setRelationships(relationshipList);
-
-    const nextEditingPoints = {};
-    relationshipList.forEach((rel) => {
-      nextEditingPoints[`${rel.driverId}-${rel.sponsorId}`] = rel.points ?? 0;
-    });
-    setEditingPoints(nextEditingPoints);
-  } catch (error) {
-    console.error(error);
-    setRelationshipError("Failed to load driver sponsors.");
-  } finally {
-    setLoadingRelationships(false);
-  }
-};
-
-useEffect(() => {
-  if (selectedDriverUser?.username) {
-    loadDriverRelationships(selectedDriverUser.username);
-  } else {
-    setRelationships([]);
-  }
-}, [selectedDriverUser]);
+  useEffect(() => {
+    if (selectedDriverUser?.username) {
+      loadSelectedDriverRecord(selectedDriverUser.username);
+    } else {
+      setSelectedDriverRecord(null);
+    }
+  }, [selectedDriverUser]);
 
   const handleAssignRole = async () => {
     if (!selectedPendingUser) return;
-
     try {
       setAssigningRole(true);
       setRoleCardError("");
@@ -488,6 +513,108 @@ useEffect(() => {
     }
   }, [removeError]);
 
+  // Handles points
+  const handleAwardPoints = async () => {
+    if (!selectedDriverUser) {
+      setAwardError("Please select a driver.");
+      setAwardMessage("");
+      return;
+    }
+    const amount = Number(awardPointsAmount);
+    if (!amount || Number.isNaN(amount) || amount <= 0) {
+      setAwardError("Enter a valid positive number of points.");
+      setAwardMessage("");
+      return;
+    }
+    try {
+      setUpdatingDriverPoints(true);
+      setAwardError("");
+      setAwardMessage("");
+      const driverId = selectedDriverUser.username;
+      const existing = await client.models.Driver.get({ driverId });
+      const currentPoints = existing?.data?.points ?? 0;
+      const newTotal = currentPoints + amount;
+      await client.models.Driver.update({
+        driverId,
+        points: newTotal,
+      });
+      setAwardMessage("Points awarded successfully.");
+      setAwardPointsAmount("");
+      await loadSelectedDriverRecord(driverId);
+    } catch (error) {
+      console.error(error);
+      setAwardError("Failed to award points.");
+      setAwardMessage("");
+    } finally {
+      setUpdatingDriverPoints(false);
+    }
+  };
+
+  const handleDeductPoints = async () => {
+    if (!selectedDriverUser) {
+      setDeductError("Please select a driver.");
+      setDeductMessage("");
+      return;
+    }
+    const amount = Number(deductPointsAmount);
+    if (!amount || Number.isNaN(amount) || amount <= 0) {
+      setDeductError("Enter a valid positive number of points.");
+      setDeductMessage("");
+      return;
+    }
+    try {
+      setUpdatingDriverPoints(true);
+      setDeductError("");
+      setDeductMessage("");
+      const driverId = selectedDriverUser.username;
+      const existing = await client.models.Driver.get({ driverId });
+      const currentPoints = existing?.data?.points ?? 0;
+      const newTotal = Math.max(0, currentPoints - amount);
+      await client.models.Driver.update({
+        driverId,
+        points: newTotal,
+      });
+      setDeductMessage("Points deducted successfully.");
+      setDeductPointsAmount("");
+      await loadSelectedDriverRecord(driverId);
+    } catch (error) {
+      console.error(error);
+      setDeductError("Failed to deduct points.");
+      setDeductMessage("");
+    } finally {
+      setUpdatingDriverPoints(false);
+    }
+  };
+
+  useEffect(() => {
+    if (awardMessage) {
+      const timer = setTimeout(() => setAwardMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [awardMessage]);
+
+  useEffect(() => {
+    if (awardError) {
+      const timer = setTimeout(() => setAwardError(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [awardError]);
+
+  useEffect(() => {
+    if (deductMessage) {
+      const timer = setTimeout(() => setDeductMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [deductMessage]);
+
+  useEffect(() => {
+    if (deductError) {
+      const timer = setTimeout(() => setDeductError(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [deductError]);
+
+  
   const handleSaveRelationshipPoints = async (driverId, sponsorId) => {
     const key = `${driverId}-${sponsorId}`;
     const rawValue = editingPoints[key];
@@ -645,7 +772,7 @@ useEffect(() => {
 
                           <div className="mb-2">
                             <strong>Total Points:</strong>{" "}
-                            {relationships.reduce((sum, rel) => sum + (rel.points ?? 0), 0)}
+                            {selectedDriverRecord?.points ?? 0}
                           </div>
                         </div>
                       )}
@@ -737,6 +864,76 @@ useEffect(() => {
                           Remove
                         </Button>
                       </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                <Col md={6}>
+                  <Card className="h-100">
+                    <Card.Body>
+                      <Card.Title><strong>Award Points</strong></Card.Title>
+                        <StatusAlert error={awardError} message={awardMessage} />
+                        {!selectedDriverUser ? (
+                          <div className="text-muted">Select a driver first.</div>
+                        ) : (
+                          <>
+                          <Form.Group className="mb-3">
+                            <Form.Label></Form.Label>
+                              <Form.Control
+                                type="number"
+                                min="1"
+                                value={awardPointsAmount} 
+                                onChange={(e) => setAwardPointsAmount(e.target.value)}
+                                placeholder="Enter points amount"
+                              />
+                          </Form.Group>
+                          <div className="d-flex justify-content-center">
+                          <Button
+                            style={{ width: "160px", height: "50px" }}
+                            variant="success"
+                            onClick={handleAwardPoints}
+                            disabled={!selectedDriverUser || updatingDriverPoints}
+                          >
+                          Award
+                          </Button>
+                          </div>
+                        </>
+                        )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                <Col md={6}>
+                  <Card className="h-100">
+                    <Card.Body>
+                      <Card.Title><strong>Deduct Points</strong></Card.Title>
+                      <StatusAlert error={deductError} message={deductMessage} />
+                      {!selectedDriverUser ? (
+                        <div className="text-muted">Select a driver first.</div>
+                      ) : (
+                        <>
+                        <Form.Group className="mb-3">
+                          <Form.Label></Form.Label>
+                            <Form.Control
+                              type="number"
+                              min="1"
+                              value={deductPointsAmount}
+                              onChange={(e) => setDeductPointsAmount(e.target.value)}
+                              placeholder="Enter points amount"
+                            />
+                        </Form.Group>
+                        <div className="d-flex justify-content-center">
+                        <Button
+                          style={{ width: "160px", height: "50px" }}
+                          variant="outline-danger"
+                          onClick={handleDeductPoints}
+                          disabled={!selectedDriverUser || updatingDriverPoints}
+                        >
+                        Deduct
+                        </Button>
+                        </div>
+                        </>
+                      )}
                     </Card.Body>
                   </Card>
                 </Col>
