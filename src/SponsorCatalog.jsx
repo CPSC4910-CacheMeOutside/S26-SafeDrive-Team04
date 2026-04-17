@@ -19,11 +19,9 @@ export default function SponsorCatalog() {
     const [pointTotals, updatePointTotals] = useState(null);
     const [sponsors, updateSponsors] = useState(null);
     const [catalogs, updateCatalogs] = useState(null);
-    const [activeCatalog, updateActiveCatalog] = useState(null);
     const [cart, updateCart] = useState(null);
     const [wishlist, updateWishlist] = useState(null);
     // Catalog Filters
-
 
     useEffect(() => {
 
@@ -39,7 +37,6 @@ export default function SponsorCatalog() {
                 console.log(`Error: Failed to retrive sponsor from Cognito: `, err);
                 return;
             }
-            
         }
         
         async function getAmpUserData(id) {
@@ -49,8 +46,10 @@ export default function SponsorCatalog() {
 
             if (errors) {
                 console.log(`Error: Could not obtain driver id:${id} from Driver table:`, errors);
+                return;
             } else if (data === null) {
                 console.log(`Error: Could not obtain driver id:${id} from Driver table: No driver by that id was found`);
+                return;
             }
             console.log("Retried from Amplify Data: ", data);
             return data;
@@ -61,25 +60,82 @@ export default function SponsorCatalog() {
             const {data: dbCatalogs, errors} = await ampData.catalogs();
 
             if (errors) {
-                console.log(`Error: Could not obtain wishlists for driver id:${ampData.driverId}:`, errors);
+                console.log(`Error: Could not obtain catalogs for driver id:${ampData.driverId}:`, errors);
+                return obtainedCatalogs;
             } else if (dbCatalogs === null) {
-                console.log(`Error: Could not obtain wishlists for driver id:${ampData.driverId}: No wishlists were found`);
+                console.log(`Error: Could not obtain catalogs for driver id:${ampData.driverId}: No catalogs were found`);
+                return obtainedCatalogs;
             }
-            console.log("Retried wishlists from Amplify Data: ", dbCatalogs);
-            return dbCatalogs;
+            console.log("Retrieved catalogs from Amplify Data: ", dbCatalogs);
 
             for (const catalog of dbCatalogs) {
                 const {data: products, errors} = await catalog.products();
 
                 if (errors) {
                     console.log(`Error: Could not obtain products for catalog id:${catalog.id}:`, errors);
+                    return new Map();
                 } else if (products === null) {
                     console.log(`Error: Could not obtain products for catalog id:${catalog.id}: No products were found`);
+                    return new Map();
                 }
-
                 obtainedCatalogs.set(catalog.sponsorId, products);
             }
+            console.log("Retrieved catalogs from Amplify Data: ", obtainedCatalogs);
             return obtainedCatalogs;
+        }
+
+        async function populateCart(ampData) {
+            const {data: cart, errors} = await ampData.cart();
+
+            if (errors) {
+                console.log(`Error: Could not obtain cart for driver id:${ampData.driverId}:`, errors);
+                return [];
+            } else if (cart === null) {
+                console.log(`Error: Could not obtain cart for driver id:${ampData.driverId}: No cart was found`);
+                return [];
+            }
+
+            console.log("Retried cart from Amplify Data: ", cart);
+
+            const {data: products, errors: productErrors} = await cart.products();
+
+            if (productErrors) {
+                console.log(`Error: Could not obtain products for cart id:${cart.id}:`, productErrors);
+                return [];
+            } else if (products === null) {
+                console.log(`Error: Could not obtain products for cart id:${cart.id}: No products were found`);
+                return [];
+            }
+
+            console.log("Retrieved products from Amplify Data: ", products);
+            return products;
+        }
+
+        async function populateWishlist(ampData) {
+            const {data: wishlist, errors} = await ampData.wishlist();
+
+            if (errors) {
+                console.log(`Error: Could not obtain wishlist for driver id:${ampData.driverId}:`, errors);
+                return [];
+            } else if (wishlist === null) {
+                console.log(`Error: Could not obtain wishlist for driver id:${ampData.driverId}: No wishlist was found`);
+                return [];
+            }
+
+            console.log("Retrieved wishlist from Amplify Data: ", wishlist);
+
+            const {data: products, errors: productErrors} = await wishlist.products();
+
+            if (productErrors) {
+                console.log(`Error: Could not obtain products for wishlist id:${wishlist.id}:`, productErrors);
+                return [];
+            } else if (products === null) {
+                console.log(`Error: Could not obtain products for wishlist id:${wishlist.id}: No products were found`);
+                return [];
+            }
+
+            console.log("Retried products from Amplify Data: ", products);
+            return products;
         }
 
         async function populateSponsors(ampData) {
@@ -87,16 +143,18 @@ export default function SponsorCatalog() {
 
             if (errors) {
                 console.log(`Error: Could not obtain sponsors for driver id:${ampData.driverId}:`, errors);
+                return [];
             } else if (sponsors === null) {
                 console.log(`Error: Could not obtain sponsors for driver id:${ampData.driverId}: No sponsors were found`);
+                return [];
             }
-            console.log("Retried sponsors from Amplify Data: ", sponsors);
-            return sponsors.map(s => s.sponsorId);
+            console.log("Retrieved sponsors from Amplify Data: ", sponsors);
+            return sponsors;
         }
 
         async function populatePointTotals(id) {
             let pointTotals = new Map();
-            const {data: pointTotals, errors} = await client.models.DriverSponsor.list({
+            const {data: pTotals, errors} = await client.models.DriverSponsor.list({
                 filter: {
                     driverId: { eq: id }
                 }
@@ -104,13 +162,18 @@ export default function SponsorCatalog() {
 
             if (errors) {
                 console.log(`Error: Could not obtain point totals for driver id:${id}:`, errors);
-            } else if (pointTotals === null) {
+                return pointTotals;
+            } else if (pTotals === null) {
                 console.log(`Error: Could not obtain point totals for driver id:${id}: No point totals were found`);
+                return pointTotals;
             }
 
-            for (const pt of pointTotals) {
+            for (const pt of pTotals) {
                 pointTotals.set(pt.sponsorId, pt.points);
             }
+
+            console.log("Loaded point totals: ", pointTotals);
+            return pointTotals;
         }
 
         async function loadData() {
@@ -120,8 +183,9 @@ export default function SponsorCatalog() {
             updateUserData(cogData);
             updateCatalogs(await populateCatalogs(dbData));
             updateSponsors(await populateSponsors(dbData));
-
-
+            updatePointTotals(await populatePointTotals(cogData.id));
+            updateCart(await populateCart(dbData));
+            updateWishlist(await populateWishlist(dbData));
         }
 
         loadData();
@@ -129,16 +193,16 @@ export default function SponsorCatalog() {
 
     // Check to ensure all user data is loaded
     useEffect(() => {
-        if (pointTotals === null) return;
-        if (sponsors === null) return;
+        if (userData === null) return;
         if (catalogs === null) return;
-        if (activeCatalog === null) return;
+        if (sponsors === null) return;
+        if (pointTotals === null) return;
         if (cart === null) return;
         if (wishlist === null) return;
-        if (userData === null) return;
 
-        isLoading(false);
-    }, pointTotals, sponsors, catalogs, activeCatalog, cart, wishlist);
+        console.log("Page loading finished!");
+        setIsLoading(false);
+    }, [pointTotals, sponsors, catalogs, cart, wishlist]);
 
     // TODO: This is here for the sake of testing. Remove once we can get a succesful load
     if (isLoading) {
