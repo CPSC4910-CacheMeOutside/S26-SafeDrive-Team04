@@ -47,7 +47,7 @@ const SafeDriveSchema = a.schema({
     sponsor: a.belongsTo('Sponsor', 'sponsorId'),
 
     // The total number of points the sponsor has rewarded the driver
-    points: a.integer()
+    points: a.integer().default(0)
   }).identifier(['driverId', 'sponsorId'])
   .authorization(allow => [allow.publicApiKey()]),
 
