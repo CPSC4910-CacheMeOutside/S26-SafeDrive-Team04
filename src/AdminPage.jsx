@@ -468,10 +468,9 @@ function AdminPage(){
           <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
             <Nav variant="tabs">
               <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
-              <Nav.Item><Nav.Link eventKey="pendingUsers">Pending Users</Nav.Link></Nav.Item>
-              <Nav.Item><Nav.Link eventKey="relationships">Sponsor Assignments</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="pendingUsers">Manage Pending Users</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
-              <Nav.Item><Nav.Link eventKey="updateAbout">Update About</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="updateAbout">Update Home Page</Nav.Link></Nav.Item>
             </Nav>
 
             {activeTab === "manage" && (
@@ -488,9 +487,9 @@ function AdminPage(){
 
           <Tab.Content>
             <Tab.Pane eventKey="manage">
-              <Row>
+              <Row className="g-4 align-items-start">
                 <Col md={4}>
-                  <Card>
+                  <Card className="mb-4">
                     <Card.Body>
                       <Card.Title className="mb-4"><strong>Drivers</strong></Card.Title>
                         {loadingDriverUsers ? (
@@ -515,8 +514,10 @@ function AdminPage(){
                   </Card>
                 </Col>
 
-                <Col md={4}>
-                  <Card>
+                <Col md={8}>
+                <Row className="g-4">
+                <Col md={6}>
+                  <Card className="h-100">
                     <Card.Body>
                       <Card.Title><strong>View Driver Account</strong></Card.Title>
                         <Button className="mt-3" style={{ width: "160px", height: "50px" }} variant="primary" onClick={handleViewDriverAccount} disabled={!selectedDriverUser}>View</Button>
@@ -524,8 +525,8 @@ function AdminPage(){
                   </Card>
                 </Col>
 
-                <Col md={4}>
-                  <Card className="mb-4">
+                <Col md={6}>
+                  <Card className="h-100">
                     <Card.Body>
                       <Card.Title><strong>Edit Driver Account</strong></Card.Title>
                         {!selectedDriverUser ? (
@@ -536,13 +537,11 @@ function AdminPage(){
                     </Card.Body>
                   </Card>
                 </Col>
-              </Row>
 
-              <Row>
-                <Col md={4}>
-                  <Card className="mb-4">
+                <Col md={6}>
+                  <Card className="h-100">
                     <Card.Body>
-                      <Card.Title><strong>Assign Driver to Sponsor</strong></Card.Title>
+                      <Card.Title><strong>Assign a Sponsor</strong></Card.Title>
 
                       {relationshipError && (
                         <div className="alert alert-danger py-2">{relationshipError}</div>
@@ -589,9 +588,7 @@ function AdminPage(){
                           </Form.Group>
 
                           <div className="d-flex gap-2">
-                            <Button onClick={handleAssignDriverToSponsor}>
-                              Assign Driver
-                            </Button>
+
                             <Button
                               variant="outline-secondary"
                               onClick={() => {
@@ -602,6 +599,7 @@ function AdminPage(){
                             >
                               Refresh
                             </Button>
+                            <Button onClick={handleAssignDriverToSponsor}>Assign Sponsor</Button>
                           </div>
                         </>
                       )}
@@ -609,8 +607,8 @@ function AdminPage(){
                   </Card>
                 </Col>
 
-                <Col md={4}>
-                  <Card>
+                <Col md={6}>
+                  <Card className="h-100">
                     <Card.Body>
                       <Card.Title><strong>Associated Sponsors</strong></Card.Title>
                       {loadingRelationships ? (
@@ -680,6 +678,8 @@ function AdminPage(){
                     </Card.Body>
                   </Card>
                 </Col>
+              </Row>
+              </Col>
               </Row>
             </Tab.Pane>
 
