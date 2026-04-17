@@ -28,7 +28,7 @@ const translations = {
       currentSprint: "Current Sprint",
       nextRelease: "Next Release Date",
       title: "Update About Info",
-      instructions: "This page allows for the updating of the About page. Fill out the below information, then click 'Submit' to push new changes. New info with a previous sprint number is not allowed.",
+      instructions: "This page allows for the updating of the about section on the home page. Fill out the below information, then click 'Submit' to push new changes. New info with a previous sprint number is not allowed.",
       teamName: "Team Name #",
       teamPlaceholder: "Team XX",
       sprintLabel: "Current Sprint",

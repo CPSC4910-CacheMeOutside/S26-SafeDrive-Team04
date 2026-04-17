@@ -564,7 +564,7 @@ useEffect(() => {
               <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="pendingUsers">Manage Pending Users</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
-              <Nav.Item><Nav.Link eventKey="updateAbout">Update Home Page</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="updateAbout">Update About Info</Nav.Link></Nav.Item>
             </Nav>
 
             {activeTab === "manage" && (

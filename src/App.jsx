@@ -124,7 +124,6 @@ function App() {
                     </NavDropdown.Item>
                   ))}
                 </NavDropdown>
-                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>{t('navbar.login')}</Nav.Link>}
               </Nav>
               <Nav className="ms-auto align-items-center">
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>Sign Up</Nav.Link>}
