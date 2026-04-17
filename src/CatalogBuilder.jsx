@@ -7,13 +7,14 @@ import { Tab, ListGroup, Row, Col, Modal, Stack, Carousel, ButtonGroup,
     Button, Image, Card, ListGroupItem, Form, ButtonToolbar} from 'react-bootstrap';
 import { useLanguage } from './LanguageContext';
 
-export default function CatalogBuilder(sponsorId) {
+export default function CatalogBuilder() {
 
     const { t } = useLanguage();
 
+    // Important page states
+    const [isLoading, updateIsLoading] = useState(true);
     // Client used to add products to the backend catalog
     const client = generateClient();
-
     const auth = useAmplifyAuth();
     // The sponsor's data
     const [sponsoredUser, setSponsoredUser] = useState(null);
@@ -61,7 +62,7 @@ export default function CatalogBuilder(sponsorId) {
                 console.log(`Sponsor Data Retrieved from Cognito: `, cogAttr);
                 return cogAttr;
             } catch(err) {
-                console.log(`Error: Failed to retrive sponsor id:${sponsorId} from Cognito: `, err);
+                console.log(`Error: Failed to retrive sponsor from Cognito: `, err);
                 return;
             }
         }
@@ -87,19 +88,19 @@ export default function CatalogBuilder(sponsorId) {
             const dbDataDrivers = await dbData.drivers();
             const {data: dProducts, errors: dpErrors} = await client.models.CatalogProduct.list({
                 filter: {
-                    sponsorId: { eq: cogData.sponsorId}
+                    sponsorId: { eq: cogData.sub }
                 }
             })
+            console.log("Whats in DB products?: ", dProducts);
 
             // Populate the sponsor data into the state
             const userData = {
                 id: cogData.sub,
-                drivers: dbDataDrivers,
-                catalog: dProducts.map(p => p.pId)
+                drivers: dbDataDrivers.data,
+                catalog: dProducts
             }
 
             setSponsoredUser(userData)
-            console.log("Sponsor has been update to the following object: ", userData);
         }
 
         loadSponsorData();
@@ -114,14 +115,21 @@ export default function CatalogBuilder(sponsorId) {
         updateStorePages([]);
     }, [pName, minPrice, maxPrice, category, perPage]);
 
+    useEffect(() => {
+        if (sponsoredUser !== null) {
+            updateIsLoading(false);
+            console.log("Sponsored User is now: ", sponsoredUser);
+        } 
+    }, [sponsoredUser]);
+
     // Add the product to the sponsor's catalog
     async function addProduct(product) {
 
         // Create the catalog assignment
         for (const dr of sponsoredUser.drivers) {
-            const { data: assignment, aErrors } = await client.models.CatalogProduct.create({
+            const { data: assignment, errors: aErrors } = await client.models.CatalogProduct.create({
                 pId: product.pId,
-                sponsorId: sponsoredUser.sponsorId,
+                sponsorId: sponsoredUser.id,
                 driverId: dr.driverId
             });
 
@@ -132,16 +140,17 @@ export default function CatalogBuilder(sponsorId) {
                 console.log(`Error: Could not assign product:${product.pId} to driver:${dr.driverId}: Created null"`);
                 return;
             }
+            sponsoredUser.catalog.push(assignment);
         };
-        console.log(`Added product:${dbProduct.pId} to sponsor:${sponsoredUser.sponsorId} catalog`);
+        console.log(`Added product:${product.pId} to sponsor:${sponsoredUser.id} catalog`);
     }
 
     // Remove an item from the catalog
     async function removeProduct(product) {
         for (const dr of sponsoredUser.drivers) {
-            const { data: deletedAssignment, aErrors } = await client.models.CatalogProduct.delete({
+            const { data: deletedAssignment, errors: aErrors } = await client.models.CatalogProduct.delete({
                 pId: product.pId,
-                sponsorId: sponsoredUser.sponsorId,
+                sponsorId: sponsoredUser.id,
                 driverId: dr.driverId
             });
 
@@ -152,9 +161,9 @@ export default function CatalogBuilder(sponsorId) {
                 console.log("Error: Could not delete assignment: attempted to delete null");
                 return;
             }
-            
+            sponsoredUser.catalog = sponsoredUser.catalog.filter(p => p.sponsorId !== deletedAssignment.sponsorId && p.driverId !== deletedAssignment.driverId && p.pId !== deletedAssignment.pId);
         };
-        console.log(`removed product:${product.pId} from sponsor:${sponsoredUser.sponsorId} catalog`);
+        console.log(`removed product:${product.pId} from sponsor:${sponsoredUser.id} catalog`);
     }
 
     // Contact the external store API and retrieve all product information
@@ -380,18 +389,48 @@ export default function CatalogBuilder(sponsorId) {
         );
     }
 
-    function UpdateCatalogButton({product}) {
+    function UpdateCatalogButton({ product }) {
 
-        const {inCatalog, setInCatalog} = useState(false);
+        const [inCatalog, setInCatalog] = useState(false);
+
+        useEffect(() => {
+            if (!sponsoredUser) return;
+
+            const exists = sponsoredUser.catalog?.some(
+                (p) => p.pId === product.pId
+            );
+
+            setInCatalog(exists);
+        }, [sponsoredUser, product.pId]);
+
+        if (!sponsoredUser) return null;
 
         if (inCatalog) {
-            return (<span onClick={ () => {removeProduct(product.pId); setInCatalog(false);
-            }} className="btn btn-danger">{t('catalog.remove')}</span>);
+            return (
+                <span
+                    onClick={() => {
+                        removeProduct(product);
+                        setInCatalog(false);
+                    }}
+                    className="btn btn-danger"
+                >
+                    {t('catalog.remove')}
+                </span>
+            );
         } else {
-            return (<span onClick={ () => {addProduct(product.pId); setInCatalog(true);
-            }} className="btn btn-primary">{t('catalog.addToCatalog')}</span>);
+            return (
+                <span
+                    onClick={() => {
+                        addProduct(product);
+                        setInCatalog(true);
+                    }}
+                    className="btn btn-primary"
+                >
+                    {t('catalog.addToCatalog')}
+                </span>
+            );
         }
-    } 
+    }
 
     /* The main Catalog Page */
     return (
