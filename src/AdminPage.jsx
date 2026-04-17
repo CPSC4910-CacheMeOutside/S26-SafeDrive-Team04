@@ -10,6 +10,7 @@ import Col from "react-bootstrap/Col"
 import Form from "react-bootstrap/Form"
 import Tabs from "react-bootstrap/Tabs"
 import Tab from"react-bootstrap/Tab"
+import Nav from "react-bootstrap/Nav"
 import { ListGroupItem } from 'react-bootstrap';
 import UpdateAbout from './UpdateAbout';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
@@ -32,6 +33,9 @@ import {
   fetchSponsorUsers,
 } from "./adminUpdateDriverInfo-api";
 
+import { startDriverView } from './adminDriverView-api';
+import { fetchAuthSession } from 'aws-amplify/auth';
+
 function AdminPage(){
   const [editingPoints, setEditingPoints] = useState({});
   const [savingPoints, setSavingPoints] = useState(false);
@@ -47,6 +51,7 @@ function AdminPage(){
   const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
   const [loadingDriverUsers, setLoadingDriverUsers] = useState(false);
   const [driverUsersError, setDriverUsersError] = useState("");
+  const [activeTab, setActiveTab] = useState("manage");
 
   const [sponsorUsers, setSponsorUsers] = useState([]);
   const [selectedSponsorUsername, setSelectedSponsorUsername] = useState("");
@@ -63,8 +68,6 @@ function AdminPage(){
   const [loadingRelationships, setLoadingRelationships] = useState(false);
   const [relationshipMessage, setRelationshipMessage] = useState("");
   const [relationshipError, setRelationshipError] = useState("");
-
-
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -151,6 +154,7 @@ function AdminPage(){
 
   const selectedPendingUser = useMemo(() => unassignedUsers.find((u) => u.username === selectedPendingUsername) ?? null, [unassignedUsers, selectedPendingUsername]);
   
+  //Unassigned Handlers
   const loadUnassignedUsers = async () => {
     try {
       setLoadingPendingUsers(true);
@@ -165,6 +169,48 @@ function AdminPage(){
       setRoleCardError("Failed to load unassigned users.");
     } finally {
       setLoadingPendingUsers(false);
+    }
+  };
+
+  //Driver Handlers
+  const loadDriverUsers = async () => {
+    try {
+      setLoadingDriverUsers(true);
+      setDriverUsersError("");
+
+      const users = safeArray(await fetchDriverUsers());
+
+      setDriverUsers(users);
+      setSelectedDriverUsername((prev) => pickSelected(users, prev, "username"));
+    } catch (error) {
+      console.error(error);
+      setDriverUsersError("Failed to load drivers.");
+    } finally {
+      setLoadingDriverUsers(false);
+    }
+  };
+
+  //Sponsor User Handlers
+  const loadSponsors = async () => {
+    try {
+      setLoadingSponsors(true);
+      setRelationshipError("");
+
+      const sponsorUsers = safeArray(await fetchSponsorUsers());
+      const ensuredSponsors = [];
+
+      for (const user of sponsorUsers) {
+        const sponsorRecord = await ensureSponsorRecord(user);
+        if (sponsorRecord) ensuredSponsors.push(sponsorRecord);
+      }
+
+      setSponsors(ensuredSponsors);
+      setSelectedSponsorId((prev) => pickSelected(ensuredSponsors, prev, "sponsorId"));
+    } catch (error) {
+      console.error(error);
+      setRelationshipError("Failed to load sponsors.");
+    } finally {
+      setLoadingSponsors(false);
     }
   };
 
@@ -233,65 +279,32 @@ function AdminPage(){
   };
 
   const { t } = useLanguage();
-    /*setLogs(prev => [
-      {
-        driver: selectedDriver.name,
-        change: value,
-        reason: description || "No Reason Provided",
-        time: timestamp
-      },
-      ...prev
-    ]);
-    setDescription("");
-  };
-  */
   const navigate = useNavigate();
 
   const handleAdminAccountTakeover = () => {
-  if (!selectedDriverUser) return;
-  navigate(`/admin/drivers/${selectedDriverUser.username}/edit`);
+    if (!selectedDriverUser) return;
+    navigate(`/admin/drivers/${selectedDriverUser.id}/edit`);
   };
 
+  const handleViewDriverAccount = async () => {
+    if (!selectedDriverUser) return;
 
-    //Driver Handlers
-  const loadDriverUsers = async () => {
     try {
-      setLoadingDriverUsers(true);
-      setDriverUsersError("");
+      const data = await startDriverView(selectedDriverUser.username);
 
-      const users = safeArray(await fetchDriverUsers());
-
-      setDriverUsers(users);
-      setSelectedDriverUsername((prev) => pickSelected(users, prev, "username"));
+      localStorage.setItem(
+        'driverViewSession',
+        JSON.stringify({
+          sessionId: data.sessionId,
+          driverUsername: data.driverUsername,
+          driverName: data.driverName,
+          expiresAt: data.expiresAt,
+        })
+      );
+      navigate('/DriverPage?adminView=1');
     } catch (error) {
-      console.error(error);
-      setDriverUsersError("Failed to load drivers.");
-    } finally {
-      setLoadingDriverUsers(false);
-    }
-  };
-
-  //Sponsor User Handlers
-  const loadSponsors = async () => {
-    try {
-      setLoadingSponsors(true);
-      setRelationshipError("");
-
-      const sponsorUsers = safeArray(await fetchSponsorUsers());
-      const ensuredSponsors = [];
-
-      for (const user of sponsorUsers) {
-        const sponsorRecord = await ensureSponsorRecord(user);
-        if (sponsorRecord) ensuredSponsors.push(sponsorRecord);
-      }
-
-      setSponsors(ensuredSponsors);
-      setSelectedSponsorId((prev) => pickSelected(ensuredSponsors, prev, "sponsorId"));
-    } catch (error) {
-      console.error(error);
-      setRelationshipError("Failed to load sponsors.");
-    } finally {
-      setLoadingSponsors(false);
+      console.error('Error: Failed to start driver view', error);
+      alert(error?.message || 'Could not open driver account view.');
     }
   };
 
@@ -339,9 +352,6 @@ function AdminPage(){
       setLoadingRelationships(false);
     }
   };
-
-
-
 
   //Relationship Handlers
   const handleAssignDriverToSponsor = async () => {
@@ -424,10 +434,6 @@ function AdminPage(){
     }
   };
 
-
-
-
-
   //Handlers for reading proper lables for Drivers and Sponsors
   const getDriverLabel = (driverId) => {
   const match = driverUsers.find((u) => u.username === driverId);
@@ -455,82 +461,141 @@ function AdminPage(){
   return(
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>{t('admin.title')}</strong></h1>
-          <Tabs defaultActiveKey="pendingUsers" className="mb-4">
-          <Tab eventKey="pendingUsers" title="Pending Users">
-            <Row>
-            <Col md={5}>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{t('admin.title')}</h1>
+        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+
+        <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
+          <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
+            <Nav variant="tabs">
+              <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="pendingUsers">Pending Users</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
+            </Nav>
+
+            {activeTab === "manage" && (
+              <div className="ms-3 pb-2 text-nowrap">
+                <span style={{ color: "black", fontWeight: "600" }} className="me-2">Selected Driver:</span>
+                {selectedDriverUser ? (<span style={{backgroundColor: "#10b981", color: "white", padding: "4px 10px", borderRadius: "8px", fontWeight: "500"}}>
+                {selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</span>
+                ) : (
+                  <span className="text-muted">None</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <Tab.Content>
+            <Tab.Pane eventKey="manage">
+              <Row>
+                <Col md={4}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title className="mb-4"><strong>Drivers</strong></Card.Title>
+                        {loadingDriverUsers ? (
+                          <div className="text-muted">Loading drivers...</div>
+                        ) : !driverUsers.length ? (
+                          <div className="text-muted">No drivers found.</div>
+                        ) : (
+                          <>
+                        <ListGroup className="mb-3">
+                          {driverUsers.map((user) => (
+                            <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)} 
+                              style={user.username === selectedDriverUsername ? { backgroundColor: "#10b981", border: "None", color: "white" } : {}}>
+                              <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
+                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
+                            </ListGroupItem>
+                          ))}
+                        </ListGroup>
+                        <Button className="mt-3" style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
+                        </>
+                        )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                <Col md={4}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title><strong>View Driver Account</strong></Card.Title>
+                        <Button className="mt-3" style={{ width: "160px", height: "50px" }} variant="primary" onClick={handleViewDriverAccount} disabled={!selectedDriverUser}>View</Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                <Col md={4}>
+                  <Card className="mb-4">
+                    <Card.Body>
+                      <Card.Title><strong>Edit Driver Account</strong></Card.Title>
+                        {!selectedDriverUser ? (
+                          <div className="text-muted">Select a driver to manage their account.</div>
+                        ) : (
+                        <Button className="mt-3" style={{ width: "160px", height: "50px" }} variant="primary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit</Button>
+                        )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="pendingUsers" title="Pending Users">
+              <Col md={5}>
                 <Card className="mb-4">
                   <Card.Body>
                     <Card.Title>Assign Role</Card.Title>
                       {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
                       {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
-                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>) : 
-                        !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>) : 
-                      (
+                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>
+                      ) : !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>
+                      ) : (
+                      <>
+                      <ListGroup className="mb-3">
+                        {unassignedUsers.map((user) => (
+                          <ListGroupItem key={user.username} action active={user.username === selectedPendingUsername} onClick={() => setSelectedPendingUsername(user.username)}>
+                            <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
+                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
+                          </ListGroupItem>
+                        ))}
+                      </ListGroup>
+
+                      {selectedPendingUser && (
                         <>
-                          <ListGroup className="mb-3">
-                            {unassignedUsers.map((user) => (
-                              <ListGroupItem
-                                key={user.username}
-                                action
-                                active={user.username === selectedPendingUsername}
-                                onClick={() => setSelectedPendingUsername(user.username)}
-                              >
-                                <div className="fw-semibold">
-                                  {user.name || user.preferred_username || user.username}
-                                </div>
-                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                  {user.email || user.username}
-                                </div>
-                              </ListGroupItem>
-                            ))}
-                          </ListGroup>
+                        <div className="mb-3">
+                          <strong>Selected User:</strong><br />{selectedPendingUser.name || "No name"}<br />
+                          <span className="text-muted">{selectedPendingUser.email || selectedPendingUser.username}</span>
+                        </div>
 
-                          {selectedPendingUser && (
-                            <>
-                              <div className="mb-3">
-                                <strong>Selected User:</strong><br />
-                                {selectedPendingUser.name || "No name"}<br />
-                                <span className="text-muted">
-                                  {selectedPendingUser.email || selectedPendingUser.username}
-                                </span>
-                              </div>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Assign Group</Form.Label>
+                          <Form.Select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+                            <option value="Admin">Admin</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Sponsor">Sponsor</option>
+                          </Form.Select>
+                        </Form.Group>
 
-                              <Form.Group className="mb-3">
-                                <Form.Label>Assign Group</Form.Label>
-                                <Form.Select
-                                  value={selectedRole}
-                                  onChange={(e) => setSelectedRole(e.target.value)}
-                                >
-                                  <option value="Admin">Admin</option>
-                                  <option value="Driver">Driver</option>
-                                  <option value="Sponsor">Sponsor</option>
-                                </Form.Select>
-                              </Form.Group>
-
-                              <div className="d-flex justify-content-center gap-4">
-                                <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
-                                <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
-                              </div>
-                            </>
-                          )}
+                        <div className="d-flex justify-content-center gap-4">
+                          <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
+                          <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
+                        </div>
                         </>
+                        )}
+                      </>
                       )}
-                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
+                    <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
                   </Card.Body>
                 </Card>
               </Col>
-            </Row>
-          </Tab>          <Tab eventKey="updateAbout" title="Update About">
-            <UpdateAbout />
-          </Tab>
+            </Tab.Pane>
 
-          <Tab eventKey="audit" title={t('admin.logsReports')}>
-            <div className="text-muted p-3">Audit log coming soon.</div>
-          </Tab>
+            <Tab.Pane eventKey="updateAbout" title="Update About">
+              <UpdateAbout />
+            </Tab.Pane>
 
-          <Tab eventKey="relationships" title="Sponsor Assignments">
+            <Tab.Pane eventKey="audit" title={t('admin.logsReports')}>
+              <div className="text-muted p-3">Audit log coming soon.</div>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="relationships" title="Sponsor Assignments">
               <Row>
                 <Col md={5}>
                   <Card className="mb-4">
@@ -678,11 +743,12 @@ function AdminPage(){
                   </Card>
                 </Col>
               </Row>
-            </Tab>
-  </Tabs>
- </div>
-</Container>
-  );  
-}
+            </Tab.Pane>
+          </Tab.Content>
+        </Tab.Container>
+        </div>
+      </div>
+    </Container>
+  )}
 
 export default AdminPage;

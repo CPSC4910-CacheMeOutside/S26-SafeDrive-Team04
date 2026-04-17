@@ -50,6 +50,19 @@ adminUserLambda.addToRolePolicy(
 
 const apiStack = backend.createStack('admin-api-stack');
 
+adminUserLambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: [
+      'dynamodb:PutItem',
+      'dynamodb:GetItem',
+      'dynamodb:UpdateItem',
+    ],
+    resources: [
+      `arn:aws:dynamodb:us-east-1:${Stack.of(apiStack).account}:table/DriverViewSession-opf5l7awlrcc7gwlw2c6ccmmca-NONE`,
+    ],
+  })
+);
+
 const adminApi = new RestApi(apiStack, 'AdminRestApi', {
   restApiName: 'SafeDriveAPI',
   deploy: true,
@@ -65,6 +78,7 @@ const adminApi = new RestApi(apiStack, 'AdminRestApi', {
       'Authorization',
       'X-Api-Key',
       'X-Amz-Security-Token',
+      'x-driver-view-session',
     ],
   },
 });
@@ -74,8 +88,8 @@ new GatewayResponse(apiStack, 'Default4xxGatewayResponse', {
   type: ResponseType.DEFAULT_4XX,
   responseHeaders: {
     'Access-Control-Allow-Origin': "'http://localhost:5173'",
-    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-driver-view-session'",
+    'Access-Control-Allow-Methods': "'GET,PUT,POST,OPTIONS'",
   },
 });
 
@@ -84,8 +98,8 @@ new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
   type: ResponseType.DEFAULT_5XX,
   responseHeaders: {
     'Access-Control-Allow-Origin': "'http://localhost:5173'",
-    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-driver-view-session'",
+    'Access-Control-Allow-Methods': "'GET,PUT,POST,OPTIONS'",
   },
 });
 
@@ -128,6 +142,32 @@ const usernamePath = usersPath.addResource('{username}');
 const groupPath = usernamePath.addResource('group');
 
 groupPath.addMethod('PUT', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const driverViewPath = adminPath.addResource('driver-view');
+
+const driverViewStartPath = driverViewPath.addResource('start');
+driverViewStartPath.addMethod('POST', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const driverViewCurrentPath = driverViewPath.addResource('current');
+driverViewCurrentPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const driverViewDashboardPath = driverViewPath.addResource('dashboard');
+driverViewDashboardPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const driverViewStopPath = driverViewPath.addResource('stop');
+driverViewStopPath.addMethod('POST', lambdaIntegration, {
   authorizationType: AuthorizationType.COGNITO,
   authorizer: cognitoAuth,
 });

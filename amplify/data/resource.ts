@@ -229,6 +229,17 @@ const SafeDriveSchema = a.schema({
   }).identifier(['sendId', 'recipId', 'nId'])
   .authorization(allow => [allow.publicApiKey()]),
 
+  DriverViewSession: a.model({
+    sessionId: a.id().required(),
+    adminSub: a.string().required(),
+    driverUsername: a.string().required(),
+    driverSub: a.string(),
+    driverName: a.string(),
+    expiresAt: a.integer().required(),
+    active: a.boolean().default(true),
+  }).identifier(['sessionId'])
+  .authorization(allow => [allow.groups(['Admin'])]),
+
 }).authorization(allow => [allow.resource(updateStorefront).to(["mutate", "query"])]);
  
 // Used for code completion / highlighting when making requests from frontend
