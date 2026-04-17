@@ -469,7 +469,9 @@ function AdminPage(){
             <Nav variant="tabs">
               <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="pendingUsers">Pending Users</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="relationships">Sponsor Assignments</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="updateAbout">Update About</Nav.Link></Nav.Item>
             </Nav>
 
             {activeTab === "manage" && (
@@ -535,72 +537,12 @@ function AdminPage(){
                   </Card>
                 </Col>
               </Row>
-            </Tab.Pane>
 
-            <Tab.Pane eventKey="pendingUsers" title="Pending Users">
-              <Col md={5}>
-                <Card className="mb-4">
-                  <Card.Body>
-                    <Card.Title>Assign Role</Card.Title>
-                      {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
-                      {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
-                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>
-                      ) : !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>
-                      ) : (
-                      <>
-                      <ListGroup className="mb-3">
-                        {unassignedUsers.map((user) => (
-                          <ListGroupItem key={user.username} action active={user.username === selectedPendingUsername} onClick={() => setSelectedPendingUsername(user.username)}>
-                            <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
-                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
-                          </ListGroupItem>
-                        ))}
-                      </ListGroup>
-
-                      {selectedPendingUser && (
-                        <>
-                        <div className="mb-3">
-                          <strong>Selected User:</strong><br />{selectedPendingUser.name || "No name"}<br />
-                          <span className="text-muted">{selectedPendingUser.email || selectedPendingUser.username}</span>
-                        </div>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Assign Group</Form.Label>
-                          <Form.Select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-                            <option value="Admin">Admin</option>
-                            <option value="Driver">Driver</option>
-                            <option value="Sponsor">Sponsor</option>
-                          </Form.Select>
-                        </Form.Group>
-
-                        <div className="d-flex justify-content-center gap-4">
-                          <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
-                          <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
-                        </div>
-                        </>
-                        )}
-                      </>
-                      )}
-                    <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Tab.Pane>
-
-            <Tab.Pane eventKey="updateAbout" title="Update About">
-              <UpdateAbout />
-            </Tab.Pane>
-
-            <Tab.Pane eventKey="audit" title={t('admin.logsReports')}>
-              <div className="text-muted p-3">Audit log coming soon.</div>
-            </Tab.Pane>
-
-            <Tab.Pane eventKey="relationships" title="Sponsor Assignments">
               <Row>
-                <Col md={5}>
+                <Col md={4}>
                   <Card className="mb-4">
                     <Card.Body>
-                      <Card.Title>Assign Driver to Sponsor</Card.Title>
+                      <Card.Title><strong>Assign Driver to Sponsor</strong></Card.Title>
 
                       {relationshipError && (
                         <div className="alert alert-danger py-2">{relationshipError}</div>
@@ -617,21 +559,6 @@ function AdminPage(){
                       ) : (
                         <>
                           <Form.Group className="mb-3">
-                            <Form.Label>Select Sponsor</Form.Label>
-                            <Form.Select
-                              value={selectedSponsorId}
-                              onChange={(e) => setSelectedSponsorId(e.target.value)}
-                            >
-                              <option value="">Choose a sponsor</option>
-                              {sponsors.map((sponsor) => (
-                                <option key={sponsor.sponsorId} value={sponsor.sponsorId}>
-                                  {sponsor.affiliation || sponsor.sponsorId}
-                                </option>
-                              ))}
-                            </Form.Select>
-                          </Form.Group>
-
-                          <Form.Group className="mb-3">
                             <Form.Label>Select Driver</Form.Label>
                             <Form.Select
                               value={selectedRelationshipDriverId}
@@ -641,6 +568,21 @@ function AdminPage(){
                               {relationshipDrivers.map((driver) => (
                                 <option key={driver.driverId} value={driver.driverId}>
                                   {getDriverLabel(driver.driverId)}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>Select Sponsor</Form.Label>
+                            <Form.Select
+                              value={selectedSponsorId}
+                              onChange={(e) => setSelectedSponsorId(e.target.value)}
+                            >
+                              <option value="">Choose a sponsor</option>
+                              {sponsors.map((sponsor) => (
+                                <option key={sponsor.sponsorId} value={sponsor.sponsorId}>
+                                  {sponsor.affiliation || sponsor.sponsorId}
                                 </option>
                               ))}
                             </Form.Select>
@@ -667,14 +609,10 @@ function AdminPage(){
                   </Card>
                 </Col>
 
-                <Col md={7}>
+                <Col md={4}>
                   <Card>
                     <Card.Body>
-                      <Card.Title>
-                        Current Relationships
-                        {selectedSponsorId ? ` (${getSponsorLabel(selectedSponsorId)})` : ""}
-                      </Card.Title>
-
+                      <Card.Title><strong>Associated Sponsors</strong></Card.Title>
                       {loadingRelationships ? (
                         <div className="text-muted">Loading relationships...</div>
                       ) : !selectedSponsorId ? (
@@ -743,6 +681,64 @@ function AdminPage(){
                   </Card>
                 </Col>
               </Row>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="pendingUsers" title="Pending Users">
+              <Col md={5}>
+                <Card className="mb-4">
+                  <Card.Body>
+                    <Card.Title>Assign Role</Card.Title>
+                      {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
+                      {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
+                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>
+                      ) : !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>
+                      ) : (
+                      <>
+                      <ListGroup className="mb-3">
+                        {unassignedUsers.map((user) => (
+                          <ListGroupItem key={user.username} action active={user.username === selectedPendingUsername} onClick={() => setSelectedPendingUsername(user.username)}>
+                            <div className="fw-semibold">{user.name || user.preferred_username || user.username}</div>
+                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>{user.email || user.username}</div>
+                          </ListGroupItem>
+                        ))}
+                      </ListGroup>
+
+                      {selectedPendingUser && (
+                        <>
+                        <div className="mb-3">
+                          <strong>Selected User:</strong><br />{selectedPendingUser.name || "No name"}<br />
+                          <span className="text-muted">{selectedPendingUser.email || selectedPendingUser.username}</span>
+                        </div>
+
+                        <Form.Group className="mb-3">
+                          <Form.Label>Assign Group</Form.Label>
+                          <Form.Select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+                            <option value="Admin">Admin</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Sponsor">Sponsor</option>
+                          </Form.Select>
+                        </Form.Group>
+
+                        <div className="d-flex justify-content-center gap-4">
+                          <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
+                          <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
+                        </div>
+                        </>
+                        )}
+                      </>
+                      )}
+                    <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="updateAbout" title="Update About">
+              <UpdateAbout />
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="audit" title={t('admin.logsReports')}>
+              <div className="text-muted p-3">Audit log coming soon.</div>
             </Tab.Pane>
           </Tab.Content>
         </Tab.Container>
