@@ -103,7 +103,6 @@ export default function DriverApplicationForm() {
           submittedDate: a.createdAt?.slice(0, 10) ?? "",
           sponsorName: a.sponsorId ?? "",
           denialReason: a.notes ?? "",
-          driverAction: a.driverAction ?? null,
         }));
 
       const client2 = generateClient();
@@ -199,19 +198,6 @@ export default function DriverApplicationForm() {
     }
   }
 
-  async function handleDriverAction(appId, action) {
-    try {
-      const client = generateClient();
-      await client.models.Application.update({ appId, driverAction: action });
-      setMyApplications(prev =>
-        prev.map(a => (a.appId === appId ? { ...a, driverAction: action } : a))
-      );
-    } catch (err) {
-      console.error("Failed to save driver action:", err);
-      alert("Something went wrong. Please try again.");
-    }
-  }
-
   if (done) {
     return (
       <div style={{ textAlign: "center", padding: "80px 20px", fontFamily: "Arial, sans-serif" }}>
@@ -254,7 +240,7 @@ export default function DriverApplicationForm() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <strong style={{ fontSize: 15 }}>{app.sponsorName}</strong>
               <StatusBadge
-                status={app.driverAction ? (app.driverAction === "accepted" ? "offer_accepted" : "offer_declined") : app.status}
+                status={app.status}
                 t={t}
               />
             </div>
@@ -263,25 +249,9 @@ export default function DriverApplicationForm() {
             <ApplicationStatusMessage
               status={app.status}
               rejectionReason={app.denialReason}
-              driverAction={app.driverAction}
               t={t}
             />
 
-            {app.status === "accepted" && app.driverAction === null && (
-              <div style={{ marginTop: 12 }}>
-                <p style={{ fontSize: 13, fontWeight: "bold", marginBottom: 8 }}>
-                  {t('driverApp.wouldYouAccept')}
-                </p>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => handleDriverAction(app.appId, "accepted")} style={{ ...btnStyle, background: "#28a745", padding: "7px 18px", fontSize: 13 }}>
-                    {t('driverApp.acceptOffer')}
-                  </button>
-                  <button onClick={() => handleDriverAction(app.appId, "rejected")} style={{ ...btnStyle, background: "#dc3545", padding: "7px 18px", fontSize: 13 }}>
-                    {t('driverApp.declineOffer')}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -379,13 +349,7 @@ export default function DriverApplicationForm() {
   );
 }
 
-function ApplicationStatusMessage({ status, rejectionReason, driverAction, t }) {
-  if (driverAction === "accepted") {
-    return <div style={{ background: "#d4edda", border: "1px solid #c3e6cb", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#155724" }}>{t('driverApp.acceptedAction')}</div>;
-  }
-  if (driverAction === "rejected") {
-    return <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#721c24" }}>{t('driverApp.rejectedAction')}</div>;
-  }
+function ApplicationStatusMessage({ status, rejectionReason, t }) {
   if (status === "pending") {
     return <div style={{ background: "#fff3cd", border: "1px solid #ffeeba", borderRadius: 4, padding: "10px 14px", fontSize: 13, color: "#856404" }}>{t('driverApp.pendingStatus')}</div>;
   }
@@ -437,19 +401,15 @@ function FormField({ field, value, error, showError, onChange, onBlur }) {
 
 function StatusBadge({ status, t }) {
   const colors = {
-    pending:       { background: "#fff3cd", color: "#856404" },
-    accepted:      { background: "#d4edda", color: "#155724" },
-    denied:        { background: "#f8d7da", color: "#721c24" },
-    offer_accepted:{ background: "#d4edda", color: "#155724" },
-    offer_declined:{ background: "#e2e3e5", color: "#383d41" },
+    pending:  { background: "#fff3cd", color: "#856404" },
+    accepted: { background: "#d4edda", color: "#155724" },
+    denied:   { background: "#f8d7da", color: "#721c24" },
   };
   const s = colors[status] || colors.pending;
   const label = {
-    pending:        t('driverApp.statusPending'),
-    accepted:       t('driverApp.statusAccepted'),
-    denied:         t('driverApp.statusDenied'),
-    offer_accepted: t('driverApp.statusOfferAccepted'),
-    offer_declined: t('driverApp.statusOfferDeclined'),
+    pending:  t('driverApp.statusPending'),
+    accepted: t('driverApp.statusAccepted'),
+    denied:   t('driverApp.statusDenied'),
   }[status] || status;
   return (
     <span style={{ ...s, padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: "bold" }}>
