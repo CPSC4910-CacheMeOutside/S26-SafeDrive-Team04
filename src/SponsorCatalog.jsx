@@ -55,42 +55,19 @@ export default function SponsorCatalog() {
             return data;
         }
 
-        async function populateCatalogs (ampData) {
-            let obtainedCatalogs = new Map();
-            const {data: dbCatalogs, errors} = await ampData.catalogs();
+        async function populateCatalogs (dId) {
+            const {data, errors} = await client.models.CatalogProduct.list({
+                filter: {
+                    driverId: { eq : dId }
+                }
+            });
 
             if (errors) {
-                console.log(`Error: Could not obtain catalogs for driver id:${ampData.driverId}:`, errors);
-            } else if (dbCatalogs === null) {
-                console.log(`Error: Could not obtain catalogs for driver id:${ampData.driverId}: No catalogs were found`);
+                console.log("Error: Could not obtain catalogs for driver id:" + dI, errors);                 
+            } else if (data === null) {
+                console.log("Error: Could not obtain catalogs for driver id:" + dI + " : No catalogs were obtained");          
             }
-            console.log("Step 1: Get catalogs", dbCatalogs)
-            for (const icatalog of dbCatalogs) {
-                const {data: pAssignment, errors} = await icatalog.products();
-
-                if (errors) {
-                    console.log(`Error: Could not obtain products for catalog id:${icatalog.id}:`, errors);
-                } else if (pAssignment === null) {
-                    console.log(`Error: Could not obtain products for catalog id:${icatalog.id}: No products were found`);
-                }
-                console.log("Step 2: Get assignments", pAssignment)
-                let products = [];
-
-                for (const p of pAssignment) {
-                    const {data: product, pErrors} = await p.product();
-
-                    if (pErrors) {
-                        console.log(`Error: Could not obtain product for product assignment id:${p.id}:`, pErrors);
-                    } else if (product === null) {
-                        console.log(`Error: Could not obtain product for product assignment id:${p.id}: No product was found`);
-                    }
-                    console.log("Step 3: Get products, ", product)
-                    products.push(product);
-                }
-                obtainedCatalogs.set(icatalog.sponsorId, products);
-            }
-            console.log("Retrieved catalogs from Amplify Data: ", obtainedCatalogs);
-            return obtainedCatalogs;
+            console.log("TEST: Obtained products assignments: ", data);
         }
 
         async function populateCart(ampData) {

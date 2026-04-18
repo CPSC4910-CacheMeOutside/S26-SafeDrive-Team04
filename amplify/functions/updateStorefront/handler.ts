@@ -25,12 +25,9 @@ const { resourceConfig, libraryOptions } =
 Amplify.configure(resourceConfig, libraryOptions);
 const client = generateClient<AboutSchema>();
 
-const badNames = ["test", "Test", "UNIQPRODUCT", "update", "Update",
-  "user", "User", "product", "Product"
-];
+const badNames = ["test", "Test", "UNIQPRODUCT"];
 
-const approvedCategories = ["Clothes", "clothes", "Furniture", "furniture", "Shoes",
-  "shoes", "Technology", "technology", "Miscellaneous", "miscellaneous"]
+const approvedCategories = ["clothes", "furniture", "shoes", "technology", "miscellaneous", "vegetables"]
 
 export const handler: EventBridgeHandler<
   "Scheduled Event",
@@ -50,12 +47,18 @@ export const handler: EventBridgeHandler<
     console.log("API did not return an array");
     return;
   }
+  console.log("Pulled the following raw from Platzi: ", storeFront);
 
   // Sanatize the inputs
   // Remove products that have a bad name
+  console.log("Before any filters:", storeFront.length);
   storeFront = storeFront.filter( p => !badNames.some(name => p.title.includes(name)));
+  console.log("After name filter:", storeFront.length);
   // Remove products that are not in one of the approved categories
-  storeFront = storeFront.filter( p => approvedCategories.some(category => p.category.name.includes(category)));
+  storeFront = storeFront.filter(p => 
+  approvedCategories.includes(p.category.name)
+);
+  console.log("After category filter:", storeFront.length);
 
   // Store all products available on the storefront
   const storeFrontProducts = storeFront.map((rawProduct: palatziProduct) => ({
