@@ -131,7 +131,6 @@ function parseNotification(content) {
                 <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
                 <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
                 <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
-                <p className="mb-0"><strong>Points:</strong> {driver.points}</p>
               </Card.Body>
             </Card>
           </Col>
