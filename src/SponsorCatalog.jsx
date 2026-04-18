@@ -7,6 +7,8 @@ import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import { AmplifyError } from "@aws-amplify/core/internals/utils";
 import useAmplifyAuth from "./UseAmplifyAuth";
 
+import { Container, Row, Col, Card, Tab, Tabs, Placeholder} from "react-bootstrap";
+
 export default function SponsorCatalog() {
 
     // Page State Trackers
@@ -23,6 +25,7 @@ export default function SponsorCatalog() {
     const [wishlist, updateWishlist] = useState(null);
     // Catalog Filters
 
+    // Buisness Logic
     useEffect(() => {
 
         async function getCogUserData() {
@@ -55,7 +58,14 @@ export default function SponsorCatalog() {
             return data;
         }
 
-        async function populateCatalogs (dId) {
+        async function populateCatalogs (dId, sponsors) {
+            let allCatalogs = new Map()
+            // Initilize all catalogs to a blank state
+            for (const sponsor of sponsors) {
+                allCatalogs.set(sponsor.sponsorId, [])
+            }
+
+            // Add all products to each respective catalog
             const {data, errors} = await client.models.CatalogProduct.list({
                 filter: {
                     driverId: { eq : dId }
@@ -63,11 +73,23 @@ export default function SponsorCatalog() {
             });
 
             if (errors) {
-                console.log("Error: Could not obtain catalogs for driver id:" + dI, errors);                 
+                console.log("Error: Could not obtain catalogs for driver id:" + dId, errors);                 
             } else if (data === null) {
-                console.log("Error: Could not obtain catalogs for driver id:" + dI + " : No catalogs were obtained");          
+                console.log("Error: Could not obtain catalogs for driver id:" + dId + " : No catalogs were obtained");          
             }
-            console.log("TEST: Obtained products assignments: ", data);
+            
+            for (const assignment of data) {
+                const product = await assignment.product();
+
+                const bucket = allCatalogs.get(assignment.sponsorId);
+
+                if (bucket) {
+                    bucket.push(product.data);
+                }
+            }
+
+            console.log("Retrieved the following catalogs: ", allCatalogs);
+            return allCatalogs;
         }
 
         async function populateCart(ampData) {
@@ -120,7 +142,7 @@ export default function SponsorCatalog() {
                 return [];
             }
 
-            console.log("Retried products from Amplify Data: ", products);
+            console.log("Retrieved products from Amplify Data: ", products);
             return products;
         }
 
@@ -167,11 +189,15 @@ export default function SponsorCatalog() {
             const dbData = await getAmpUserData(cogData.id);
 
             updateUserData(cogData);
-            updateSponsors(await populateSponsors(dbData));
+
+            const sponsorData = await populateSponsors(dbData);
+            updateSponsors(sponsorData);
+
             updatePointTotals(await populatePointTotals(cogData.id));
             updateCart(await populateCart(dbData));
             updateWishlist(await populateWishlist(dbData));
-            updateCatalogs(await populateCatalogs(dbData));
+
+            updateCatalogs(await populateCatalogs(dbData.driverId, sponsorData));
         }
 
         loadData();
@@ -190,10 +216,49 @@ export default function SponsorCatalog() {
         setIsLoading(false);
     }, [pointTotals, sponsors, catalogs, cart, wishlist]);
 
-    // TODO: This is here for the sake of testing. Remove once we can get a succesful load
+    // UI Components
+    function catalogTabs() {
+        return
+    }
+
+    // Page
     if (isLoading) {
         return (<h1>Loading...</h1>);
-    } else {
-        return (<h1>Success!</h1>)
     }
+    
+    return (
+        <Container fluid>
+            <h1 className="mx-auto" >Drivers Catalog</h1>
+            <Tabs
+                defaultActiveKey={sponsors[0].sponsorId}
+                id="catalogs-tab"
+                className="px-3"
+            >
+                
+                {sponsors.map((sponsor, index) => (
+                    <Tab 
+                        key={sponsor.sponsorId}
+                        eventKey={sponsor.sponsorId} 
+                        title={sponsor.affiliation ?? `Catalog ${index+1}`}
+                    >
+                        {/* Catalog Page Content */}
+                        <Row className="m-3">
+                            <Col md={3}>
+                                <Card className="w-100 h-100">
+                                    <h2>Account Balance</h2>
+                                    <h1>{pointTotals.get(sponsor.sponsorId)} PTs</h1>
+                                </Card>
+                            </Col>
+                            <Col md={9}>
+                                <Card className="w-100 h-100">
+
+                                </Card>
+                            </Col>
+                        </Row>
+                    </Tab>
+                ))}
+            </Tabs>
+
+        </Container>
+    )
 }
