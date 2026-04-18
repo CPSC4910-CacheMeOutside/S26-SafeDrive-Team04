@@ -148,18 +148,19 @@ function DriverPage() {
 
   const applicationsByStatus = useMemo(() => {
     return {
-      pending: driver.applications.filter((app) => app.status === "pending"),
-      approved: driver.applications.filter((app) => app.status === "approved"),
+      pending:  driver.applications.filter((app) => app.status === "pending"),
+      accepted: driver.applications.filter((app) => app.status === "accepted"),
     };
   }, [driver.applications]);
 
   const getBadgeVariant = (status) => {
     switch (status) {
       case "active":
-      case "approved":
+      case "accepted":
         return "success";
       case "pending":
         return "warning";
+      case "denied":
       case "rejected":
         return "danger";
       default:
@@ -222,35 +223,85 @@ function DriverPage() {
         </Row>
 
         <Tabs defaultActiveKey="sponsors" className="mb-4">
-          <Tab eventKey="sponsors" title="My Sponsors">
+          <Tab eventKey="sponsors" title={`Associated Sponsors${driver.sponsors.length ? ` (${driver.sponsors.length})` : ""}`}>
             <Card className="mt-3">
               <Card.Body>
-                <Card.Title>Associated Sponsors</Card.Title>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <Card.Title className="mb-0">Associated Sponsors</Card.Title>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    disabled={sponsorsLoading}
+                    onClick={async () => {
+                      setSponsorsLoading(true);
+                      try {
+                        const dsResult = await client.models.DriverSponsor.list({
+                          filter: { driverId: { eq: driver.id } }
+                        });
+                        const dsRows = dsResult.data ?? [];
+                        const sponsorList = await Promise.all(
+                          dsRows.map(async (ds) => {
+                            let affiliation = ds.sponsorId;
+                            try {
+                              const sponsorResult = await client.models.Sponsor.get({ sponsorId: ds.sponsorId });
+                              affiliation = sponsorResult?.data?.affiliation || ds.sponsorId;
+                            } catch (_) {}
+                            return {
+                              id: ds.sponsorId,
+                              name: affiliation,
+                              points: ds.points ?? 0,
+                              status: "active",
+                              joinedDate: ds.createdAt?.slice(0, 10) ?? ""
+                            };
+                          })
+                        );
+                        setDriver((prev) => ({ ...prev, sponsors: sponsorList }));
+                      } catch (err) {
+                        console.error("Failed to refresh sponsors:", err);
+                      } finally {
+                        setSponsorsLoading(false);
+                      }
+                    }}
+                  >
+                    {sponsorsLoading ? "Refreshing…" : "↻ Refresh"}
+                  </Button>
+                </div>
+
                 {sponsorsLoading ? (
                   <div className="text-muted">Loading sponsors...</div>
                 ) : !driver.sponsors.length ? (
-                  <div className="text-muted">No sponsors associated yet.</div>
+                  <div className="text-center py-4">
+                    <div className="text-muted mb-2">No sponsors associated yet.</div>
+                    <div className="text-muted" style={{ fontSize: "0.85rem" }}>
+                      Apply to a sponsor — once your application is accepted, they will appear here.
+                    </div>
+                    <Button variant="primary" size="sm" className="mt-3" onClick={() => navigate("/sponsor-list")}>
+                      Browse Sponsors
+                    </Button>
+                  </div>
                 ) : (
-                  <ListGroup>
-                    {driver.sponsors.map((sponsor) => (
-                      <ListGroup.Item key={sponsor.id}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <strong>{sponsor.name}</strong>
-                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                              Joined: {sponsor.joinedDate}
+                  <>
+                    <div className="text-muted mb-3" style={{ fontSize: "0.875rem" }}>
+                      You are associated with <strong>{driver.sponsors.length}</strong> sponsor{driver.sponsors.length !== 1 ? "s" : ""}.
+                    </div>
+                    <ListGroup>
+                      {driver.sponsors.map((sponsor) => (
+                        <ListGroup.Item key={sponsor.id}>
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div>
+                              <strong style={{ fontSize: "1rem" }}>{sponsor.name}</strong>
+                              <div className="text-muted" style={{ fontSize: "0.85rem", marginTop: "2px" }}>
+                                Member since: {sponsor.joinedDate || "N/A"}
+                              </div>
                             </div>
-                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                              Points with this sponsor: <strong>{sponsor.points}</strong>
-                            </div>
+                            <Badge bg={getBadgeVariant(sponsor.status)} style={{ flexShrink: 0, marginTop: "2px" }}>
+                              {sponsor.status}
+                            </Badge>
                           </div>
-                          <Badge bg={getBadgeVariant(sponsor.status)}>
-                            {sponsor.status}
-                          </Badge>
-                        </div>
-                      </ListGroup.Item>
-                    ))}
-                  </ListGroup>
+                        </ListGroup.Item>
+                      ))}
+                    </ListGroup>
+                  </>
                 )}
               </Card.Body>
             </Card>
