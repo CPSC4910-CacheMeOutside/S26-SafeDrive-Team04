@@ -350,16 +350,16 @@ function AdminPage(){
 
   const handleViewDriverAccount = async () => {
     if (!selectedDriverUser) return;
-
     try {
       const data = await startDriverView(selectedDriverUser.username);
-
       localStorage.setItem(
         'driverViewSession',
         JSON.stringify({
           sessionId: data.sessionId,
           driverUsername: data.driverUsername,
           driverName: data.driverName,
+          driverEmail: selectedDriverUser.email || "",
+          driverPhone: selectedDriverUser.phone_number || "",
           expiresAt: data.expiresAt,
         })
       );

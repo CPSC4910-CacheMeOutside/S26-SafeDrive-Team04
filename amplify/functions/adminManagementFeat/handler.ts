@@ -1,7 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import crypto from 'crypto';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import {
   CognitoIdentityProviderClient,
   ListUsersCommand,
@@ -16,6 +16,10 @@ import {
 const cognito = new CognitoIdentityProviderClient({});
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const driverViewTable = 'DriverViewSession-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
+
+const driverTable = 'Driver-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
+const driverSponsorTable = 'DriverSponsor-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
+const sponsorTable = 'Sponsor-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
 
 const APP_GROUPS = ['Admin', 'Driver', 'Sponsor'] as const;
 
@@ -246,6 +250,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
+    console.log('ENV CHECK', {
+      DRIVER_TABLE_NAME: process.env.DRIVER_TABLE_NAME,
+      DRIVER_SPONSOR_TABLE_NAME: process.env.DRIVER_SPONSOR_TABLE_NAME,
+      SPONSOR_TABLE_NAME: process.env.SPONSOR_TABLE_NAME,
+    });
+
     if (event.httpMethod === 'POST' && path.endsWith('/admin/driver-view/start')) {
       const adminSub = getClaimSub(event);
 
@@ -393,6 +403,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     if (event.httpMethod === 'GET' && path.endsWith('/admin/driver-view/dashboard')) {
+        if (!driverTable || !driverSponsorTable || !sponsorTable) {
+  return {
+    statusCode: 500,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      message: 'Missing dashboard table env vars',
+      driverTable,
+      driverSponsorTable,
+      sponsorTable,
+    }),
+  };
+}
       const adminSub = getClaimSub(event);
 
       if (!adminSub) {
@@ -491,6 +513,52 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         [attrs.given_name, attrs.family_name].filter(Boolean).join(' ') ??
         '';
 
+      const driverId = session.driverUsername;
+
+      const driverRecordResult = await ddb.send(new GetCommand({TableName: driverTable, Key: { driverId },}));
+      const driverRecord = driverRecordResult.Item ?? {};
+      const totalPoints = driverRecord.points ?? 0;
+
+      const driverSponsorResult = await ddb.send(
+        new ScanCommand({
+          TableName: driverSponsorTable,
+          FilterExpression: 'driverId = :driverId',
+          ExpressionAttributeValues: {
+            ':driverId': driverId,
+          },
+        })
+      );
+
+      const driverSponsorItems = Array.isArray(driverSponsorResult.Items)
+        ? driverSponsorResult.Items
+        : [];
+
+      const sponsors = await Promise.all(
+        driverSponsorItems.map(async (rel: any) => {
+          let sponsorName = rel.sponsorId;
+          try {
+            const sponsorResult = await ddb.send(
+              new GetCommand({
+                TableName: sponsorTable,
+                Key: { sponsorId: rel.sponsorId },
+              })
+            );
+            sponsorName =
+              sponsorResult.Item?.affiliation ||
+              sponsorResult.Item?.name ||
+              rel.sponsorId;
+          } catch (error) {
+            console.error('Failed to load sponsor', rel.sponsorId, error);
+          }
+          return {
+            id: rel.sponsorId,
+            name: sponsorName,
+            points: rel.points ?? 0,
+            status: 'active',
+          };
+        })
+      );
+
       return {
         statusCode: 200,
         headers: corsHeaders,
@@ -503,8 +571,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           email: attrs.email ?? '',
           phoneNumber: attrs.phone_number ?? '',
           groups,
-          points: 0,
-          sponsors: [],
+          points: totalPoints,
+          sponsors,
           applications: [],
         }),
       };
@@ -636,7 +704,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       headers: corsHeaders,
       body: JSON.stringify({
         message: 'Server error',
-        error: error?.message ?? 'Unknown error',
+        error: error?.message,
+        stack: error?.stack,
       }),
     };
   }

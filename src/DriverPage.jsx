@@ -11,10 +11,12 @@ import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
 import { fetchCurrentDriverAssignments } from "./driverPage-api";
 import { fetchNotificationsForUser } from "./notification-api";
+import { getCurrentDriverView, stopDriverView } from './adminDriverView-api';
 import { useNotifications } from "./NotificationContext";
-import { getCurrentDriverView, getDriverViewDashboard } from './adminDriverView-api';
 import { useNavigate } from 'react-router-dom';
-import { stopDriverView } from './adminDriverView-api';
+import { generateClient } from 'aws-amplify/data';
+
+const client = generateClient();
 
 function DriverPage() {
   const { addNotification, notifications, closeNotification } = useNotifications();
@@ -36,50 +38,119 @@ function DriverPage() {
   });
 
   useEffect(() => {
-    async function loadUser() {
+    async function loadPage() {
+      const raw = localStorage.getItem("driverViewSession");
+
+      if (raw) {
+      const stored = JSON.parse(raw);
+
       try {
-        const [session, assignmentData] = await Promise.all([
-          fetchAuthSession(),
-          fetchCurrentDriverAssignments(),
-        ]);
+      const sessionData = await getCurrentDriverView(stored.sessionId);
 
-        const idPayload = session.tokens?.idToken?.payload ?? {};
-        const accessPayload = session.tokens?.accessToken?.payload ?? {};
+      const driverId = sessionData.driverUsername;
 
-        const groups =
-          idPayload["cognito:groups"] ||
-          accessPayload["cognito:groups"] ||
-          [];
-        const backendNotifications = await fetchNotificationsForUser(
-          assignmentData.driverId
-        );
+      const driverResult = await client.models.Driver.get({ driverId });
 
-        backendNotifications.forEach((n) => {
-          addNotification({
-            id: n.nId,
-            description: n.content,
-            timestamp: Date.now(),
-          });
-        });
+      const relationshipResult = await client.models.DriverSponsor.list({
+        filter: { driverId: { eq: driverId } },
+      });
 
-        setDriver((prev) => ({
-          ...prev,
-          username: assignmentData.driverId || "",
-          fullName: assignmentData.fullName || "",
-          email: assignmentData.email || "",
-          phoneNumber: assignmentData.phoneNumber || "",
-          groups: Array.isArray(groups) ? groups : [],
-          points: assignmentData.totalPoints || 0,
-          sponsors: Array.isArray(assignmentData.sponsors) ? assignmentData.sponsors : [],
-        }));
-      } catch (error) {
-        console.error("Failed to load Cognito user info:", error);
-      }
-      
+      const relationships = Array.isArray(relationshipResult?.data)
+        ? relationshipResult.data
+        : [];
+
+      const sponsors = await Promise.all(
+        relationships.map(async (rel) => {
+          let sponsorName = rel.sponsorId;
+
+          try {
+            const sponsorResult = await client.models.Sponsor.get({
+              sponsorId: rel.sponsorId,
+            });
+
+            sponsorName =
+              sponsorResult?.data?.affiliation ||
+              sponsorResult?.data?.name ||
+              rel.sponsorId;
+          } catch (error) {
+            console.error("Failed to load sponsor", rel.sponsorId, error);
+          }
+
+          return {
+            id: rel.sponsorId,
+            name: sponsorName,
+            points: rel.points ?? 0,
+            status: "active",
+          };
+        })
+      );
+
+      setAdminView(true);
+      setViewedDriver(sessionData);
+      setDriver({
+        username: driverId || "",
+        fullName: driverResult?.data?.fullName || stored.driverName || sessionData.driverName || "",
+        email: stored.driverEmail || driverResult?.data?.email || "",
+        phoneNumber: stored.driverPhone || driverResult?.data?.phoneNumber || "",
+        groups: ["Driver"],
+        points: driverResult?.data?.points ?? 0,
+        sponsors,
+        applications: [],
+      });
+
+      return;
+    } catch (error) {
+      console.error("Admin driver view failed:", error);
+      setAdminView(true);
+      setViewedDriver({
+        driverSub: stored.driverUsername,
+      });
+      return;
     }
+  }
+    try {
+      const [session, assignmentData] = await Promise.all([
+        fetchAuthSession(),
+        fetchCurrentDriverAssignments(),
+      ]);
 
-    loadUser();
-  }, []);
+      const idPayload = session.tokens?.idToken?.payload ?? {};
+      const accessPayload = session.tokens?.accessToken?.payload ?? {};
+
+      const groups =
+        idPayload["cognito:groups"] ||
+        accessPayload["cognito:groups"] ||
+        [];
+
+      const backendNotifications = await fetchNotificationsForUser(
+        assignmentData.driverId
+      );
+
+      backendNotifications.forEach((n) => {
+        addNotification({
+          id: n.nId,
+          description: n.content,
+          timestamp: Date.now(),
+        });
+      });
+
+      setDriver({
+        username: assignmentData.driverId || "",
+        fullName: assignmentData.fullName || "",
+        email: assignmentData.email || "",
+        phoneNumber: assignmentData.phoneNumber || "",
+        groups: Array.isArray(groups) ? groups : [],
+        points: assignmentData.totalPoints || 0,
+        sponsors: Array.isArray(assignmentData.sponsors) ? assignmentData.sponsors : [],
+        applications: Array.isArray(assignmentData.applications) ? assignmentData.applications : [],
+      });
+    } catch (error) {
+      console.error("Failed to load driver page:", error);
+    }
+  }
+
+  loadPage();
+}, []);
 
   const applicationsByStatus = useMemo(() => {
     return {
@@ -124,25 +195,6 @@ function parseNotification(content) {
 
   return content;
 }
-
-  useEffect(() => {
-    const loadAdminView = async () => {
-      const raw = localStorage.getItem('driverViewSession');
-      if (!raw) return;
-      try {
-        const stored = JSON.parse(raw);
-        const sessionData = await getCurrentDriverView(stored.sessionId);
-        const dashboardData = await getDriverViewDashboard(stored.sessionId);
-        setAdminView(true);
-        setViewedDriver(sessionData);
-        setDriver(dashboardData);
-      } catch (error) {
-        console.error(error);
-        localStorage.removeItem('driverViewSession');
-      }
-    };
-    loadAdminView();
-  }, []);
 
   const handleExitDriverView = async () => {
     try {
