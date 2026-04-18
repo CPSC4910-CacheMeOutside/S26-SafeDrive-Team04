@@ -61,24 +61,33 @@ export default function SponsorCatalog() {
 
             if (errors) {
                 console.log(`Error: Could not obtain catalogs for driver id:${ampData.driverId}:`, errors);
-                return obtainedCatalogs;
             } else if (dbCatalogs === null) {
                 console.log(`Error: Could not obtain catalogs for driver id:${ampData.driverId}: No catalogs were found`);
-                return obtainedCatalogs;
             }
-            console.log("Retrieved catalogs from Amplify Data: ", dbCatalogs);
-
-            for (const catalog of dbCatalogs) {
-                const {data: products, errors} = await catalog.products();
+            console.log("Step 1: Get catalogs", dbCatalogs)
+            for (const icatalog of dbCatalogs) {
+                const {data: pAssignment, errors} = await icatalog.products();
 
                 if (errors) {
-                    console.log(`Error: Could not obtain products for catalog id:${catalog.id}:`, errors);
-                    return new Map();
-                } else if (products === null) {
-                    console.log(`Error: Could not obtain products for catalog id:${catalog.id}: No products were found`);
-                    return new Map();
+                    console.log(`Error: Could not obtain products for catalog id:${icatalog.id}:`, errors);
+                } else if (pAssignment === null) {
+                    console.log(`Error: Could not obtain products for catalog id:${icatalog.id}: No products were found`);
                 }
-                obtainedCatalogs.set(catalog.sponsorId, products);
+                console.log("Step 2: Get assignments", pAssignment)
+                let products = [];
+
+                for (const p of pAssignment) {
+                    const {data: product, pErrors} = await p.product();
+
+                    if (pErrors) {
+                        console.log(`Error: Could not obtain product for product assignment id:${p.id}:`, pErrors);
+                    } else if (product === null) {
+                        console.log(`Error: Could not obtain product for product assignment id:${p.id}: No product was found`);
+                    }
+                    console.log("Step 3: Get products, ", product)
+                    products.push(product);
+                }
+                obtainedCatalogs.set(icatalog.sponsorId, products);
             }
             console.log("Retrieved catalogs from Amplify Data: ", obtainedCatalogs);
             return obtainedCatalogs;
@@ -181,11 +190,11 @@ export default function SponsorCatalog() {
             const dbData = await getAmpUserData(cogData.id);
 
             updateUserData(cogData);
-            updateCatalogs(await populateCatalogs(dbData));
             updateSponsors(await populateSponsors(dbData));
             updatePointTotals(await populatePointTotals(cogData.id));
             updateCart(await populateCart(dbData));
             updateWishlist(await populateWishlist(dbData));
+            updateCatalogs(await populateCatalogs(dbData));
         }
 
         loadData();
@@ -194,11 +203,11 @@ export default function SponsorCatalog() {
     // Check to ensure all user data is loaded
     useEffect(() => {
         if (userData === null) return;
-        if (catalogs === null) return;
         if (sponsors === null) return;
         if (pointTotals === null) return;
         if (cart === null) return;
         if (wishlist === null) return;
+        if (catalogs === null) return;
 
         console.log("Page loading finished!");
         setIsLoading(false);
