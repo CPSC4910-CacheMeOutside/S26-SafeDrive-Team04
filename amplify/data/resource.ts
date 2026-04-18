@@ -24,7 +24,7 @@ const SafeDriveSchema = a.schema({
   Sponsor: a.model({
     sponsorId: a.id().required(),
     affiliation: a.string(),
-    pointToDollarRatio: a.float(),
+    pointToDollarRatio: a.float().default(1),
 
     drivers: a.hasMany("DriverSponsor", 'sponsorId'),
     applications: a.hasMany('Application', 'sponsorId'),

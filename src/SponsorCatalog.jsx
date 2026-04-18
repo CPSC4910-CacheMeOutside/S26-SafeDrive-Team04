@@ -7,7 +7,7 @@ import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import { AmplifyError } from "@aws-amplify/core/internals/utils";
 import useAmplifyAuth from "./UseAmplifyAuth";
 
-import { Container, Row, Col, Card, Tab, Tabs, Placeholder} from "react-bootstrap";
+import { Container, Row, Col, Card, Tab, Tabs, Button, Modal, Carousel} from "react-bootstrap";
 
 export default function SponsorCatalog() {
 
@@ -84,6 +84,8 @@ export default function SponsorCatalog() {
                 const bucket = allCatalogs.get(assignment.sponsorId);
 
                 if (bucket) {
+                    const pData = product.data;
+                    pData.imgs = JSON.parse(pData.imgs)
                     bucket.push(product.data);
                 }
             }
@@ -223,24 +225,65 @@ export default function SponsorCatalog() {
     }, [pointTotals, sponsors, catalogs, cart, wishlist]);
 
     // UI Components
-    function Catalog(sId) {
 
-        const {activeCatalog, setActiveCatalog} = useState(catalogs.get(sId));
-        const {itemPTPrice, setItemPTPrice} = useState()
+    function Catalog({sId}) {
+
+        function requestModal({product}) {
+            const [show, setShow] = useState(false);
+
+            const handleClose = () => setShow(false);
+            const handleShow = () => setShow(true);
+
+            <Modal show={show} onHide={handleClose}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Request {product.title}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Woohoo, you are reading this text in a modal!</Modal.Body>
+                <Modal.Footer>
+                <Button variant="secondary" onClick={handleClose}>
+                    Cancel
+                </Button>
+                <Button variant="primary" onClick={handleClose}>
+                    Complete Request
+                </Button>
+                </Modal.Footer>
+            </Modal>
+        }
+
+        console.log("Loading catalog under the provided id...", sId);
+
+        const [activeCatalog, setActiveCatalog] = useState(catalogs.get(sId));
+        const [ptToDollar, setPtToDollar] = useState(sponsors.find( s => s.sponsorId).pointtoDollarRatio);
+
+        if (activeCatalog === null) {
+            console.log("Error: No catalog under the provided id was found", sId);
+            return;
+        }
+
+        if (ptToDollar === null) {
+            console.log("Error: No point to dollar conversion ratio was found", sId);
+            return;
+        }
 
         return (
             <Container>
-                {activeCatalog.map( (product) => (
-                    <Card>
-                        <Card.Body>
-                            <Card.Title>{product.title}</Card.Title>
-                            <Card.Subtitle>{}</Card.Subtitle>
-                            <Card.Text>{product.synop}</Card.Text>
-                        </Card.Body>
-                    </Card>
+            <Row>
+                {activeCatalog.map((product, index) => (
+                    <Col key={index} xs={12} md={4} className="mb-4">
+                        <Card style={{ height: "100%" }}>
+                            <Card.Img variant="top" src={product.imgs[0]} />
+                            <Card.Body style={{ height: "100px" }}>
+                                <Card.Title>{product.title}</Card.Title>
+                                <Card.Subtitle>
+                                    {Number(product.price)} PTs
+                                </Card.Subtitle>
+                                <Button variant="primary">Request</Button>
+                            </Card.Body>
+                        </Card>
+                    </Col>
                 ))}
-
-            </Container>
+            </Row>
+        </Container>
         );
     }
 
@@ -274,8 +317,8 @@ export default function SponsorCatalog() {
                                 </Card>
                             </Col>
                             <Col md={9}>
-                                <Card className="w-100 h-100">
-
+                                <Card style={{ overflowY: 'auto', maxHeight: "500px" }} className="w-100 h-100">
+                                    <Catalog sId={sponsor.sponsorId} />
                                 </Card>
                             </Col>
                         </Row>
