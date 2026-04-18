@@ -147,6 +147,7 @@ export default function SponsorCatalog() {
         }
 
         async function populateSponsors(ampData) {
+            let returnedSponsors = [];
             const {data: sponsors, errors} = await ampData.sponsors();
 
             if (errors) {
@@ -156,8 +157,13 @@ export default function SponsorCatalog() {
                 console.log(`Error: Could not obtain sponsors for driver id:${ampData.driverId}: No sponsors were found`);
                 return [];
             }
-            console.log("Retrieved sponsors from Amplify Data: ", sponsors);
-            return sponsors;
+
+            for (const s of sponsors) {
+                const sponsor = await s.sponsor()
+                returnedSponsors.push(sponsor.data)
+            }
+            console.log("Retrieved sponsors from Amplify Data: ", returnedSponsors);
+            return returnedSponsors;
         }
 
         async function populatePointTotals(id) {
@@ -217,11 +223,29 @@ export default function SponsorCatalog() {
     }, [pointTotals, sponsors, catalogs, cart, wishlist]);
 
     // UI Components
-    function catalogTabs() {
-        return
+    function Catalog(sId) {
+
+        const {activeCatalog, setActiveCatalog} = useState(catalogs.get(sId));
+        const {itemPTPrice, setItemPTPrice} = useState()
+
+        return (
+            <Container>
+                {activeCatalog.map( (product) => (
+                    <Card>
+                        <Card.Body>
+                            <Card.Title>{product.title}</Card.Title>
+                            <Card.Subtitle>{}</Card.Subtitle>
+                            <Card.Text>{product.synop}</Card.Text>
+                        </Card.Body>
+                    </Card>
+                ))}
+
+            </Container>
+        );
     }
 
     // Page
+
     if (isLoading) {
         return (<h1>Loading...</h1>);
     }
