@@ -15,6 +15,7 @@ import { ListGroupItem } from 'react-bootstrap';
 import UpdateAbout from './UpdateAbout';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 import { generateClient } from 'aws-amplify/data';
+import ManageSponsorsTab from "./ManageSponsorsTab";
 import ManageAdminsTab from "./ManageAdminsTab";
 
 const client = generateClient();
@@ -84,6 +85,7 @@ function AdminPage(){
   const [deductError, setDeductError] = useState("");
   const [updatingDriverPoints, setUpdatingDriverPoints] = useState(false);
   const [selectedDriverRecord, setSelectedDriverRecord] = useState(null);
+  const [selectedSponsorUser, setSelectedSponsorUser] = useState(null);
   const [selectedAdminUser, setSelectedAdminUser] = useState(null);
 
   const selectedDriverUser = useMemo(
@@ -682,7 +684,7 @@ function AdminPage(){
 
 
   return(
-    <Container className="mt-4">
+    <Container fluid className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{t('admin.title')}</h1>
         <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
@@ -691,6 +693,7 @@ function AdminPage(){
           <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
             <Nav variant="tabs">
               <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="manageSponsors">Manage Sponsors</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="manageAdmins">Manage Admins</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="pendingUsers">Manage Pending Users</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
@@ -740,6 +743,32 @@ function AdminPage(){
         {selectedAdminUser.name ||
           selectedAdminUser.preferred_username ||
           selectedAdminUser.username}
+      </span>
+    ) : (
+      <span className="text-muted">None</span>
+    )}
+  </div>
+)}
+
+{activeTab === "manageSponsors" && (
+  <div className="ms-3 pb-2 text-nowrap">
+    <span style={{ color: "black", fontWeight: "600" }} className="me-2">
+      Selected Sponsor:
+    </span>
+    {selectedSponsorUser ? (
+      <span
+        style={{
+          backgroundColor: "#10b981",
+          color: "white",
+          padding: "4px 10px",
+          borderRadius: "8px",
+          fontWeight: "500",
+        }}
+      >
+        {selectedSponsorUser.affiliation ||
+          selectedSponsorUser.name ||
+          selectedSponsorUser.preferred_username ||
+          selectedSponsorUser.username}
       </span>
     ) : (
       <span className="text-muted">None</span>
@@ -986,6 +1015,15 @@ function AdminPage(){
               </Row>
               </Col>
               </Row>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="manageSponsors">
+              <ManageSponsorsTab 
+                onSelectSponsor={setSelectedSponsorUser}
+                relationships={relationships}
+                loadRelationships={loadRelationships}
+                getDriverLabel={getDriverLabel} 
+              />
             </Tab.Pane>
 
             <Tab.Pane eventKey="manageAdmins">
