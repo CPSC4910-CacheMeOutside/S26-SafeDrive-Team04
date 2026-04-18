@@ -32,6 +32,14 @@ import {
   fetchSponsorUsers,
 } from "./adminUpdateDriverInfo-api";
 
+
+import {
+  createUser,
+  deleteUser,
+  fetchAdminUsers,
+
+}from "./adminUserMgmt-api";
+
 function AdminPage(){
   const [editingPoints, setEditingPoints] = useState({});
   const [savingPoints, setSavingPoints] = useState(false);
@@ -64,6 +72,16 @@ function AdminPage(){
   const [relationshipMessage, setRelationshipMessage] = useState("");
   const [relationshipError, setRelationshipError] = useState("");
 
+  const [newUsername, setNewUsername] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newTempPassword, setNewTempPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState("Driver");
+  const [newMgmtMessage, setNewMgmtMessage] = useState("");
+  const [userMgmtError, setUserMgmtError] = useState("");
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [allManagedUsers, setAllManagedUsers] = useState([]);
+  const [selectedManagedUsername, setSelectedManagedUsername] = useState("");
 
 
   const selectedDriverUser = useMemo(
@@ -80,22 +98,6 @@ function AdminPage(){
     return items[0]?.[key] || "";
   };
 
-  const loadSponsorUsers = async () => {
-    try {
-      setLoadingSponsors(true);
-      const data = await fetchSponsorUsers();
-      const users = Array.isArray(data) ? data : [];
-      setSponsorUsers(users);
-      const first = users[0]?.username ?? "";
-      setSelectedSponsorUsername(first);
-      if (first) await loadSponsorRatio(first);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoadingSponsors(false);
-    }
-  };
-
   const loadSponsorRatio = async (username) => {
     try {
       const result = await client.models.Sponsor.get({ sponsorId: username });
@@ -109,11 +111,6 @@ function AdminPage(){
     }
   };
 
-  const handleSponsorSelect = async (username) => {
-    setSelectedSponsorUsername(username);
-    await loadSponsorRatio(username);
-  };
-
   const handleSaveRatio = async () => {
     const num = parseFloat(sponsorRatioInput);
     if (isNaN(num) || num < 0.001 || num > 1.0) {
@@ -123,11 +120,24 @@ function AdminPage(){
     try {
       setSavingRatio(true);
       setSponsorRatioError("");
-      const existing = await client.models.Sponsor.get({ sponsorId: selectedSponsorUsername });
+
+      if (!selectedSponsorId) {
+        setSponsorRatioError("Please select a sponsor.");
+        return;
+      }
+
+      const existing = await client.models.Sponsor.get({ sponsorId: selectedSponsorId });
+
       if (existing?.data) {
-        await client.models.Sponsor.update({ sponsorId: selectedSponsorUsername, pointToDollarRatio: num });
+        await client.models.Sponsor.update({
+          sponsorId: selectedSponsorId,
+          pointToDollarRatio: num,
+        });
       } else {
-        await client.models.Sponsor.create({ sponsorId: selectedSponsorUsername, pointToDollarRatio: num });
+        await client.models.Sponsor.create({
+          sponsorId: selectedSponsorId,
+          pointToDollarRatio: num,
+        });
       }
       setSponsorRatioSuccess("Ratio saved successfully!");
       setTimeout(() => setSponsorRatioSuccess(""), 3000);
@@ -173,13 +183,17 @@ function AdminPage(){
   loadUnassignedUsers();
   loadSponsors();
   loadRelationshipDrivers();
+  loadManagedUsers();
   }, []);
 
   useEffect(() => {
   if (selectedSponsorId) {
     loadRelationships(selectedSponsorId);
+    loadSponsorRatio(selectedSponsorId);
   } else {
-    setRelationships([]);
+    setSponsorRatioInput(DEFAULT_RATIO.toString());
+    setSponsorRatioError("")
+    setSponsorRatioSuccess("");
   }
   }, [selectedSponsorId]);
 
@@ -428,27 +442,138 @@ function AdminPage(){
 
 
 
-  //Handlers for reading proper lables for Drivers and Sponsors
-  const getDriverLabel = (driverId) => {
-  const match = driverUsers.find((u) => u.username === driverId);
 
-  if (!match) return driverId;
 
-  return (
-    match.preferred_username ||
-    match.name ||
-    match.email ||
-    match.username ||
-    driverId
-    );
+    const loadManagedUsers = async () => {
+    try {
+      const [unassigned, drivers, sponsors, admins] = await Promise.all([
+        fetchUnassignedUsers(),
+        fetchDriverUsers(),
+        fetchSponsorUsers(),
+        fetchAdminUsers(),
+      ]);
+
+      const combined = [
+        ...(unassigned || []),
+        ...(drivers || []),
+        ...(sponsors || []),
+        ...(admins || []),
+      ];
+
+      const deduped = Array.from(
+        new Map(combined.map((u) => [u.username, u])).values()
+      );
+
+      setAllManagedUsers(deduped);
+      setSelectedManagedUsername(deduped[0]?.username || "");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const getSponsorLabel = (sponsorId) => {
-  const match = sponsors.find((s) => s.sponsorId === sponsorId);
+  const handleCreateUser = async() => {
+    if(!newUsername || !newEmail || !newTempPassword){
+      setUserMgmtError("All Fields Required");
+      return;
+    }
+    try{
+      setCreatingUser(true);
+      setUserMgmtError("");
+      setNewMgmtMessage("");
 
-  if (!match) return sponsorId;
+      await createUser({
+        username: newUsername,
+        email: newEmail,
+        temporaryPassword: newTempPassword,
+        group: newUserRole,
+      });
+      setNewMgmtMessage("User Created Successfully");
 
-  return match.affiliation || sponsorId;
+      setNewUsername("");
+      setNewEmail("");
+      setNewTempPassword("");
+      setNewUserRole("Driver");
+
+      await loadUnassignedUsers();
+      await loadDriverUsers();
+      await loadSponsors();
+    } catch(err){
+        console.error("create user error:", err);
+        setUserMgmtError(
+          err?.message ||
+          err?.response?.data?.message ||
+          err?.errors?.[0]?.message ||
+          "Failed to create user"
+        );
+    } finally{
+      setCreatingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if(!selectedManagedUsername){
+      setUserMgmtError("select a user to delete");
+      return;
+      
+    }
+    try{
+      setDeletingUser(true);
+      setUserMgmtError("");
+      setNewMgmtMessage("");
+
+      await deleteUser(selectedManagedUsername);
+
+      setNewMgmtMessage(`${selectedManagedUsername} deleted.`);
+
+      setAllManagedUsers((prev) =>
+      prev.filter((u) => u.username !== selectedManagedUsername)
+    );
+    setSelectedManagedUsername("");
+
+    } catch(err){
+      console.error(err);
+      setUserMgmtError("Failed to delete user");
+    } finally {
+      setDeletingUser(false);
+    }
+  };
+
+  const getSponsorRatio = (sponsorId) => {
+    const sponsor = sponsors.find((s) => s.sponsorId === sponsorId);
+    return sponsor?.pointToDollarRatio ?? DEFAULT_RATIO;
+  };
+
+  const getEstimatedDollarAmount = (points, sponsorId) => {
+    const ratio = getSponsorRatio(sponsorId);
+    return (Number(points || 0) * Number(ratio || DEFAULT_RATIO)).toFixed(2);
+  };
+
+
+  const getUserLabel = (username) => {
+    const driverMatch = driverUsers.find((u) => u.username === username);
+    if (driverMatch) {
+      return (
+        driverMatch.preferred_username ||
+        driverMatch.name ||
+        driverMatch.email ||
+        driverMatch.username
+      );
+    }
+    const sponsorMatch = sponsors.find((s) => s.sponsorId === username);
+    if (sponsorMatch) {
+      return sponsorMatch.affiliation || sponsorMatch.sponsorId;
+    }
+    const genericMatch = allManagedUsers.find((u) => u.username === username);
+    if (genericMatch) {
+      return (
+        genericMatch.preferred_username ||
+        genericMatch.name ||
+        genericMatch.email ||
+        genericMatch.username
+      );
+    }
+
+    return username;
   };
 
 
@@ -565,7 +690,32 @@ function AdminPage(){
                               ))}
                             </Form.Select>
                           </Form.Group>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Point-to-Dollar Ratio</Form.Label>
+                            <Form.Control
+                              type="number"
+                              step="0.001"
+                              min="0.001"
+                              max="1.0"
+                              value={sponsorRatioInput}
+                              onChange={(e) => setSponsorRatioInput(e.target.value)}
+                            />
+                            <Form.Text className="text-muted">
+                              Example: 0.10 means each point is worth $0.10.
+                            </Form.Text>
+                          </Form.Group>
 
+                          {sponsorRatioError && (
+                            <div className="alert alert-danger py-2">{sponsorRatioError}</div>
+                          )}
+
+                          {sponsorRatioSuccess && (
+                            <div className="alert alert-success py-2">{sponsorRatioSuccess}</div>
+                          )}
+
+                          <Button onClick={handleSaveRatio} disabled={savingRatio || !selectedSponsorId}>
+                            {savingRatio ? "Saving..." : "Save Ratio"}
+                          </Button>
                           <Form.Group className="mb-3">
                             <Form.Label>Select Driver</Form.Label>
                             <Form.Select
@@ -575,7 +725,7 @@ function AdminPage(){
                               <option value="">Choose a driver</option>
                               {relationshipDrivers.map((driver) => (
                                 <option key={driver.driverId} value={driver.driverId}>
-                                  {getDriverLabel(driver.driverId)}
+                                  {getUserLabel(driver.driverId)}
                                 </option>
                               ))}
                             </Form.Select>
@@ -607,7 +757,7 @@ function AdminPage(){
                     <Card.Body>
                       <Card.Title>
                         Current Relationships
-                        {selectedSponsorId ? ` (${getSponsorLabel(selectedSponsorId)})` : ""}
+                        {selectedSponsorId ? ` (${getUserLabel(selectedSponsorId)})` : ""}
                       </Card.Title>
 
                       {loadingRelationships ? (
@@ -627,12 +777,15 @@ function AdminPage(){
                                 className="d-flex justify-content-between align-items-center"
                               >
                                 <div style={{ flex: 1 }}>
-                                  <div className="fw-semibold">{getDriverLabel(rel.driverId)}</div>
+                                  <div className="fw-semibold">{getUserLabel(rel.driverId)}</div>
                                   <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                                     ID: {rel.driverId}
                                   </div>
                                   <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                                     Current Points: {rel.points ?? 0}
+                                  </div>
+                                  <div classname="text-muted" style={{fontSize: "0.9rem" }}>
+                                    Estimated Value: ${getEstimatedDollarAmount(editingPoints[key] ?? rel.points, rel.sponsorId)}
                                   </div>
                                 </div>
 
@@ -674,6 +827,75 @@ function AdminPage(){
                           })}
                         </ListGroup>
                       )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </Tab>
+            <Tab eventKey="UserManagement" title = "User Management">
+              <Row>
+                {/* CREATE USER */}
+                <Col md={6}>
+                  <Card className="mb-4">
+                    <Card.Body>
+                      <Card.Title>Create User</Card.Title>
+
+                      {userMgmtError && <div className="alert alert-danger">{userMgmtError}</div>}
+                      {newMgmtMessage && <div className="alert alert-success">{newMgmtMessage}</div>}
+
+                      <Form.Group className="mb-2">
+                        <Form.Label>Email</Form.Label>
+                        <Form.Control value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
+                      </Form.Group>
+
+                      <Form.Group className="mb-2">
+                        <Form.Label>Confirm Email</Form.Label>
+                        <Form.Control value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                      </Form.Group>
+
+                      <Form.Group className="mb-2">
+                        <Form.Label>Password</Form.Label>
+                        <Form.Control value={newTempPassword} onChange={(e) => setNewTempPassword(e.target.value)} />
+                      </Form.Group>
+
+                      <Form.Group className="mb-2">
+                        <Form.Label>Role</Form.Label>
+                        <Form.Select value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)}>
+                          <option value="Admin">Admin</option>
+                          <option value="Driver">Driver</option>
+                          <option value="Sponsor">Sponsor</option>
+                        </Form.Select>
+                      </Form.Group>
+
+                      <Button onClick={handleCreateUser} disabled={creatingUser}>
+                        {creatingUser ? "Creating..." : "Create"}
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                {/* DELETE USER */}
+                <Col md={6}>
+                  <Card className="mb-4">
+                    <Card.Body>
+                      <Card.Title>Delete User</Card.Title>
+
+                      <ListGroup className="mb-3">
+                        {allManagedUsers.map((user) => (
+                          <ListGroupItem
+                            key={user.username}
+                            action
+                            active={user.username === selectedManagedUsername}
+                            onClick={() => setSelectedManagedUsername(user.username)}
+                          >
+                            {getUserLabel(user.username)}
+                          </ListGroupItem>
+                        ))}
+                      </ListGroup>
+
+                      <Button variant="danger" onClick={handleDeleteUser} disabled={deletingUser}>
+                        {deletingUser ? "Deleting..." : "Delete"}
+                      </Button>
                     </Card.Body>
                   </Card>
                 </Col>

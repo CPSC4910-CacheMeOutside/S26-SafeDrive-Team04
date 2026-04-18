@@ -43,6 +43,8 @@ adminUserLambda.addToRolePolicy(
       'cognito-idp:AdminListGroupsForUser',
       'cognito-idp:AdminAddUserToGroup',
       'cognito-idp:AdminRemoveUserFromGroup',
+      'cognito-idp:AdminCreateUser',
+      'cognito-idp:AdminDeleteUser',
     ],
     resources: [userPool.userPoolArn],
   })
@@ -75,7 +77,7 @@ new GatewayResponse(apiStack, 'Default4xxGatewayResponse', {
   responseHeaders: {
     'Access-Control-Allow-Origin': "'http://localhost:5173'",
     'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+    'Access-Control-Allow-Methods': "'GET,PUT,POST,DELETE,OPTIONS'",
   },
 });
 
@@ -126,6 +128,17 @@ driverIdPath.addMethod('PUT', lambdaIntegration, {
 
 const usernamePath = usersPath.addResource('{username}');
 const groupPath = usernamePath.addResource('group');
+
+usersPath.addMethod('POST', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+usernamePath.addMethod('DELETE', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
 
 groupPath.addMethod('PUT', lambdaIntegration, {
   authorizationType: AuthorizationType.COGNITO,

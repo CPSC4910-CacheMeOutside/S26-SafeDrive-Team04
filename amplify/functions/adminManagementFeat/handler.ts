@@ -8,6 +8,8 @@ import {
   AdminRemoveUserFromGroupCommand,
   AdminGetUserCommand,
   AdminUpdateUserAttributesCommand,
+  AdminCreateUserCommand,
+  AdminDeleteUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 
 const cognito = new CognitoIdentityProviderClient({});
@@ -17,7 +19,7 @@ const APP_GROUPS = ['Admin', 'Driver', 'Sponsor'] as const;
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
 };
 
 function getClaims(event: any) {
@@ -88,6 +90,62 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const path = event.path || '';
     const username = event.pathParameters?.username || event.pathParameters?.driverId;
     const groupname = event.pathParameters?.groupname;
+    if (event.httpMethod === 'POST' && path.endsWith('/admin/users')) {
+      const body = JSON.parse(event.body || '{}');
+
+      const { username, email, temporaryPassword, group } = body;
+
+      if (!username || !email || !temporaryPassword) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing required fields' }),
+        };
+      }
+
+      await cognito.send(
+        new AdminCreateUserCommand({
+          UserPoolId: userPoolId,
+          Username: username,
+          TemporaryPassword: temporaryPassword,
+          UserAttributes: [
+            { Name: 'email', Value: email },
+            { Name: 'email_verified', Value: 'true' },
+          ],
+        })
+      );
+
+      if (group && APP_GROUPS.includes(group)) {
+        await cognito.send(
+          new AdminAddUserToGroupCommand({
+            UserPoolId: userPoolId,
+            Username: username,
+            GroupName: group,
+          })
+        );
+      }
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'User created successfully' }),
+      };
+    }
+
+    if (event.httpMethod === 'DELETE' && path.includes('/admin/users/') && username) {
+      await cognito.send(
+        new AdminDeleteUserCommand({
+          UserPoolId: userPoolId,
+          Username: username,
+        })
+      );
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'User deleted successfully' }),
+      };
+    }
 
     if (event.httpMethod === 'GET' && path.endsWith('/admin/users/unassigned')) {
       const result = await cognito.send(
@@ -300,7 +358,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         error: error?.message ?? 'Unknown error',
       }),
     };
+
+    
   }
   
+
 };
 

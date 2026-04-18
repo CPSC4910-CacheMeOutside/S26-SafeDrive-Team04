@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import useAmplifyAuth from './UseAmplifyAuth';
 import { updateUserAttributes, fetchUserAttributes } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useMemo, useState } from "react";
