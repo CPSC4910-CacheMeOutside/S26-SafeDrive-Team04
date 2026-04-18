@@ -25,6 +25,7 @@ const SafeDriveSchema = a.schema({
   Sponsor: a.model({
     sponsorId: a.id().required(),
     affiliation: a.string(),
+    description: a.string(),
     pointToDollarRatio: a.float(),
 
     drivers: a.hasMany("DriverSponsor", 'sponsorId'),
@@ -65,6 +66,7 @@ const SafeDriveSchema = a.schema({
     state: a.string(),
     expDate: a.string(),
     notes: a.string(),
+    driverAction: a.string(),
 
     logs: a.hasMany('ApplicationLog', 'appId'),
   }).identifier(['appId'])

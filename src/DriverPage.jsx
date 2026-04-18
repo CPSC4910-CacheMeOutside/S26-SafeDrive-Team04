@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAuthSession, getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
+import { generateClient } from "aws-amplify/data";
+import { useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -10,47 +12,23 @@ import Tab from "react-bootstrap/Tab";
 import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
 
+const client = generateClient();
+
 function DriverPage() {
+  const navigate = useNavigate();
   const [driver, setDriver] = useState({
-    id: 1,
-    subId: "",
+    id: "",
     username: "",
-    name: "",
+    fullName: "",
     email: "",
     phoneNumber: "",
     groups: [],
-    points: 200,
-    sponsors: [
-      {
-        id: "SPUser1",
-        name: "East Bound and Down",
-        status: "active",
-        joinedDate: "2026-03-31"
-      },
-      {
-        id: "SPUser3",
-        name: "DriversCo",
-        status: "active",
-        joinedDate: "2026-03-20"
-      }
-    ],
-    applications: [
-      {
-        id: "APP1",
-        sponsorId: "SPUser2",
-        sponsorName: "Get Your Kicks on Rt 66",
-        status: "rejected",
-        submittedAt: "2026-03-30"
-      },
-      {
-        id: "APP2",
-        sponsorId: "SPUser4",
-        sponsorName: "Convoy Boys",
-        status: "pending",
-        submittedAt: "2026-03-25"
-      }
-    ]
+    points: 0,
+    sponsors: [],
+    applications: []
   });
+  const [sponsorsLoading, setSponsorsLoading] = useState(true);
+  const [appsLoading, setAppsLoading] = useState(true);
 
   useEffect(() => {
     async function loadUser() {
@@ -65,25 +43,103 @@ function DriverPage() {
         const accessPayload = session.tokens?.accessToken?.payload ?? {};
 
         const fullName =
-        attributes.name ||
-        [attributes.given_name, attributes.family_name].filter(Boolean).join(" ") ||
-        "";
+          attributes.name ||
+          [attributes.given_name, attributes.family_name].filter(Boolean).join(" ") ||
+          "";
 
         const groups =
           idPayload["cognito:groups"] ||
           accessPayload["cognito:groups"] ||
           [];
 
+        const driverId = currentUser.username;
+
         setDriver((prev) => ({
           ...prev,
+          id: driverId,
           username: currentUser.username ?? "",
           fullName,
           email: attributes.email ?? "",
           phoneNumber: attributes.phone_number ?? "",
           groups
         }));
+
+        setSponsorsLoading(true);
+        try {
+          const dsResult = await client.models.DriverSponsor.list({
+            filter: { driverId: { eq: driverId } }
+          });
+          const dsRows = dsResult.data ?? [];
+
+          const sponsorList = await Promise.all(
+            dsRows.map(async (ds) => {
+              let affiliation = ds.sponsorId;
+              try {
+                const sponsorResult = await client.models.Sponsor.get({ sponsorId: ds.sponsorId });
+                affiliation = sponsorResult?.data?.affiliation || ds.sponsorId;
+              } catch (_) { /* use fallback */ }
+              return {
+                id: ds.sponsorId,
+                name: affiliation,
+                points: ds.points ?? 0,
+                status: "active",
+                joinedDate: ds.createdAt?.slice(0, 10) ?? ""
+              };
+            })
+          );
+
+          setDriver((prev) => ({ ...prev, sponsors: sponsorList }));
+        } catch (err) {
+          console.error("Failed to load sponsors:", err);
+        } finally {
+          setSponsorsLoading(false);
+        }
+
+        setAppsLoading(true);
+        try {
+          const appsResult = await client.models.Application.list({
+            filter: { driverId: { eq: driverId } }
+          });
+          const appRows = appsResult.data ?? [];
+
+          const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
+
+          const appList = await Promise.all(
+            appRows.map(async (app) => {
+              let sponsorName = app.sponsorId;
+              try {
+                const sponsorResult = await client.models.Sponsor.get({ sponsorId: app.sponsorId });
+                sponsorName = sponsorResult?.data?.affiliation || app.sponsorId;
+              } catch (_) { /* use fallback */ }
+              return {
+                id: app.appId,
+                sponsorId: app.sponsorId,
+                sponsorName,
+                status: STATUS_MAP[app.status] ?? "pending",
+                submittedAt: app.createdAt?.slice(0, 10) ?? ""
+              };
+            })
+          );
+
+          setDriver((prev) => ({
+            ...prev,
+            applications: appList,
+            points: appList
+              .filter(a => a.status === "accepted")
+              .length > 0
+              ? prev.points
+              : prev.points
+          }));
+        } catch (err) {
+          console.error("Failed to load applications:", err);
+        } finally {
+          setAppsLoading(false);
+        }
+
       } catch (error) {
         console.error("Failed to load Cognito user info:", error);
+        setSponsorsLoading(false);
+        setAppsLoading(false);
       }
     }
 
@@ -125,7 +181,7 @@ function DriverPage() {
                 <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
                 <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
                 <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
-                <p className="mb-0"><strong>Points:</strong> {driver.points}</p>
+                <p className="mb-0"><strong>Total Points:</strong> {driver.sponsors.reduce((sum, s) => sum + (s.points || 0), 0)}</p>
               </Card.Body>
             </Card>
           </Col>
@@ -170,7 +226,9 @@ function DriverPage() {
             <Card className="mt-3">
               <Card.Body>
                 <Card.Title>Associated Sponsors</Card.Title>
-                {!driver.sponsors.length ? (
+                {sponsorsLoading ? (
+                  <div className="text-muted">Loading sponsors...</div>
+                ) : !driver.sponsors.length ? (
                   <div className="text-muted">No sponsors associated yet.</div>
                 ) : (
                   <ListGroup>
@@ -181,6 +239,9 @@ function DriverPage() {
                             <strong>{sponsor.name}</strong>
                             <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                               Joined: {sponsor.joinedDate}
+                            </div>
+                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                              Points with this sponsor: <strong>{sponsor.points}</strong>
                             </div>
                           </div>
                           <Badge bg={getBadgeVariant(sponsor.status)}>
@@ -200,12 +261,14 @@ function DriverPage() {
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <Card.Title className="mb-0">My Applications</Card.Title>
-                  <Button variant="primary" size="sm">
+                  <Button variant="primary" size="sm" onClick={() => navigate("/sponsor-list")}>
                     Browse Sponsors
                   </Button>
                 </div>
 
-                {!driver.applications.length ? (
+                {appsLoading ? (
+                  <div className="text-muted">Loading applications...</div>
+                ) : !driver.applications.length ? (
                   <div className="text-muted">No applications submitted yet.</div>
                 ) : (
                   <ListGroup>

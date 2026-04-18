@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { generateClient } from 'aws-amplify/data';
+import { getCurrentUser } from 'aws-amplify/auth';
 import { useLanguage } from './LanguageContext';
 
 const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
@@ -13,30 +14,29 @@ export default function SponsorApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
-
-  const [filterDate, setFilterDate] = useState("");
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [pageSize, setPageSize] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [denyTargetId, setDenyTargetId] = useState(null);
+  const [filterDate, setFilterDate]         = useState("");
+  const [selectedApp, setSelectedApp]       = useState(null);
+  const [statusFilter, setStatusFilter]     = useState("all");
+  const [searchQuery, setSearchQuery]       = useState("");
+  const [selectedIds, setSelectedIds]       = useState(new Set());
+  const [pageSize, setPageSize]             = useState(5);
+  const [currentPage, setCurrentPage]       = useState(1);
+  const [denyTargetId, setDenyTargetId]     = useState(null);
   const [denialReasonDraft, setDenialReasonDraft] = useState("");
 
   useEffect(() => {
     async function load() {
       try {
         const client = generateClient();
-        const result = await client.models.Application.list();
-        console.log("Raw API result:", result);
-        console.log("Applications data:", result.data);
-        console.log("Errors:", result.errors);
+
+        const currentUser = await getCurrentUser();
+        const mySponsorId = currentUser.userId;
+
+        const result = await client.models.Application.list({
+          filter: { sponsorId: { eq: mySponsorId } }
+        });
+
         const apps = result.data ?? [];
-        console.log("Number of apps found:", apps.length);
-        if (apps.length > 0) {
-          console.log("First app sample:", JSON.stringify(apps[0], null, 2));
-        }
 
         const normalized = apps.map(a => ({
           ...a,
@@ -63,14 +63,10 @@ export default function SponsorApplicationsPage() {
   async function handleAccept(id) {
     try {
       const client = generateClient();
-
-      // Find the application being accepted
       const app = applications.find(a => a.id === id);
 
-      // Update the application status to accepted
       await client.models.Application.update({ appId: id, status: STATUS_INT.accepted });
 
-      // Create the DriverSponsor relationship if both IDs are real
       if (app && app.driverId && app.driverId !== "unlinked" && app.sponsorId && app.sponsorId !== "unlinked") {
         const existing = await client.models.DriverSponsor.list({
           filter: {
@@ -157,7 +153,7 @@ export default function SponsorApplicationsPage() {
 
   const filtered = useMemo(() => {
     return applications.filter(a => {
-      const dateMatch = filterDate ? a.submittedDate >= filterDate : true;
+      const dateMatch   = filterDate ? a.submittedDate >= filterDate : true;
       const statusMatch = statusFilter === "all" ? true : a.status === statusFilter;
       const searchMatch = searchQuery.trim()
         ? a.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
@@ -167,8 +163,8 @@ export default function SponsorApplicationsPage() {
   }, [applications, filterDate, statusFilter, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const safePage   = Math.min(currentPage, totalPages);
+  const paginated  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
   const visibleIds = paginated.map(a => a.id);
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
 
@@ -263,7 +259,6 @@ export default function SponsorApplicationsPage() {
         )}
       </div>
 
-      {/* Bulk actions */}
       {selectedIds.size > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 4, padding: "10px 16px", marginBottom: 12 }}>
           <span style={{ fontSize: 13, fontWeight: "bold" }}>{selectedIds.size} {t('sponsorApp.selected')}</span>
@@ -277,7 +272,6 @@ export default function SponsorApplicationsPage() {
       )}
 
       <div style={{ display: "flex", gap: 20 }}>
-        {/* Application list */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {paginated.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -323,7 +317,6 @@ export default function SponsorApplicationsPage() {
                   <strong style={{ fontSize: 15 }}>{app.name}</strong>
                   <StatusBadge status={app.status} />
                 </div>
-                <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>Applying to: <strong>{app.sponsorName}</strong></div>
                 <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>{app.email}</div>
                 <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
                   {t('sponsorApp.submitted')} {app.submittedDate}
@@ -369,7 +362,6 @@ export default function SponsorApplicationsPage() {
           </div>
         </div>
 
-        {/* Detail panel */}
         <div style={{ width: 320, flexShrink: 0 }}>
           {selectedApp ? (
             <div style={{ border: "1px solid #ddd", borderRadius: 6, padding: 20, position: "sticky", top: 20 }}>
@@ -378,13 +370,12 @@ export default function SponsorApplicationsPage() {
                 <StatusBadge status={selectedApp.status} />
               </div>
 
-              <DetailRow label="Sponsor" value={selectedApp.sponsorName} />
-              <DetailRow label={t('sponsorApp.email')} value={selectedApp.email} />
-              <DetailRow label={t('sponsorApp.phone')} value={selectedApp.phone} />
-              <DetailRow label={t('sponsorApp.licenseNum')} value={selectedApp.licenseNo} />
-              <DetailRow label={t('sponsorApp.licenseState')} value={selectedApp.state} />
+              <DetailRow label={t('sponsorApp.email')}         value={selectedApp.email} />
+              <DetailRow label={t('sponsorApp.phone')}         value={selectedApp.phone} />
+              <DetailRow label={t('sponsorApp.licenseNum')}    value={selectedApp.licenseNo} />
+              <DetailRow label={t('sponsorApp.licenseState')}  value={selectedApp.state} />
               <DetailRow label={t('sponsorApp.licenseExpiry')} value={selectedApp.expDate} />
-              <DetailRow label={t('sponsorApp.submittedLabel')} value={selectedApp.submittedDate} />
+              <DetailRow label={t('sponsorApp.submittedLabel')}value={selectedApp.submittedDate} />
 
               {selectedApp.status === "denied" && selectedApp.denialReason && (
                 <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: "#721c24", marginTop: 8 }}>
@@ -394,16 +385,10 @@ export default function SponsorApplicationsPage() {
 
               {selectedApp.status === "pending" && (
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                  <button
-                    onClick={() => handleAccept(selectedApp.id)}
-                    style={{ ...btnBase, flex: 1, background: "#28a745", color: "#fff" }}
-                  >
+                  <button onClick={() => handleAccept(selectedApp.id)} style={{ ...btnBase, flex: 1, background: "#28a745", color: "#fff" }}>
                     {t('sponsorApp.accept')}
                   </button>
-                  <button
-                    onClick={() => openDenyModal(selectedApp.id)}
-                    style={{ ...btnBase, flex: 1, background: "#dc3545", color: "#fff" }}
-                  >
+                  <button onClick={() => openDenyModal(selectedApp.id)} style={{ ...btnBase, flex: 1, background: "#dc3545", color: "#fff" }}>
                     {t('sponsorApp.deny')}
                   </button>
                 </div>
@@ -417,7 +402,6 @@ export default function SponsorApplicationsPage() {
         </div>
       </div>
 
-      {/* Deny modal */}
       {denyTargetId !== null && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
           <div style={{ background: "#fff", borderRadius: 6, padding: 28, maxWidth: 420, width: "100%", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
@@ -447,9 +431,9 @@ export default function SponsorApplicationsPage() {
 
 function StatusBadge({ status }) {
   const colors = {
-    pending: { background: "#fff3cd", color: "#856404" },
+    pending:  { background: "#fff3cd", color: "#856404" },
     accepted: { background: "#d4edda", color: "#155724" },
-    denied: { background: "#f8d7da", color: "#721c24" },
+    denied:   { background: "#f8d7da", color: "#721c24" },
   };
   return (
     <span style={{ ...(colors[status] ?? colors.pending), padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: "bold" }}>

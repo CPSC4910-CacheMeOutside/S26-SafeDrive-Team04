@@ -42,6 +42,9 @@ function EditProfilePage({
   });
 
   const [isDriver, setIsDriver] = useState(false);
+  const [isSponsor, setIsSponsor] = useState(false);
+  const [sponsorAffiliation, setSponsorAffiliation] = useState("");
+  const [sponsorDescription, setSponsorDescription] = useState("");
   const [authRole, setAuthRole] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -81,6 +84,21 @@ function EditProfilePage({
             }
           } catch (err) {
             console.error("Failed to load driver license info:", err);
+          }
+        }
+
+        if (groups.includes('Sponsor')) {
+          setIsSponsor(true);
+          try {
+            const currentUser = await getCurrentUser();
+            const sponsorId = currentUser.username;
+            const { data: sponsorRecord } = await client.models.Sponsor.get({ sponsorId });
+            if (sponsorRecord) {
+              setSponsorAffiliation(sponsorRecord.affiliation || "");
+              setSponsorDescription(sponsorRecord.description || "");
+            }
+          } catch (err) {
+            console.error("Failed to load sponsor affiliation:", err);
           }
         }
 
@@ -201,6 +219,27 @@ function EditProfilePage({
               licenseNo: licenseData.licenseNo || null,
               expDate: licenseData.expDate || null,
               state: licenseData.state || null
+            });
+          }
+        }
+
+        if (isSponsor) {
+          const currentUser = await getCurrentUser();
+          const sponsorId = currentUser.username;
+
+          const { data: existingSponsor } = await client.models.Sponsor.get({ sponsorId });
+
+          if (existingSponsor) {
+            await client.models.Sponsor.update({
+              sponsorId,
+              affiliation: sponsorAffiliation || null,
+              description: sponsorDescription || null,
+            });
+          } else {
+            await client.models.Sponsor.create({
+              sponsorId,
+              affiliation: sponsorAffiliation || null,
+              description: sponsorDescription || null,
             });
           }
         }
@@ -356,6 +395,46 @@ function EditProfilePage({
                           <option key={s} value={s}>{s}</option>
                         ))}
                       </Form.Select>
+                    </Col>
+                  </Form.Group>
+                  <hr />
+                </>
+              )}
+
+              {isSponsor && !adminView && (
+                <>
+                  <hr />
+                  <h5 className="mb-3">Sponsor Information</h5>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>Affiliation / Company Name</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        name="sponsorAffiliation"
+                        value={sponsorAffiliation}
+                        onChange={(e) => setSponsorAffiliation(e.target.value)}
+                        placeholder="Enter your company or organization name"
+                      />
+                      <Form.Text className="text-muted">
+                        This name will appear on your public sponsor profile and to drivers.
+                      </Form.Text>
+                    </Col>
+                  </Form.Group>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>Company Description</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        as="textarea"
+                        rows={4}
+                        name="sponsorDescription"
+                        value={sponsorDescription}
+                        onChange={(e) => setSponsorDescription(e.target.value)}
+                        placeholder="Describe your company, what drivers can expect, and why they should apply..."
+                      />
+                      <Form.Text className="text-muted">
+                        Shown to drivers on the sponsor listings page and application page.
+                      </Form.Text>
                     </Col>
                   </Form.Group>
                   <hr />
