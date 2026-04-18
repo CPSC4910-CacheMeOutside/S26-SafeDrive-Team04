@@ -23,7 +23,19 @@ export default function SponsorCatalog() {
     const [catalogs, updateCatalogs] = useState(null);
     const [cart, updateCart] = useState(null);
     const [wishlist, updateWishlist] = useState(null);
-    // Catalog Filters
+    // Modal States
+    const [show, setShow] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+
+    const handleClose = () => {
+        setShow(false);
+        setSelectedProduct(null);
+    };
+
+    const handleShow = (product) => {
+        setSelectedProduct(product);
+        setShow(true);
+    };
 
     // Buisness Logic
     useEffect(() => {
@@ -225,30 +237,41 @@ export default function SponsorCatalog() {
     }, [pointTotals, sponsors, catalogs, cart, wishlist]);
 
     // UI Components
+    function RequestModal({ product }) {
+        if (!product) return null;
 
-    function Catalog({sId}) {
-
-        function requestModal({product}) {
-            const [show, setShow] = useState(false);
-
-            const handleClose = () => setShow(false);
-            const handleShow = () => setShow(true);
-
+        return (
             <Modal show={show} onHide={handleClose}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Request {product.title}</Modal.Title>
+                    <Modal.Title>{product.title}</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Woohoo, you are reading this text in a modal!</Modal.Body>
+
+                <Modal.Body>
+                    <Carousel>
+                        {product.imgs.map((img, i) => (
+                            <Carousel.Item key={i}>
+                                <img className="d-block w-100" src={img} />
+                            </Carousel.Item>
+                        ))}
+                    </Carousel>
+
+                    <h3>Price: {product.price}</h3>
+                    <p>{product.desc}</p>
+                </Modal.Body>
+
                 <Modal.Footer>
-                <Button variant="secondary" onClick={handleClose}>
-                    Cancel
-                </Button>
-                <Button variant="primary" onClick={handleClose}>
-                    Complete Request
-                </Button>
+                    <Button variant="secondary" onClick={handleClose}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={handleClose}>
+                        Complete Request
+                    </Button>
                 </Modal.Footer>
             </Modal>
-        }
+        );
+    }
+
+    function Catalog({sId}) {
 
         console.log("Loading catalog under the provided id...", sId);
 
@@ -277,12 +300,17 @@ export default function SponsorCatalog() {
                                 <Card.Subtitle>
                                     {Number(product.price)} PTs
                                 </Card.Subtitle>
-                                <Button variant="primary">Request</Button>
+                                <Button onClick= { () => {
+                                    setSelectedProduct(product);
+                                    setShow(true)
+                                }}
+                                variant="primary">Request</Button>
                             </Card.Body>
                         </Card>
                     </Col>
                 ))}
             </Row>
+            <RequestModal product={selectedProduct} />
         </Container>
         );
     }
