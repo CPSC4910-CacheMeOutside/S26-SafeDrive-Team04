@@ -15,6 +15,7 @@ import { ListGroupItem } from 'react-bootstrap';
 import UpdateAbout from './UpdateAbout';
 import { fetchUnassignedUsers, assignUserGroup } from './adminAssignRoles-api';
 import { generateClient } from 'aws-amplify/data';
+import ManageAdminsTab from "./ManageAdminsTab";
 
 const client = generateClient();
 const DEFAULT_RATIO = 0.10;
@@ -83,6 +84,7 @@ function AdminPage(){
   const [deductError, setDeductError] = useState("");
   const [updatingDriverPoints, setUpdatingDriverPoints] = useState(false);
   const [selectedDriverRecord, setSelectedDriverRecord] = useState(null);
+  const [selectedAdminUser, setSelectedAdminUser] = useState(null);
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -689,21 +691,61 @@ function AdminPage(){
           <div className="d-flex justify-content-between align-items-center border-bottom mb-4">
             <Nav variant="tabs">
               <Nav.Item><Nav.Link eventKey="manage">{t('admin.manageDrivers')}</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="manageAdmins">Manage Admins</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="pendingUsers">Manage Pending Users</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="audit">{t('admin.logsReports')}</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="updateAbout">Update About Info</Nav.Link></Nav.Item>
             </Nav>
 
             {activeTab === "manage" && (
-              <div className="ms-3 pb-2 text-nowrap">
-                <span style={{ color: "black", fontWeight: "600" }} className="me-2">Selected Driver:</span>
-                {selectedDriverUser ? (<span style={{backgroundColor: "#10b981", color: "white", padding: "4px 10px", borderRadius: "8px", fontWeight: "500"}}>
-                {selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</span>
-                ) : (
-                  <span className="text-muted">None</span>
-                )}
-              </div>
-            )}
+  <div className="ms-3 pb-2 text-nowrap">
+    <span style={{ color: "black", fontWeight: "600" }} className="me-2">
+      Selected Driver:
+    </span>
+    {selectedDriverUser ? (
+      <span
+        style={{
+          backgroundColor: "#10b981",
+          color: "white",
+          padding: "4px 10px",
+          borderRadius: "8px",
+          fontWeight: "500",
+        }}
+      >
+        {selectedDriverUser.name ||
+          selectedDriverUser.preferred_username ||
+          selectedDriverUser.username}
+      </span>
+    ) : (
+      <span className="text-muted">None</span>
+    )}
+  </div>
+)}
+
+{activeTab === "manageAdmins" && (
+  <div className="ms-3 pb-2 text-nowrap">
+    <span style={{ color: "black", fontWeight: "600" }} className="me-2">
+      Selected Admin:
+    </span>
+    {selectedAdminUser ? (
+      <span
+        style={{
+          backgroundColor: "#10b981",
+          color: "white",
+          padding: "4px 10px",
+          borderRadius: "8px",
+          fontWeight: "500",
+        }}
+      >
+        {selectedAdminUser.name ||
+          selectedAdminUser.preferred_username ||
+          selectedAdminUser.username}
+      </span>
+    ) : (
+      <span className="text-muted">None</span>
+    )}
+  </div>
+)}
           </div>
 
           <Tab.Content>
@@ -755,6 +797,10 @@ function AdminPage(){
 
                           <div className="mb-2">
                             <strong>Email:</strong> {selectedDriverUser.email}
+                          </div>
+
+                          <div className="mb-2">
+                            <strong>Phone:</strong> {selectedDriverUser.phone_number}
                           </div>
 
                           <div className="mb-2">
@@ -940,6 +986,10 @@ function AdminPage(){
               </Row>
               </Col>
               </Row>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="manageAdmins">
+              <ManageAdminsTab onSelectAdmin={setSelectedAdminUser} />
             </Tab.Pane>
 
             <Tab.Pane eventKey="pendingUsers" title="Pending Users">
