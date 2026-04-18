@@ -179,23 +179,44 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
               </Card.Body>
             </Card>
 
-            <Card className="shadow-sm h-100 mt-4">
-  <Card.Body className="text-center d-flex flex-column justify-content-center">
-    <Card.Title className="fw-bold fs-2 mb-4">Edit Account</Card.Title>
-    <Button
-      variant="primary"
-      style={{ minWidth: "160px" }}
-      disabled={!selectedSponsorUser}
-      onClick={() => {
-        if (selectedSponsorUser?.username) {
-          navigate(`/admin/sponsors/${selectedSponsorUser.username}/edit`);
-        }
-      }}
-    >
-      Edit
-    </Button>
-  </Card.Body>
-</Card>
+            <Row className="g-4 mt-1">
+  <Col md={6}>
+    <Card className="shadow-sm h-100">
+      <Card.Body className="text-center d-flex flex-column justify-content-center align-items-center">
+        <Card.Title><strong>View Account</strong></Card.Title>
+        <Button
+          className="mt-3"
+          style={{ width: "160px", height: "50px" }}
+          variant="primary"
+          disabled={!selectedSponsorUser}
+        >
+          View
+        </Button>
+      </Card.Body>
+    </Card>
+  </Col>
+
+  <Col md={6}>
+    <Card className="h-100">
+      <Card.Body className="text-center d-flex flex-column justify-content-center align-items-center">
+        <Card.Title><strong>Edit Account</strong></Card.Title>
+        <Button
+          className="mt-3"
+          style={{ width: "160px", height: "50px" }}
+          variant="primary"
+          disabled={!selectedSponsorUser}
+          onClick={() => {
+            if (selectedSponsorUser?.username) {
+              navigate(`/admin/sponsors/${selectedSponsorUser.username}/edit`);
+            }
+          }}
+        >
+          Edit
+        </Button>
+      </Card.Body>
+    </Card>
+  </Col>
+</Row>
           </Col>
         </Row>
       </Col>
