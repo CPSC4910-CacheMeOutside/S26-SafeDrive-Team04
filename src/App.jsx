@@ -31,6 +31,7 @@ import DriverNotificationsPage from './DriverNotificationsPage';
 import DriverApplication from './DriverApplication';
 import SponsorApplication from './SponsorApplication';
 import SponsorListings from './Available-Sponsors';
+import SponsorOrdersPage from './SponsorsOrdersPage';
  
 import UpdateAbout from './UpdateAbout';
 
@@ -107,7 +108,9 @@ function App() {
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/CatalogBuilder">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-orders">Orders</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
+
                 <NavDropdown
                   title={LANGUAGE_NAMES[language]}
                   id="language-dropdown"
@@ -169,6 +172,7 @@ function App() {
           <Route path="/edit_profile" element={<EditProfilePage profilePic={profilePic} setProfilePic={setProfilePic} />}/>
           <Route path="/CatalogBuilder" element={<CatalogBuilder />}/>
           <Route path="/sponsor-notifications" element={<SponsorNotificationsPage />}/>
+          <Route path="/sponsor-orders" element={<SponsorOrdersPage />}/>
           <Route path="/driver-notifications" element={<DriverNotificationsPage />}/>
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
