@@ -16,6 +16,7 @@ function ManageSponsorsTab({
   getDriverLabel,
   driverUsers = [],
   assignDriverToSponsor,
+  removeDriverFromSponsor,
 }) {
   const [sponsorUsers, setSponsorUsers] = useState([]);
   const [selectedSponsorUsername, setSelectedSponsorUsername] = useState("");
@@ -23,9 +24,14 @@ function ManageSponsorsTab({
   const [sponsorUsersError, setSponsorUsersError] = useState("");
 
   const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
+  const [selectedAssignedDriverUsername, setSelectedAssignedDriverUsername] = useState("");
   const [assignDriverError, setAssignDriverError] = useState("");
   const [assignDriverSuccess, setAssignDriverSuccess] = useState("");
   const [assigningDriver, setAssigningDriver] = useState(false);
+
+  const [removeDriverError, setRemoveDriverError] = useState("");
+  const [removeDriverSuccess, setRemoveDriverSuccess] = useState("");
+  const [removingDriver, setRemovingDriver] = useState(false);
 
   const navigate = useNavigate();
 
@@ -88,6 +94,8 @@ function ManageSponsorsTab({
       loadRelationships(selectedSponsorUser.username);
       setAssignDriverSuccess("");
       setAssignDriverError("");
+      setRemoveDriverSuccess("");
+      setRemoveDriverError("");
     }
   }, [selectedSponsorUser, loadRelationships]);
 
@@ -101,6 +109,17 @@ function ManageSponsorsTab({
       setSelectedDriverUsername("");
     }
   }, [assignableDriverUsers, selectedDriverUsername]);
+
+  useEffect(() => {
+    if (
+      selectedAssignedDriverUsername &&
+      !(Array.isArray(relationships) ? relationships : []).some(
+        (rel) => rel?.driverId === selectedAssignedDriverUsername
+      )
+    ) {
+      setSelectedAssignedDriverUsername("");
+    }
+  }, [relationships, selectedAssignedDriverUsername]);
 
   const handleViewSponsor = () => {
     if (!selectedSponsorUser?.username) return;
@@ -167,6 +186,32 @@ function ManageSponsorsTab({
       setAssignDriverError("Failed to assign driver.");
     } finally {
       setAssigningDriver(false);
+    }
+  };
+
+  const handleRemoveDriver = async () => {
+    if (!removeDriverFromSponsor) return;
+    if (!selectedSponsorUser?.username || !selectedAssignedDriverUsername) return;
+
+    try {
+      setRemovingDriver(true);
+      setRemoveDriverError("");
+      setRemoveDriverSuccess("");
+
+      await removeDriverFromSponsor(
+        selectedSponsorUser.username,
+        selectedAssignedDriverUsername
+      );
+
+      setRemoveDriverSuccess("Driver removed successfully.");
+      setSelectedAssignedDriverUsername("");
+
+      await loadRelationships(selectedSponsorUser.username);
+    } catch (error) {
+      console.error("Failed to remove driver:", error);
+      setRemoveDriverError("Failed to remove driver.");
+    } finally {
+      setRemovingDriver(false);
     }
   };
 
@@ -348,8 +393,8 @@ function ManageSponsorsTab({
                 </Card>
               </Col>
 
-              <Col md={12}>
-                <Card className="shadow-sm">
+              <Col md={6}>
+                <Card className="shadow-sm h-100">
                   <Card.Body className="text-center">
                     <Card.Title className="mb-4">
                       <strong>Assign a Driver</strong>
@@ -404,6 +449,70 @@ function ManageSponsorsTab({
                         }
                       >
                         {assigningDriver ? "Assigning..." : "Assign"}
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={6}>
+                <Card className="h-100">
+                  <Card.Body className="text-center">
+                    <Card.Title className="mb-4">
+                      <strong>Remove a Driver</strong>
+                    </Card.Title>
+
+                    {removeDriverError && (
+                      <div className="alert alert-danger py-2">
+                        {removeDriverError}
+                      </div>
+                    )}
+
+                    {removeDriverSuccess && (
+                      <div className="alert alert-success py-2">
+                        {removeDriverSuccess}
+                      </div>
+                    )}
+
+                    <div className="d-flex flex-column align-items-center">
+                      <Form.Select
+                        style={{ maxWidth: "460px" }}
+                        className="mb-3"
+                        value={selectedAssignedDriverUsername}
+                        onChange={(e) =>
+                          setSelectedAssignedDriverUsername(e.target.value)
+                        }
+                        disabled={!selectedSponsorUser || !relationships.length}
+                      >
+                        <option value="">
+                          {!selectedSponsorUser
+                            ? "Select a sponsor first"
+                            : !relationships.length
+                            ? "No assigned drivers"
+                            : "Select a driver"}
+                        </option>
+
+                        {relationships.map((rel, index) => (
+                          <option
+                            key={rel.driverSponsorId || `${rel.driverId}-${index}`}
+                            value={rel.driverId}
+                          >
+                            {getDriverLabel(rel.driverId)}
+                          </option>
+                        ))}
+                      </Form.Select>
+
+                      <Button
+                        style={{ width: "160px", height: "50px" }}
+                        variant="outline-danger"
+                        onClick={handleRemoveDriver}
+                        disabled={
+                          !selectedSponsorUser ||
+                          !selectedAssignedDriverUsername ||
+                          removingDriver
+                        }
+                      >
+                        {removingDriver ? "Removing..." : "Remove"}
                       </Button>
                     </div>
                   </Card.Body>

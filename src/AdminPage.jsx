@@ -1172,6 +1172,13 @@ function AdminPage() {
                     });
                     await loadRelationships(sponsorId);
                   }}
+                  removeDriverFromSponsor={async (sponsorId, driverId) => {
+                    await client.models.DriverSponsor.delete({
+                      driverId,
+                      sponsorId,
+                    });
+                    await loadRelationships(sponsorId);
+                  }}
                 />
               </Tab.Pane>
 
