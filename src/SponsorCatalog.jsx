@@ -19,6 +19,7 @@ export default function SponsorCatalog() {
     // User Centric Data
     const [userData, updateUserData] = useState(null);
     const [pointTotals, updatePointTotals] = useState(null);
+    const [ptToDollarRatios, updatePtToDollarRatios] = useState(null);
     const [sponsors, updateSponsors] = useState(null);
     const [catalogs, updateCatalogs] = useState(null);
     const [cart, updateCart] = useState(null);
@@ -68,6 +69,15 @@ export default function SponsorCatalog() {
             }
             console.log("Retried from Amplify Data: ", data);
             return data;
+        }
+
+        async function populateRatios(sponsors) {
+            let ratios = new Map();
+            for (const sponsor of sponsors) {
+                ratios.set(sponsor.sponsorId, sponsor.pointtoDollarRatio ?? 1);
+            }
+            console.log("Loaded point to dollar ratios: ", ratios);
+            return ratios;
         }
 
         async function populateCatalogs (dId, sponsors) {
@@ -214,6 +224,7 @@ export default function SponsorCatalog() {
             updateSponsors(sponsorData);
 
             updatePointTotals(await populatePointTotals(cogData.id));
+            updatePtToDollarRatios(await populateRatios(sponsorData));
             updateCart(await populateCart(dbData));
             updateWishlist(await populateWishlist(dbData));
 
@@ -228,15 +239,18 @@ export default function SponsorCatalog() {
         if (userData === null) return;
         if (sponsors === null) return;
         if (pointTotals === null) return;
+        if (ptToDollarRatios === null) return;
         if (cart === null) return;
         if (wishlist === null) return;
         if (catalogs === null) return;
 
         console.log("Page loading finished!");
         setIsLoading(false);
-    }, [pointTotals, sponsors, catalogs, cart, wishlist]);
+    }, [pointTotals, sponsors, catalogs, cart, wishlist, ptToDollarRatios]);
 
     function submitOrder(product, sId) {
+        
+        const [ptToDollar, setPtToDollar] = useState(ptToDollarRatios.get(sId));
 
         const activeTotal = pointTotals.get(sId);
 
@@ -244,9 +258,9 @@ export default function SponsorCatalog() {
     }
 
     // UI Components
-    function RequestModal({ product }) {
+    function RequestModal({ product, sponsorId }) {
 
-        const [ptToDollar, setPtToDollar] = useState(sponsors.find( s => s.sponsorId).pointtoDollarRatio ?? 1);
+        const [ptToDollar, setPtToDollar] = useState(ptToDollarRatios.get(sponsorId));
 
         if (!product) return null;
 
@@ -286,7 +300,7 @@ export default function SponsorCatalog() {
         console.log("Loading catalog under the provided id...", sId);
 
         const [activeCatalog, setActiveCatalog] = useState(catalogs.get(sId));
-        const [ptToDollar, setPtToDollar] = useState(sponsors.find( s => s.sponsorId).pointtoDollarRatio ?? 1);
+        const [ptToDollar, setPtToDollar] = useState(ptToDollarRatios.get(sId));
 
         if (activeCatalog === null) {
             console.log("Error: No catalog under the provided id was found", sId);
@@ -320,7 +334,7 @@ export default function SponsorCatalog() {
                     </Col>
                 ))}
             </Row>
-            <RequestModal product={selectedProduct} />
+            <RequestModal product={selectedProduct} sponsorId={sId} />
         </Container>
         );
     }
