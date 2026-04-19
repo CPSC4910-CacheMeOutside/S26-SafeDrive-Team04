@@ -11,10 +11,16 @@ import { useNavigate } from "react-router-dom";
 function ManageSponsorsTab({
   sponsorUsers = [],
   onSelectSponsor,
-  relationships,
+  relationships = [],
   loadRelationships,
   getUserLabel,
   driverUsers = [],
+  sponsorRatioInput,
+  setSponsorRatioInput,
+  sponsorRatioError,
+  sponsorRatioSuccess,
+  handleSaveRatio,
+  savingRatio,
   assignDriverToSponsor,
   removeDriverFromSponsor,
   awardPointsToDriver,
@@ -703,6 +709,81 @@ function ManageSponsorsTab({
                   </Card.Body>
                 </Card>
               </Col>
+              <Col md={12}>
+                  <Card>
+                    <Card.Body>
+                    <Card.Title>Point-to-Dollar Ratio</Card.Title>
+
+                    <Form.Group className="mb-3">
+                        <Form.Label>Point-to-Dollar Ratio</Form.Label>
+                        <Form.Control
+                        type="number"
+                        step="0.001"
+                        min="0.001"
+                        max="1.0"
+                        value={sponsorRatioInput}
+                        onChange={(e) => setSponsorRatioInput(e.target.value)}
+                        />
+                        <Form.Text className="text-muted">
+                        Example: 0.10 means each point is worth $0.10.
+                        </Form.Text>
+                    </Form.Group>
+
+                    {sponsorRatioError && (
+                        <div className="alert alert-danger py-2">{sponsorRatioError}</div>
+                    )}
+
+                    {sponsorRatioSuccess && (
+                        <div className="alert alert-success py-2">{sponsorRatioSuccess}</div>
+                    )}
+
+                    <Button
+                        onClick={handleSaveRatio}
+                        disabled={savingRatio || !selectedSponsorUser?.username}
+                    >
+                        {savingRatio ? "Saving..." : "Save Ratio"}
+                    </Button>
+                    </Card.Body>
+                  </Card>
+              </Col>
+              <Col md={12}>
+                <Card>
+                    <Card.Body>
+                    <Card.Title>
+                        Current Relationships
+                        {selectedSponsorUser?.username
+                        ? ` (${getUserLabel(selectedSponsorUser.username)})`
+                        : ""}
+                    </Card.Title>
+
+                    {!selectedSponsorUser ? (
+                        <div className="text-muted">Select a sponsor to view assignments.</div>
+                    ) : !relationships.length ? (
+                        <div className="text-muted">
+                        No drivers assigned to this sponsor yet.
+                        </div>
+                    ) : (
+                        <ListGroup>
+                        {relationships.map((rel, index) => {
+                            const key = rel.driverSponsorId || `${rel.driverId}-${rel.sponsorId}-${index}`;
+
+                            return (
+                            <ListGroupItem key={key}>
+                                <div className="fw-semibold">{getUserLabel(rel.driverId)}</div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                ID: {rel.driverId}
+                                </div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                Current Points: {rel.points ?? 0}
+                                </div>
+                            </ListGroupItem>
+                            );
+                        })}
+                        </ListGroup>
+                    )}
+                    </Card.Body>
+                  </Card>
+                </Col>
             </Row>
           </Col>
         </Row>

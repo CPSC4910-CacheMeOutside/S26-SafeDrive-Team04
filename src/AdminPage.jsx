@@ -1304,168 +1304,90 @@ function AdminPage() {
                         </Card.Body>
                       </Card>
                     </Col>
-
-                    <Col md={12}>
-                      <Card>
-                        <Card.Body>
-                          <Card.Title>
-                            Current Relationships
-                            {selectedSponsorId ? ` (${getUserLabel(selectedSponsorId)})` : ""}
-                          </Card.Title>
-
-                          {loadingRelationships ? (
-                            <div className="text-muted">Loading relationships...</div>
-                          ) : !selectedSponsorId ? (
-                            <div className="text-muted">Select a sponsor to view assignments.</div>
-                          ) : !sponsorRelationships.length ? (
-                            <div className="text-muted">
-                              No drivers assigned to this sponsor yet.
-                            </div>
-                          ) : (
-                            <ListGroup>
-                              {sponsorRelationships.map((rel) => {
-                                const key = `${rel.driverId}-${rel.sponsorId}`;
-
-                                return (
-                                  <ListGroupItem key={key}>
-                                    <div className="fw-semibold">{getUserLabel(rel.driverId)}</div>
-                                    <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                      ID: {rel.driverId}
-                                    </div>
-                                    <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                      Current Points: {rel.points ?? 0}
-                                    </div>
-                                    <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                      Estimated Value: $
-                                      {getEstimatedDollarAmount(
-                                        editingPoints[key] ?? rel.points,
-                                        rel.sponsorId
-                                      )}
-                                    </div>
-                                  </ListGroupItem>
-                                );
-                              })}
-                            </ListGroup>
-                          )}
-                        </Card.Body>
-                      </Card>
-                    </Col>
-
-                    <Col md={12}>
-                      <Card>
-                        <Card.Body>
-                          <Card.Title>Point-to-Dollar Ratio</Card.Title>
-
-                          <Form.Group className="mb-3">
-                            <Form.Label>Point-to-Dollar Ratio</Form.Label>
-                            <Form.Control
-                              type="number"
-                              step="0.001"
-                              min="0.001"
-                              max="1.0"
-                              value={sponsorRatioInput}
-                              onChange={(e) => setSponsorRatioInput(e.target.value)}
-                            />
-                            <Form.Text className="text-muted">
-                              Example: 0.10 means each point is worth $0.10.
-                            </Form.Text>
-                          </Form.Group>
-
-                          {sponsorRatioError && (
-                            <div className="alert alert-danger py-2">{sponsorRatioError}</div>
-                          )}
-
-                          {sponsorRatioSuccess && (
-                            <div className="alert alert-success py-2">{sponsorRatioSuccess}</div>
-                          )}
-
-                          <Button
-                            onClick={handleSaveRatio}
-                            disabled={savingRatio || !selectedSponsorId}
-                          >
-                            {savingRatio ? "Saving..." : "Save Ratio"}
-                          </Button>
-                        </Card.Body>
-                      </Card>
-                    </Col>
                   </Row>
                 </Col>
               </Row>
             </Tab.Pane>
               <Tab.Pane eventKey="manageSponsors">
                 <ManageSponsorsTab
-                  sponsorUsers={sponsors}
-                  onSelectSponsor={setSelectedSponsorUser}
-                  relationships={sponsorRelationships}
-                  loadRelationships={loadRelationships}
-                  getUserLabel={getUserLabel}
-                  driverUsers={driverUsers}
-                  assignDriverToSponsor={async (sponsorId, driverId) => {
-                    await client.models.DriverSponsor.create({
-                      driverId,
-                      sponsorId,
-                      points: 0,
-                    });
-                    await loadRelationships(sponsorId);
-                  }}
-                  removeDriverFromSponsor={async (sponsorId, driverId) => {
-                    await client.models.DriverSponsor.delete({
-                      driverId,
-                      sponsorId,
-                    });
-                    await loadRelationships(sponsorId);
-                  }}
-                  awardPointsToDriver={async (sponsorId, driverId, amount) => {
-                    const driverResult = await client.models.Driver.get({ driverId });
-                    const currentDriverPoints = driverResult?.data?.points ?? 0;
+                    sponsorUsers={sponsors}
+                    onSelectSponsor={setSelectedSponsorUser}
+                    relationships={sponsorRelationships}
+                    loadRelationships={loadRelationships}
+                    getUserLabel={getUserLabel}
+                    driverUsers={driverUsers}
+                    sponsorRatioInput={sponsorRatioInput}
+                    setSponsorRatioInput={setSponsorRatioInput}
+                    sponsorRatioError={sponsorRatioError}
+                    sponsorRatioSuccess={sponsorRatioSuccess}
+                    handleSaveRatio={handleSaveRatio}
+                    savingRatio={savingRatio}
+                    assignDriverToSponsor={async (sponsorId, driverId) => {
+                        await client.models.DriverSponsor.create({
+                        driverId,
+                        sponsorId,
+                        points: 0,
+                        });
+                        await loadRelationships(sponsorId);
+                    }}
+                    removeDriverFromSponsor={async (sponsorId, driverId) => {
+                        await client.models.DriverSponsor.delete({
+                        driverId,
+                        sponsorId,
+                        });
+                        await loadRelationships(sponsorId);
+                    }}
+                    awardPointsToDriver={async (sponsorId, driverId, amount) => {
+                        const driverResult = await client.models.Driver.get({ driverId });
+                        const currentDriverPoints = driverResult?.data?.points ?? 0;
 
-                    await client.models.Driver.update({
-                      driverId,
-                      points: currentDriverPoints + amount,
-                    });
+                        await client.models.Driver.update({
+                        driverId,
+                        points: currentDriverPoints + amount,
+                        });
 
-                    const relResult = await client.models.DriverSponsor.get({
-                      driverId,
-                      sponsorId,
-                    });
+                        const relResult = await client.models.DriverSponsor.get({
+                        driverId,
+                        sponsorId,
+                        });
 
-                    const currentSponsorPoints = relResult?.data?.points ?? 0;
+                        const currentSponsorPoints = relResult?.data?.points ?? 0;
 
-                    await client.models.DriverSponsor.update({
-                      driverId,
-                      sponsorId,
-                      points: currentSponsorPoints + amount,
-                    });
+                        await client.models.DriverSponsor.update({
+                        driverId,
+                        sponsorId,
+                        points: currentSponsorPoints + amount,
+                        });
 
-                    await loadRelationships(sponsorId);
-                  }}
-                  deductPointsFromDriver={async (sponsorId, driverId, amount) => {
-                    const driverResult = await client.models.Driver.get({ driverId });
-                    const currentDriverPoints = driverResult?.data?.points ?? 0;
-                    const newDriverTotal = Math.max(0, currentDriverPoints - amount);
+                        await loadRelationships(sponsorId);
+                    }}
+                    deductPointsFromDriver={async (sponsorId, driverId, amount) => {
+                        const driverResult = await client.models.Driver.get({ driverId });
+                        const currentDriverPoints = driverResult?.data?.points ?? 0;
+                        const newDriverTotal = Math.max(0, currentDriverPoints - amount);
 
-                    await client.models.Driver.update({
-                      driverId,
-                      points: newDriverTotal,
-                    });
+                        await client.models.Driver.update({
+                        driverId,
+                        points: newDriverTotal,
+                        });
 
-                    const relResult = await client.models.DriverSponsor.get({
-                      driverId,
-                      sponsorId,
-                    });
+                        const relResult = await client.models.DriverSponsor.get({
+                        driverId,
+                        sponsorId,
+                        });
 
-                    const currentSponsorPoints = relResult?.data?.points ?? 0;
-                    const newSponsorTotal = Math.max(0, currentSponsorPoints - amount);
+                        const currentSponsorPoints = relResult?.data?.points ?? 0;
+                        const newSponsorTotal = Math.max(0, currentSponsorPoints - amount);
 
-                    await client.models.DriverSponsor.update({
-                      driverId,
-                      sponsorId,
-                      points: newSponsorTotal,
-                    });
+                        await client.models.DriverSponsor.update({
+                        driverId,
+                        sponsorId,
+                        points: newSponsorTotal,
+                        });
 
-                    await loadRelationships(sponsorId);
-                  }}
-                />
+                        await loadRelationships(sponsorId);
+                    }}
+                    />
               </Tab.Pane>
 
               <Tab.Pane eventKey="manageAdmins">
