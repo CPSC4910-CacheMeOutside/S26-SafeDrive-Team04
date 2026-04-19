@@ -760,6 +760,7 @@ function ManageSponsorsTab({
                         Current Driver Relationships
                       </strong>
                     </Card.Title>
+                    <Form.Label></Form.Label>
 
                     {!selectedSponsorUser ? (
                         <div className="text-muted">Select a sponsor to view assignments.</div>
