@@ -116,6 +116,11 @@ function ManageSponsorsTab({
     selectedSponsorUser?.username ||
     "N/A";
 
+  const totalSponsorPoints = (relationships || []).reduce(
+    (sum, rel) => sum + (rel.points ?? 0),
+    0
+  );
+
   return (
     <Row className="g-4 align-items-start">
       <Col md={4}>
@@ -227,9 +232,16 @@ function ManageSponsorsTab({
                       <strong>Drivers:</strong>{" "}
                       {relationships.length
                         ? relationships
-                            .map((rel) => getDriverLabel(rel.driverId))
-                            .join(", ")
+                          .map(
+                            (rel) =>
+                              `${getDriverLabel(rel.driverId)} (${rel.points ?? 0} pts)`
+                          )
+                          .join(", ")
                         : "No assigned drivers found."}
+                    </div>
+
+                    <div className="mb-2">
+                      <strong>Total Points Awarded:</strong> {totalSponsorPoints}
                     </div>
                   </div>
                 )}
