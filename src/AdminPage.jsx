@@ -853,6 +853,9 @@ function AdminPage() {
                   <Nav.Link eventKey="audit">{t("admin.logsReports")}</Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
+                  <Nav.Link eventKey="manageUsers">Create/Delete Users</Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
                   <Nav.Link eventKey="updateAbout">Update About Info</Nav.Link>
                 </Nav.Item>
               </Nav>
@@ -1598,7 +1601,73 @@ function AdminPage() {
                   </Col>
                 </Row>
               </Tab.Pane>
+              <Tab.Pane eventKey={"manageUsers"}>
+                    <Row>
+                      <Col md={6}>
+                        <Card className="mb-4">
+                          <Card.Body>
+                            <Card.Title>Create User</Card.Title>
 
+                            {userMgmtError && <div className="alert alert-danger">{userMgmtError}</div>}
+                            {newMgmtMessage && <div className="alert alert-success">{newMgmtMessage}</div>}
+
+                            <Form.Group className="mb-2">
+                              <Form.Label>Email</Form.Label>
+                              <Form.Control value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
+                            </Form.Group>
+
+                            <Form.Group className="mb-2">
+                              <Form.Label>Confirm Email</Form.Label>
+                              <Form.Control value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                            </Form.Group>
+
+                            <Form.Group className="mb-2">
+                              <Form.Label>Password</Form.Label>
+                              <Form.Control value={newTempPassword} onChange={(e) => setNewTempPassword(e.target.value)} />
+                            </Form.Group>
+
+                            <Form.Group className="mb-2">
+                              <Form.Label>Role</Form.Label>
+                              <Form.Select value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)}>
+                                <option value="Admin">Admin</option>
+                                <option value="Driver">Driver</option>
+                                <option value="Sponsor">Sponsor</option>
+                              </Form.Select>
+                            </Form.Group>
+
+                            <Button onClick={handleCreateUser} disabled={creatingUser}>
+                              {creatingUser ? "Creating..." : "Create"}
+                            </Button>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+
+                      <Col md={6}>
+                        <Card className="mb-4">
+                          <Card.Body>
+                            <Card.Title>Delete User</Card.Title>
+
+                            <ListGroup className="mb-3">
+                              {allManagedUsers.map((user) => (
+                                <ListGroupItem
+                                  key={user.username}
+                                  action
+                                  active={user.username === selectedManagedUsername}
+                                  onClick={() => setSelectedManagedUsername(user.username)}
+                                >
+                                  {getUserLabel(user.username)}
+                                </ListGroupItem>
+                              ))}
+                            </ListGroup>
+
+                            <Button variant="danger" onClick={handleDeleteUser} disabled={deletingUser}>
+                              {deletingUser ? "Deleting..." : "Delete"}
+                            </Button>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    </Row>
+              </Tab.Pane>
               <Tab.Pane eventKey="updateAbout" title="Update About">
                 <UpdateAbout />
               </Tab.Pane>
