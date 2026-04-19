@@ -174,12 +174,13 @@ const SafeDriveSchema = a.schema({
   .authorization(allow => [allow.publicApiKey()]),
 
   Order : a.model({
+    oId: a.id(),
     driverId: a.id().required(),
     sponsorId: a.id().required(),
     time: a.string().required(),
     status: a.integer().required(),
 
-    products: a.hasMany("OrderProduct", ['driverId', 'sponsorId'])
+    products: a.hasMany("OrderProduct", ['oId'])
 
   }).identifier(["sponsorId", "driverId"])
   .authorization(allow => [allow.publicApiKey()]),
@@ -187,7 +188,8 @@ const SafeDriveSchema = a.schema({
   OrderProduct : a.model({
     driverId: a.id().required(),
     sponsorId: a.id().required(),
-    order: a.belongsTo("Order", ["driverId", "sponsorId"]),
+    oId: a.id().required(),
+    order: a.belongsTo("Order", ["oId"]),
     pId: a.id().required(),
     product: a.belongsTo("Product", "pId")
   }).identifier(['driverId', 'sponsorId', 'pId'])

@@ -275,6 +275,7 @@ export default function SponsorCatalog() {
         }
 
         const {data: orderProduct, errors: opErrors} = await client.models.OrderProduct.create({
+            oId: data.oId,
             driverId: userData.id,
             sponsorId: sId,
             productId: product.id
