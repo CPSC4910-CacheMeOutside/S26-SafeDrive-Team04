@@ -11,10 +11,17 @@ import { useNavigate } from "react-router-dom";
 function ManageSponsorsTab({
   sponsorUsers = [],
   onSelectSponsor,
-  relationships,
+  relationships = [],
   loadRelationships,
   getUserLabel,
+  getEstimatedDollarAmount,
   driverUsers = [],
+  sponsorRatioInput,
+  setSponsorRatioInput,
+  sponsorRatioError,
+  sponsorRatioSuccess,
+  handleSaveRatio,
+  savingRatio,
   assignDriverToSponsor,
   removeDriverFromSponsor,
   awardPointsToDriver,
@@ -62,6 +69,11 @@ function ManageSponsorsTab({
     );
   }, [driverUsers, assignedDriverIds]);
 
+  useEffect(() => {
+    if (sponsorUsers.length > 0 && !selectedSponsorUsername) {
+      setSelectedSponsorUsername(sponsorUsers[0].username);
+    }
+  }, [sponsorUsers, selectedSponsorUsername]);
 
   useEffect(() => {
     if (onSelectSponsor) {
@@ -117,6 +129,62 @@ function ManageSponsorsTab({
     selectedAwardDriverUsername,
     selectedDeductDriverUsername,
   ]);
+
+  useEffect(() => {
+  if (assignDriverSuccess) {
+    const timer = setTimeout(() => setAssignDriverSuccess(""), 3000);
+    return () => clearTimeout(timer);
+  }
+}, [assignDriverSuccess]);
+
+useEffect(() => {
+  if (assignDriverError) {
+    const timer = setTimeout(() => setAssignDriverError(""), 3000);
+    return () => clearTimeout(timer);
+  }
+}, [assignDriverError]);
+
+useEffect(() => {
+  if (removeDriverSuccess) {
+    const timer = setTimeout(() => setRemoveDriverSuccess(""), 3000);
+    return () => clearTimeout(timer);
+  }
+}, [removeDriverSuccess]);
+
+  useEffect(() => {
+    if (removeDriverError) {
+        const timer = setTimeout(() => setRemoveDriverError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [removeDriverError]);
+
+  useEffect(() => {
+    if (awardSuccess) {
+        const timer = setTimeout(() => setAwardSuccess(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [awardSuccess]);
+
+  useEffect(() => {
+    if (awardError) {
+        const timer = setTimeout(() => setAwardError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [awardError]);
+
+  useEffect(() => {
+    if (deductSuccess) {
+        const timer = setTimeout(() => setDeductSuccess(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductSuccess]);
+
+  useEffect(() => {
+    if (deductError) {
+        const timer = setTimeout(() => setDeductError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductError]);
 
   const handleViewSponsor = () => {
     if (!selectedSponsorUser?.username) return;
@@ -703,6 +771,87 @@ function ManageSponsorsTab({
                   </Card.Body>
                 </Card>
               </Col>
+              <Col md={12}>
+                  <Card>
+                    <Card.Body>
+                    <Card.Title><strong>Point-to-Dollar Ratio</strong></Card.Title>
+
+                    <Form.Group className="mb-3">
+                        <Form.Label></Form.Label>
+                        <Form.Control
+                        type="number"
+                        step="0.001"
+                        min="0.001"
+                        max="1.0"
+                        value={sponsorRatioInput}
+                        onChange={(e) => setSponsorRatioInput(e.target.value)}
+                        />
+                        <Form.Text className="text-muted">
+                        Example: 0.10 means each point is worth $0.10.
+                        </Form.Text>
+                    </Form.Group>
+
+                    {sponsorRatioError && (
+                        <div className="alert alert-danger py-2">{sponsorRatioError}</div>
+                    )}
+
+                    {sponsorRatioSuccess && (
+                        <div className="alert alert-success py-2">{sponsorRatioSuccess}</div>
+                    )}
+
+                    <Button
+                        onClick={handleSaveRatio}
+                        disabled={savingRatio || !selectedSponsorUser?.username}
+                    >
+                        {savingRatio ? "Saving..." : "Save Ratio"}
+                    </Button>
+                    </Card.Body>
+                  </Card>
+              </Col>
+              <Col md={12}>
+                <Card>
+                    <Card.Body>
+                    <Card.Title>
+                      <strong>
+                        Current Driver Relationships
+                      </strong>
+                    </Card.Title>
+                    <Form.Label></Form.Label>
+
+                    {!selectedSponsorUser ? (
+                        <div className="text-muted">Select a sponsor to view assignments.</div>
+                    ) : !relationships.length ? (
+                        <div className="text-muted">
+                        No drivers assigned to this sponsor yet.
+                        </div>
+                    ) : (
+                        <ListGroup>
+                        {relationships.map((rel, index) => {
+                            const key = rel.driverSponsorId || `${rel.driverId}-${rel.sponsorId}-${index}`;
+
+                            return (
+                            <ListGroupItem key={key}>
+                                <div className="fw-semibold">{getUserLabel(rel.driverId)}</div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                  ID: {rel.driverId}
+                                </div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                  Current Points: {rel.points ?? 0}
+                                </div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                  Estimated Dollar Value: $
+                                  {getEstimatedDollarAmount
+                                    ? getEstimatedDollarAmount(rel.points ?? 0, rel.sponsorId)
+                                    : "0.00"}
+                                </div>
+                            </ListGroupItem>
+                            );
+                        })}
+                        </ListGroup>
+                    )}
+                    </Card.Body>
+                  </Card>
+                </Col>
             </Row>
           </Col>
         </Row>

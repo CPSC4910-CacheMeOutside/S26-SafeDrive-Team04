@@ -99,6 +99,7 @@ function AdminPage() {
   const [selectedAdminUser, setSelectedAdminUser] = useState(null);
   const [selectedAwardSponsorId, setSelectedAwardSponsorId] = useState("");
   const [selectedDeductSponsorId, setSelectedDeductSponsorId] = useState("");
+  const [selectedSponsorToAssign, setSelectedSponsorToAssign] = useState("");
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -132,32 +133,46 @@ function AdminPage() {
 
   const handleSaveRatio = async () => {
     const num = parseFloat(sponsorRatioInput);
+
     if (isNaN(num) || num < 0.001 || num > 1.0) {
       setSponsorRatioError("Ratio must be between 0.001 and 1.0");
       return;
     }
+
+    const sponsorId = selectedSponsorUser?.username || selectedSponsorUser?.sponsorId;
+
     try {
       setSavingRatio(true);
       setSponsorRatioError("");
+      setSponsorRatioSuccess("");
 
-      if (!selectedSponsorId) {
+      if (!sponsorId) {
         setSponsorRatioError("Please select a sponsor.");
         return;
       }
 
-      const existing = await client.models.Sponsor.get({ sponsorId: selectedSponsorId });
+      const existing = await client.models.Sponsor.get({ sponsorId });
 
       if (existing?.data) {
         await client.models.Sponsor.update({
-          sponsorId: selectedSponsorId,
+          sponsorId,
           pointToDollarRatio: num,
         });
       } else {
         await client.models.Sponsor.create({
-          sponsorId: selectedSponsorId,
+          sponsorId,
           pointToDollarRatio: num,
         });
       }
+
+      setSponsors((prev) =>
+        prev.map((s) =>
+          (s.sponsorId || s.username) === sponsorId
+          ? { ...s, pointToDollarRatio: num }
+          : s
+        )
+      );
+
       setSponsorRatioSuccess("Ratio saved successfully!");
       setTimeout(() => setSponsorRatioSuccess(""), 3000);
     } catch (error) {
@@ -431,12 +446,13 @@ function AdminPage() {
     }
   }, []);
 
-  const availableSponsors = sponsors.filter(
-    (sponsor) => !driverRelationships.some((rel) => rel.sponsorId === sponsor.sponsorId)
-  );
+  const availableSponsors = sponsors.filter((sponsor) => {
+    const sponsorId = sponsor.sponsorId || sponsor.username;
+    return !driverRelationships.some((rel) => rel.sponsorId === sponsorId);
+  });
 
   const handleAssignDriverToSponsor = async () => {
-    if (!selectedDriverUser || !selectedSponsorId) {
+    if (!selectedDriverUser || !selectedSponsorToAssign) {
       setAssignError("Please select a driver and a sponsor.");
       setAssignMessage("");
       return;
@@ -447,7 +463,7 @@ function AdminPage() {
       setAssignMessage("");
 
       const driverId = selectedDriverUser.username;
-      const sponsorId = selectedSponsorId;
+      const sponsorId = selectedSponsorToAssign;
 
       const alreadyAssigned = driverRelationships.some(
         (rel) => rel.driverId === driverId && rel.sponsorId === sponsorId
@@ -467,7 +483,7 @@ function AdminPage() {
       setDriverRelationships((prev) => [...prev, { driverId, sponsorId, points: 0 }]);
 
       setAssignMessage("Sponsor assigned successfully.");
-      setSelectedSponsorId("");
+      setSelectedSponsorToAssign("");
     } catch (error) {
       console.error(error);
       setAssignError("Failed to assign sponsor.");
@@ -527,6 +543,48 @@ function AdminPage() {
       return () => clearTimeout(timer);
     }
   }, [removeError]);
+
+  useEffect(() => {
+    if (awardMessage) {
+      const timer = setTimeout(() => setAwardMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [awardMessage]);
+
+  useEffect(() => {
+    if (awardError) {
+        const timer = setTimeout(() => setAwardError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [awardError]);
+
+  useEffect(() => {
+    if (deductMessage) {
+        const timer = setTimeout(() => setDeductMessage(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductMessage]);
+
+  useEffect(() => {
+    if (deductError) {
+        const timer = setTimeout(() => setDeductError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductError]);
+
+  useEffect(() => {
+    if (relationshipMessage) {
+        const timer = setTimeout(() => setRelationshipMessage(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [relationshipMessage]);
+
+  useEffect(() => {
+    if (relationshipError) {
+        const timer = setTimeout(() => setRelationshipError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [relationshipError]);
 
   const handleAwardPoints = async () => {
     if (!selectedDriverUser) {
@@ -790,9 +848,20 @@ function AdminPage() {
   };
 
   const getSponsorRatio = (sponsorId) => {
-    const sponsor = sponsors.find((s) => s.sponsorId === sponsorId);
-    return sponsor?.pointToDollarRatio ?? DEFAULT_RATIO;
-  };
+  const selectedId =
+    selectedSponsorUser?.username || selectedSponsorUser?.sponsorId;
+
+  if (sponsorId === selectedId) {
+    const liveRatio = Number(sponsorRatioInput);
+    return Number.isFinite(liveRatio) ? liveRatio : DEFAULT_RATIO;
+  }
+
+  const sponsor = sponsors.find(
+    (s) => (s.sponsorId || s.username) === sponsorId
+  );
+
+  return sponsor?.pointToDollarRatio ?? DEFAULT_RATIO;
+};
 
   const getEstimatedDollarAmount = (points, sponsorId) => {
     const ratio = getSponsorRatio(sponsorId);
@@ -854,9 +923,6 @@ function AdminPage() {
                 </Nav.Item>
                 <Nav.Item>
                   <Nav.Link eventKey="pendingUsers">Manage Pending Users</Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link eventKey="audit">{t("admin.logsReports")}</Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
                   <Nav.Link eventKey="manageUsers">Create/Delete Users</Nav.Link>
@@ -1128,20 +1194,24 @@ function AdminPage() {
                           ) : (
                             <>
                               <Form.Group className="mb-3">
-                                <Form.Label>{t('admin.assignGroup')}</Form.Label>
+                                <Form.Label></Form.Label>
                                 <Form.Select
-                                  value={selectedSponsorId || ""}
-                                  onChange={(e) => setSelectedSponsorId(e.target.value)}
+                                  value={selectedSponsorToAssign || ""}
+                                  onChange={(e) => setSelectedSponsorToAssign(e.target.value)}
                                   disabled={!selectedDriverUser}
                                 >
                                   <option value="" disabled>
                                     Select a sponsor
                                   </option>
-                                  {availableSponsors.map((sponsor) => (
-                                    <option key={sponsor.sponsorId} value={sponsor.sponsorId}>
-                                      {sponsor.affiliation || sponsor.sponsorId}
-                                    </option>
-                                  ))}
+                                  {availableSponsors.map((sponsor) => {
+                                    const sponsorId = sponsor.sponsorId || sponsor.username;
+
+                                    return (
+                                      <option key={sponsorId} value={sponsorId}>
+                                        {sponsor.affiliation || sponsor.name || sponsor.username || sponsorId}
+                                      </option>
+                                    );
+                                  })}
                                 </Form.Select>
                               </Form.Group>
 
@@ -1168,6 +1238,7 @@ function AdminPage() {
                           </Card.Title>
                           <StatusAlert error={removeError} message={removeMessage} />
                           <Form.Group className="mb-3">
+                            <Form.Label></Form.Label>
                             <Form.Select
                               value={selectedAssignedSponsorId || ""}
                               onChange={(e) => setSelectedAssignedSponsorId(e.target.value)}
@@ -1212,6 +1283,7 @@ function AdminPage() {
                           ) : (
                             <>
                               <Form.Group className="mb-3">
+                                <Form.Label></Form.Label>
                                 <Form.Select
                                   value={selectedAwardSponsorId}
                                   onChange={(e) => setSelectedAwardSponsorId(e.target.value)}
@@ -1266,6 +1338,7 @@ function AdminPage() {
                           ) : (
                             <>
                               <Form.Group className="mb-3">
+                                <Form.Label></Form.Label>
                                 <Form.Select
                                   value={selectedDeductSponsorId}
                                   onChange={(e) => setSelectedDeductSponsorId(e.target.value)}
@@ -1307,168 +1380,91 @@ function AdminPage() {
                         </Card.Body>
                       </Card>
                     </Col>
-
-                    <Col md={12}>
-                      <Card>
-                        <Card.Body>
-                          <Card.Title>
-                            Current Relationships
-                            {selectedSponsorId ? ` (${getUserLabel(selectedSponsorId)})` : ""}
-                          </Card.Title>
-
-                          {loadingRelationships ? (
-                            <div className="text-muted">Loading relationships...</div>
-                          ) : !selectedSponsorId ? (
-                            <div className="text-muted">Select a sponsor to view assignments.</div>
-                          ) : !sponsorRelationships.length ? (
-                            <div className="text-muted">
-                              No drivers assigned to this sponsor yet.
-                            </div>
-                          ) : (
-                            <ListGroup>
-                              {sponsorRelationships.map((rel) => {
-                                const key = `${rel.driverId}-${rel.sponsorId}`;
-
-                                return (
-                                  <ListGroupItem key={key}>
-                                    <div className="fw-semibold">{getUserLabel(rel.driverId)}</div>
-                                    <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                      ID: {rel.driverId}
-                                    </div>
-                                    <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                      Current Points: {rel.points ?? 0}
-                                    </div>
-                                    <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                      Estimated Value: $
-                                      {getEstimatedDollarAmount(
-                                        editingPoints[key] ?? rel.points,
-                                        rel.sponsorId
-                                      )}
-                                    </div>
-                                  </ListGroupItem>
-                                );
-                              })}
-                            </ListGroup>
-                          )}
-                        </Card.Body>
-                      </Card>
-                    </Col>
-
-                    <Col md={12}>
-                      <Card>
-                        <Card.Body>
-                          <Card.Title>Point-to-Dollar Ratio</Card.Title>
-
-                          <Form.Group className="mb-3">
-                            <Form.Label>Point-to-Dollar Ratio</Form.Label>
-                            <Form.Control
-                              type="number"
-                              step="0.001"
-                              min="0.001"
-                              max="1.0"
-                              value={sponsorRatioInput}
-                              onChange={(e) => setSponsorRatioInput(e.target.value)}
-                            />
-                            <Form.Text className="text-muted">
-                              Example: 0.10 means each point is worth $0.10.
-                            </Form.Text>
-                          </Form.Group>
-
-                          {sponsorRatioError && (
-                            <div className="alert alert-danger py-2">{sponsorRatioError}</div>
-                          )}
-
-                          {sponsorRatioSuccess && (
-                            <div className="alert alert-success py-2">{sponsorRatioSuccess}</div>
-                          )}
-
-                          <Button
-                            onClick={handleSaveRatio}
-                            disabled={savingRatio || !selectedSponsorId}
-                          >
-                            {savingRatio ? "Saving..." : "Save Ratio"}
-                          </Button>
-                        </Card.Body>
-                      </Card>
-                    </Col>
                   </Row>
                 </Col>
               </Row>
             </Tab.Pane>
               <Tab.Pane eventKey="manageSponsors">
                 <ManageSponsorsTab
-                  sponsorUsers={sponsors}
-                  onSelectSponsor={setSelectedSponsorUser}
-                  relationships={sponsorRelationships}
-                  loadRelationships={loadRelationships}
-                  getUserLabel={getUserLabel}
-                  driverUsers={driverUsers}
-                  assignDriverToSponsor={async (sponsorId, driverId) => {
-                    await client.models.DriverSponsor.create({
-                      driverId,
-                      sponsorId,
-                      points: 0,
-                    });
-                    await loadRelationships(sponsorId);
-                  }}
-                  removeDriverFromSponsor={async (sponsorId, driverId) => {
-                    await client.models.DriverSponsor.delete({
-                      driverId,
-                      sponsorId,
-                    });
-                    await loadRelationships(sponsorId);
-                  }}
-                  awardPointsToDriver={async (sponsorId, driverId, amount) => {
-                    const driverResult = await client.models.Driver.get({ driverId });
-                    const currentDriverPoints = driverResult?.data?.points ?? 0;
+                    sponsorUsers={sponsors}
+                    onSelectSponsor={setSelectedSponsorUser}
+                    relationships={sponsorRelationships}
+                    loadRelationships={loadRelationships}
+                    getUserLabel={getUserLabel}
+                    getEstimatedDollarAmount={getEstimatedDollarAmount}
+                    driverUsers={driverUsers}
+                    sponsorRatioInput={sponsorRatioInput}
+                    setSponsorRatioInput={setSponsorRatioInput}
+                    sponsorRatioError={sponsorRatioError}
+                    sponsorRatioSuccess={sponsorRatioSuccess}
+                    handleSaveRatio={handleSaveRatio}
+                    savingRatio={savingRatio}
+                    assignDriverToSponsor={async (sponsorId, driverId) => {
+                        await client.models.DriverSponsor.create({
+                        driverId,
+                        sponsorId,
+                        points: 0,
+                        });
+                        await loadRelationships(sponsorId);
+                    }}
+                    removeDriverFromSponsor={async (sponsorId, driverId) => {
+                        await client.models.DriverSponsor.delete({
+                        driverId,
+                        sponsorId,
+                        });
+                        await loadRelationships(sponsorId);
+                    }}
+                    awardPointsToDriver={async (sponsorId, driverId, amount) => {
+                        const driverResult = await client.models.Driver.get({ driverId });
+                        const currentDriverPoints = driverResult?.data?.points ?? 0;
 
-                    await client.models.Driver.update({
-                      driverId,
-                      points: currentDriverPoints + amount,
-                    });
+                        await client.models.Driver.update({
+                        driverId,
+                        points: currentDriverPoints + amount,
+                        });
 
-                    const relResult = await client.models.DriverSponsor.get({
-                      driverId,
-                      sponsorId,
-                    });
+                        const relResult = await client.models.DriverSponsor.get({
+                        driverId,
+                        sponsorId,
+                        });
 
-                    const currentSponsorPoints = relResult?.data?.points ?? 0;
+                        const currentSponsorPoints = relResult?.data?.points ?? 0;
 
-                    await client.models.DriverSponsor.update({
-                      driverId,
-                      sponsorId,
-                      points: currentSponsorPoints + amount,
-                    });
+                        await client.models.DriverSponsor.update({
+                        driverId,
+                        sponsorId,
+                        points: currentSponsorPoints + amount,
+                        });
 
-                    await loadRelationships(sponsorId);
-                  }}
-                  deductPointsFromDriver={async (sponsorId, driverId, amount) => {
-                    const driverResult = await client.models.Driver.get({ driverId });
-                    const currentDriverPoints = driverResult?.data?.points ?? 0;
-                    const newDriverTotal = Math.max(0, currentDriverPoints - amount);
+                        await loadRelationships(sponsorId);
+                    }}
+                    deductPointsFromDriver={async (sponsorId, driverId, amount) => {
+                        const driverResult = await client.models.Driver.get({ driverId });
+                        const currentDriverPoints = driverResult?.data?.points ?? 0;
+                        const newDriverTotal = Math.max(0, currentDriverPoints - amount);
 
-                    await client.models.Driver.update({
-                      driverId,
-                      points: newDriverTotal,
-                    });
+                        await client.models.Driver.update({
+                        driverId,
+                        points: newDriverTotal,
+                        });
 
-                    const relResult = await client.models.DriverSponsor.get({
-                      driverId,
-                      sponsorId,
-                    });
+                        const relResult = await client.models.DriverSponsor.get({
+                        driverId,
+                        sponsorId,
+                        });
 
-                    const currentSponsorPoints = relResult?.data?.points ?? 0;
-                    const newSponsorTotal = Math.max(0, currentSponsorPoints - amount);
+                        const currentSponsorPoints = relResult?.data?.points ?? 0;
+                        const newSponsorTotal = Math.max(0, currentSponsorPoints - amount);
 
-                    await client.models.DriverSponsor.update({
-                      driverId,
-                      sponsorId,
-                      points: newSponsorTotal,
-                    });
+                        await client.models.DriverSponsor.update({
+                        driverId,
+                        sponsorId,
+                        points: newSponsorTotal,
+                        });
 
-                    await loadRelationships(sponsorId);
-                  }}
-                />
+                        await loadRelationships(sponsorId);
+                    }}
+                    />
               </Tab.Pane>
 
               <Tab.Pane eventKey="manageAdmins">
@@ -1613,7 +1609,7 @@ function AdminPage() {
                       <Col md={6}>
                         <Card className="mb-4">
                           <Card.Body>
-                            <Card.Title>Create User</Card.Title>
+                            <Card.Title className="mb-4"><strong>Create User</strong></Card.Title>
 
                             {userMgmtError && <div className="alert alert-danger">{userMgmtError}</div>}
                             {newMgmtMessage && <div className="alert alert-success">{newMgmtMessage}</div>}
@@ -1652,7 +1648,7 @@ function AdminPage() {
                       <Col md={6}>
                         <Card className="mb-4">
                           <Card.Body>
-                            <Card.Title>Delete User</Card.Title>
+                            <Card.Title className="mb-4"><strong>Delete User</strong></Card.Title>
 
                             <ListGroup className="mb-3">
                               {allManagedUsers.map((user) => (
@@ -1677,10 +1673,6 @@ function AdminPage() {
               </Tab.Pane>
               <Tab.Pane eventKey="updateAbout" title="Update About">
                 <UpdateAbout />
-              </Tab.Pane>
-
-              <Tab.Pane eventKey="audit" title={t("admin.logsReports")}>
-                <div className="text-muted p-3">Audit log coming soon.</div>
               </Tab.Pane>
             </Tab.Content>
           </Tab.Container>

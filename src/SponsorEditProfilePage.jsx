@@ -185,7 +185,7 @@ function EditProfilePage({
         <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         {adminView && (
           <Alert style={{backgroundColor: "#10b981", color: "white", border: "none"}}>
-            <strong>*** You're editing sponsor account:</strong>{" "}{targetSponsorId}<strong>{" ***"}</strong>
+            <strong>*** Admin View: You're editing sponsor account</strong>{" "}{targetSponsorId}<strong>{" ***"}</strong>
           </Alert>
         )}
 
