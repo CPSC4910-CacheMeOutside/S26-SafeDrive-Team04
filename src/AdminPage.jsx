@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
-import { useLanguage } from "./LanguageContext";
+import { useEffect, useMemo, useState, useCallback } from "react";import { useLanguage } from "./LanguageContext";
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
@@ -199,14 +198,6 @@ function AdminPage() {
   };
 
   useEffect(() => {
-  loadDriverUsers();
-  loadUnassignedUsers();
-  loadSponsors();
-  loadRelationshipDrivers();
-  loadManagedUsers();
-  }, []);
-
-  useEffect(() => {
   if (selectedSponsorId) {
     loadRelationships(selectedSponsorId);
     loadSponsorRatio(selectedSponsorId);
@@ -253,15 +244,13 @@ function AdminPage() {
       setRelationshipError("");
 
       const sponsorUsers = safeArray(await fetchSponsorUsers());
-      const ensuredSponsors = [];
 
-      for (const user of sponsorUsers) {
-        const sponsorRecord = await ensureSponsorRecord(user);
-        if (sponsorRecord) ensuredSponsors.push(sponsorRecord);
-      }
-
-      setSponsors(ensuredSponsors);
-      setSelectedSponsorId((prev) => (ensuredSponsors.some((s) => s.sponsorId === prev) ? prev : ""));
+      setSponsors(sponsorUsers);
+      setSelectedSponsorId((prev) =>
+        sponsorUsers.some((s) => (s.sponsorId || s.username) === prev)
+          ? prev
+          : ""
+      );
     } catch (error) {
       console.error(error);
       setRelationshipError("Failed to load sponsors.");
@@ -269,13 +258,12 @@ function AdminPage() {
       setLoadingSponsors(false);
     }
   };
-
   useEffect(() => {
     loadDriverUsers();
     loadUnassignedUsers();
     loadSponsors();
-    loadSponsorUsers();
     loadRelationshipDrivers();
+    loadManagedUsers();
   }, []);
 
   const loadDriverRelationships = async (driverId) => {
@@ -332,7 +320,6 @@ function AdminPage() {
       if (selectedRole === "Sponsor") {
         await ensureSponsorRecord(selectedPendingUser);
         await loadSponsors();
-        await loadSponsorUsers();
       }
 
       if (selectedRole === "Driver") {
@@ -410,7 +397,7 @@ function AdminPage() {
     }
   };
 
-  const loadRelationships = async (sponsorId) => {
+  const loadRelationships = useCallback(async (sponsorId) => {
     if (!sponsorId) {
       setSponsorRelationships([]);
       return;
@@ -436,7 +423,7 @@ function AdminPage() {
     } finally {
       setLoadingRelationships(false);
     }
-  };
+  }, []);
 
   const availableSponsors = sponsors.filter(
     (sponsor) => !driverRelationships.some((rel) => rel.sponsorId === sponsor.sponsorId)
@@ -817,7 +804,7 @@ function AdminPage() {
         driverMatch.username
       );
     }
-  }
+  
     const sponsorMatch = sponsors.find((s) => s.sponsorId === username);
     if (sponsorMatch) {
       return sponsorMatch.affiliation || sponsorMatch.sponsorId;
@@ -833,6 +820,7 @@ function AdminPage() {
     }
 
     return username;
+  };
 
   const StatusAlert = ({ error, message }) => (
     <>
@@ -1059,7 +1047,7 @@ function AdminPage() {
                                   ? driverRelationships
                                       .map(
                                         (rel) =>
-                                          `${getSponsorLabel(rel.sponsorId)} (${rel.points ?? 0} pts)`
+                                          `${getUserLabel(rel.sponsorId)} (${rel.points ?? 0} pts)`
                                       )
                                       .join(", ")
                                   : "No assigned sponsors found."}
@@ -1182,7 +1170,7 @@ function AdminPage() {
                               </option>
                               {driverRelationships.map((rel) => (
                                 <option key={rel.sponsorId} value={rel.sponsorId}>
-                                  {getSponsorLabel(rel.sponsorId)}
+                                  {getUserLabel(rel.sponsorId)}
                                 </option>
                               ))}
                             </Form.Select>
@@ -1224,7 +1212,7 @@ function AdminPage() {
                                   </option>
                                   {driverRelationships.map((rel) => (
                                     <option key={rel.sponsorId} value={rel.sponsorId}>
-                                      {getSponsorLabel(rel.sponsorId)}
+                                      {getUserLabel(rel.sponsorId)}
                                     </option>
                                   ))}
                                 </Form.Select>
@@ -1278,7 +1266,7 @@ function AdminPage() {
                                   </option>
                                   {driverRelationships.map((rel) => (
                                     <option key={rel.sponsorId} value={rel.sponsorId}>
-                                      {getSponsorLabel(rel.sponsorId)}
+                                      {getUserLabel(rel.sponsorId)}
                                     </option>
                                   ))}
                                 </Form.Select>
@@ -1399,10 +1387,11 @@ function AdminPage() {
             </Tab.Pane>
               <Tab.Pane eventKey="manageSponsors">
                 <ManageSponsorsTab
+                  sponsorUsers={sponsors}
                   onSelectSponsor={setSelectedSponsorUser}
                   relationships={sponsorRelationships}
                   loadRelationships={loadRelationships}
-                  getDriverLabel={getDriverLabel}
+                  getUserLabel={getUserLabel}
                   driverUsers={driverUsers}
                   assignDriverToSponsor={async (sponsorId, driverId) => {
                     await client.models.DriverSponsor.create({

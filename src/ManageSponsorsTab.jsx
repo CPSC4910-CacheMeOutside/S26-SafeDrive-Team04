@@ -6,24 +6,21 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { ListGroupItem } from "react-bootstrap";
-import { fetchSponsorUsers } from "./adminUpdateDriverInfo-api";
 import { useNavigate } from "react-router-dom";
 
 function ManageSponsorsTab({
+  sponsorUsers = [],
   onSelectSponsor,
   relationships,
   loadRelationships,
-  getDriverLabel,
+  getUserLabel,
   driverUsers = [],
   assignDriverToSponsor,
   removeDriverFromSponsor,
   awardPointsToDriver,
   deductPointsFromDriver,
 }) {
-  const [sponsorUsers, setSponsorUsers] = useState([]);
   const [selectedSponsorUsername, setSelectedSponsorUsername] = useState("");
-  const [loadingSponsorUsers, setLoadingSponsorUsers] = useState(false);
-  const [sponsorUsersError, setSponsorUsersError] = useState("");
 
   const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
   const [selectedAssignedDriverUsername, setSelectedAssignedDriverUsername] = useState("");
@@ -65,33 +62,6 @@ function ManageSponsorsTab({
     );
   }, [driverUsers, assignedDriverIds]);
 
-  const loadSponsorUsers = async () => {
-    try {
-      setLoadingSponsorUsers(true);
-      setSponsorUsersError("");
-
-      const users = await fetchSponsorUsers();
-      const safeUsers = Array.isArray(users) ? users : [];
-
-      setSponsorUsers(safeUsers);
-
-      setSelectedSponsorUsername((prev) => {
-        if (prev && safeUsers.some((u) => u.username === prev)) {
-          return prev;
-        }
-        return safeUsers[0]?.username || "";
-      });
-    } catch (error) {
-      console.error("Failed to load sponsors:", error);
-      setSponsorUsersError("Failed to load sponsors.");
-    } finally {
-      setLoadingSponsorUsers(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSponsorUsers();
-  }, []);
 
   useEffect(() => {
     if (onSelectSponsor) {
@@ -169,7 +139,7 @@ function ManageSponsorsTab({
       driverName:
         rel?.driverName ||
         rel?.driverNickname ||
-        getDriverLabel(rel?.driverId) ||
+        getUserLabel(rel?.driverId) ||
         rel?.driverEmail ||
         "Unknown Driver",
       driverNickname: rel?.driverNickname ?? "",
@@ -336,15 +306,9 @@ function ManageSponsorsTab({
               <strong>Select a Sponsor</strong>
             </Card.Title>
 
-            {sponsorUsersError && (
-              <div className="alert alert-danger py-2">{sponsorUsersError}</div>
-            )}
-
-            {loadingSponsorUsers ? (
-              <div className="text-muted">Loading sponsors...</div>
-            ) : !sponsorUsers.length ? (
-              <div className="text-muted">No sponsors found.</div>
-            ) : (
+              {!sponsorUsers.length ? (
+                <div className="text-muted">No sponsors found.</div>
+              ) : (
               <>
                 <ListGroup className="mb-3">
                   {sponsorUsers.map((user) => {
@@ -388,8 +352,7 @@ function ManageSponsorsTab({
                   className="mt-3"
                   style={{ width: "160px", height: "50px" }}
                   variant="outline-secondary"
-                  onClick={loadSponsorUsers}
-                  disabled={loadingSponsorUsers}
+                  onClick={() => window.location.reload()}
                 >
                   Refresh
                 </Button>
@@ -440,7 +403,7 @@ function ManageSponsorsTab({
                         ? relationships
                             .map(
                               (rel) =>
-                                `${getDriverLabel(rel.driverId)} (${rel.points ?? 0} pts)`
+                                `${getUserLabel(rel.driverId)} (${rel.points ?? 0} pts)`
                             )
                             .join(", ")
                         : "No assigned drivers found."}
@@ -597,7 +560,7 @@ function ManageSponsorsTab({
                             key={rel.driverSponsorId || `${rel.driverId}-${index}`}
                             value={rel.driverId}
                           >
-                            {`${getDriverLabel(rel.driverId)} (${rel.points ?? 0} pts)`}
+                            {`${getUserLabel(rel.driverId)} (${rel.points ?? 0} pts)`}
                           </option>
                         ))}
                       </Form.Select>
@@ -648,7 +611,7 @@ function ManageSponsorsTab({
                                 key={rel.driverSponsorId || `${rel.driverId}-${index}`}
                                 value={rel.driverId}
                               >
-                                {getDriverLabel(rel.driverId)}
+                                {getUserLabel(rel.driverId)}
                               </option>
                             ))}
                           </Form.Select>
@@ -709,7 +672,7 @@ function ManageSponsorsTab({
                                 key={rel.driverSponsorId || `${rel.driverId}-${index}`}
                                 value={rel.driverId}
                               >
-                                {getDriverLabel(rel.driverId)}
+                                {getUserLabel(rel.driverId)}
                               </option>
                             ))}
                           </Form.Select>
