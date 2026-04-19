@@ -233,7 +233,7 @@ function parseNotification(content) {
                     <p className="mb-2 text-nowrap"><strong>Name:</strong> {driver.fullName || "Unknown User"}</p>
                     <p className="mb-2 text-nowrap"><strong>Email:</strong> {driver.email || "No email found"}</p>
                     <p className="mb-2 text-nowrap"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
-                    <p className="mb-2 text-nowrap"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
+                    <p className="mb-2 text-nowrap"><strong>Group:</strong> {driver.groups.join(", ") || "None"}</p>
                     <p className="mb-0 text-nowrap"><strong>Points:</strong> {driver.points}</p>
                   </div>
               </Card.Body>

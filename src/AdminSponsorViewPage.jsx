@@ -67,25 +67,21 @@ function AdminSponsorViewPage() {
                   <strong>My Profile</strong>
                 </Card.Title>
 
-                <div className="mb-2">
+                <div className="text-start mb-2">
                   <strong>Name:</strong> {sponsorDisplayName}
                 </div>
 
-                <div className="mb-2">
+                <div className="text-start mb-2">
                   <strong>Email:</strong> {sponsorUser?.email || "N/A"}
                 </div>
 
-                <div className="mb-2">
+                <div className="text-start mb-2">
                   <strong>Phone:</strong>{" "}
                   {sponsorUser?.phone_number || sponsorUser?.phone || "N/A"}
                 </div>
 
-                <div className="mb-2">
-                  <strong>Groups:</strong> Sponsor
-                </div>
-
-                <div className="mb-2">
-                  <strong>Drivers:</strong> {relationships.length}
+                <div className="text-start mb-2">
+                  <strong>Group:</strong> Sponsor
                 </div>
               </Card.Body>
             </Card>
@@ -103,7 +99,7 @@ function AdminSponsorViewPage() {
                     <Card className="text-center h-100">
                       <Card.Body className="d-flex flex-column justify-content-center">
                         <h2>{relationships.length}</h2>
-                        <div>Assigned Drivers</div>
+                        <div>Driver Count</div>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -112,7 +108,7 @@ function AdminSponsorViewPage() {
                     <Card className="text-center h-100">
                       <Card.Body className="d-flex flex-column justify-content-center">
                         <h2>{totalPoints}</h2>
-                        <div>Total Points Distributed</div>
+                        <div>Points Awarded</div>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -133,11 +129,11 @@ function AdminSponsorViewPage() {
 
         <div style={{ maxWidth: "1080px", margin: "0 auto" }}>
           <Tabs defaultActiveKey="drivers" className="mb-4">
-            <Tab eventKey="drivers" title="Assigned Drivers">
+            <Tab eventKey="drivers" title="My Drivers">
               <Card>
                 <Card.Body>
                   <Card.Title className="text-center mb-4">
-                    <strong>Associated Drivers</strong>
+                    <strong>My Drivers</strong>
                   </Card.Title>
 
                   {!relationships.length ? (
