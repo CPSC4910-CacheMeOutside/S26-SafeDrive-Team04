@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import useAmplifyAuth from './UseAmplifyAuth';
 import { Form, Button, Container, Row, Col, Image, Alert } from 'react-bootstrap';
 import { get, put } from 'aws-amplify/api';
-import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
+import { updateUserAttributes, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+import { uploadData, getUrl } from 'aws-amplify/storage';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
 
@@ -12,7 +13,6 @@ function EditProfilePage({
   adminView = false,
   targetDriverId = null
 }) {
-  console.log("EditProfilePage rendered", { adminView, targetDriverId });
   const auth = useAmplifyAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -26,6 +26,7 @@ function EditProfilePage({
 
   const [authRole, setAuthRole] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -34,6 +35,7 @@ function EditProfilePage({
 
       if (!adminView) {
         const attrs = await fetchUserAttributes();
+
         setFormData({
           authName: attrs.name || "",
           authNickname: attrs.nickname || "",
@@ -44,7 +46,12 @@ function EditProfilePage({
         setAuthRole(auth.groups || []);
 
         if (attrs.picture && setProfilePic) {
-          setProfilePic(attrs.picture);
+          try {
+            const { url } = await getUrl({ path: attrs.picture });
+            setProfilePic(url.toString());
+          } catch {
+            setProfilePic(null);
+          }
         }
 
         return;
@@ -53,16 +60,11 @@ function EditProfilePage({
       try {
         setLoading(true);
 
-        console.log("idToken exists:", !!auth.idToken);
-        console.log("groups:", auth.groups);
-        console.log("targetDriverId:", targetDriverId);
-        console.log("token issuer:", auth.profile?.iss);
-
         const restOperation = get({
           apiName: "SafeDriveAPI",
           path: `/admin/drivers/${encodeURIComponent(targetDriverId)}`,
           options: {
-            headers: {Authorization: auth.idToken}
+            headers: { Authorization: auth.idToken }
           }
         });
 
@@ -79,7 +81,12 @@ function EditProfilePage({
         setAuthRole(data.groups || ["Driver"]);
 
         if (data.picture && setProfilePic) {
-          setProfilePic(data.picture);
+          try {
+            const { url } = await getUrl({ path: data.picture });
+            setProfilePic(url.toString());
+          } catch {
+            setProfilePic(null);
+          }
         }
       } catch (error) {
         console.error(error);
@@ -98,7 +105,8 @@ function EditProfilePage({
     auth.idToken,
     adminView,
     targetDriverId,
-    setProfilePic
+    setProfilePic,
+    t,
   ]);
 
   const handleChange = (e) => {
@@ -109,14 +117,13 @@ function EditProfilePage({
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file || !setProfilePic) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfilePic(reader.result);
-    };
-    reader.readAsDataURL(file);
+    setSelectedFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setProfilePic(previewUrl);
   };
 
   const handleSubmit = async (e) => {
@@ -128,15 +135,40 @@ function EditProfilePage({
     }
 
     try {
-      if (!adminView) {
-        const result = await updateUserAttributes({
-          userAttributes: {
-            nickname: formData.authNickname,
-            phone_number: formData.authPhoneNum
-          }
-        });
+      let picturePath = null;
 
-        console.log("update result", result);
+      if (selectedFile) {
+        const currentUser = await getCurrentUser();
+        const ext = selectedFile.name.split(".").pop() || "jpg";
+        picturePath = `profile-pictures/${currentUser.username}/avatar.${ext}`;
+
+        await uploadData({
+          path: picturePath,
+          data: selectedFile,
+          options: {
+            contentType: selectedFile.type,
+          },
+        }).result;
+
+        if (setProfilePic) {
+          const { url } = await getUrl({ path: picturePath });
+          setProfilePic(url.toString());
+        }
+      }
+
+      if (!adminView) {
+        const attrsToSave = {
+          nickname: formData.authNickname,
+          phone_number: formData.authPhoneNum,
+        };
+
+        if (picturePath) {
+          attrsToSave.picture = picturePath;
+        }
+
+        await updateUserAttributes({
+          userAttributes: attrsToSave
+        });
 
         const latest = await fetchUserAttributes();
 
@@ -163,7 +195,7 @@ function EditProfilePage({
             nickname: formData.authNickname,
             phone_number: formData.authPhoneNum,
             email: formData.authEmail,
-            picture: profilePic || null
+            picture: picturePath || null
           }
         }
       });
@@ -172,8 +204,6 @@ function EditProfilePage({
       alert(t('editProfile.driverProfileUpdated'));
     } catch (error) {
       console.error("Save error:", error);
-      console.error("Save error response:", error?.response);
-      console.error("Save error body:", error?.response?.body);
       alert(error?.message || "Something went wrong while saving.");
     }
   };
@@ -181,102 +211,101 @@ function EditProfilePage({
   return (
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{adminView ? "Edit Driver Account" : "Edit Profile"}</h1>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>
+          {adminView ? "Edit Driver Account" : "Edit Profile"}
+        </h1>
+
         <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        {adminView && (
-          <Alert variant="warning">
-            {t('editProfile.adminViewAlert')} {targetDriverId}
-          </Alert>
-        )}
+          {adminView && (
+            <Alert style={{ backgroundColor: "#10b981", color: "white", border: "none" }}>
+              <strong>*** You're editing driver account:</strong> {targetDriverId}<strong>{" ***"}</strong>
+            </Alert>
+          )}
 
-        {loading ? (
-          <div>{t('editProfile.loadingProfile')}</div>
-        ) : (
-          <Form onSubmit={handleSubmit}>
-            <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-              <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.fullName')}</Form.Label>
-                <Col sm={6}>
-                  <Form.Control
-                    name="authName"
-                    value={formData.authName}
-                    readOnly
-                    plaintext
-                  />
-                </Col>
-              </Form.Group>
+          {loading ? (
+            <div>{t('editProfile.loadingProfile')}</div>
+          ) : (
+            <Form onSubmit={handleSubmit}>
+              <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+                <Form.Group as={Row} className="mb-3">
+                  <Form.Label column sm={3}><strong>{t('editProfile.fullName')}</strong></Form.Label>
+                  <Col sm={6}>
+                    <Form.Control name="authName" value={formData.authName} readOnly plaintext />
+                  </Col>
+                </Form.Group>
 
-              <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.preferredName')}</Form.Label>
-                <Col sm={6}>
-                  <Form.Control
-                    name="authNickname"
-                    value={formData.authNickname}
-                    onChange={handleChange}
-                  />
-                </Col>
-              </Form.Group>
-
-              <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.phoneNumber')}</Form.Label>
-                <Col sm={6}>
-                  <Form.Control
-                    name="authPhoneNum"
-                    value={formData.authPhoneNum}
-                    onChange={handleChange}
-                  />
-                </Col>
-              </Form.Group>
-
-              <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.email')}</Form.Label>
-                <Col sm={6}>
-                  <Form.Control
-                    name="authEmail"
-                    value={formData.authEmail}
-                    readOnly
-                    plaintext
-                  />
-                </Col>
-              </Form.Group>
-
-              <Form.Group as={Row} className="mb-3">
-                <Form.Label column sm={3}>{t('editProfile.role')}</Form.Label>
-                <Col sm={6} className="d-flex align-items-start">
-                  {authRole.length > 0 ? authRole.join(", ") : <span>{t('common.na')}</span>}
-                </Col>
-              </Form.Group>
-
-              <Form.Group as={Row} className="mb-3 align-items-center">
-                <Form.Label column sm={3}>{t('editProfile.profilePicture')}</Form.Label>
-                <Col sm={6}>
-                  <div className="d-flex align-items-center">
+                <Form.Group as={Row} className="mb-3">
+                  <Form.Label column sm={3}><strong>{t('editProfile.preferredName')}</strong></Form.Label>
+                  <Col sm={6}>
                     <Form.Control
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="flex-grow-1 me-3"
+                      name="authNickname"
+                      value={formData.authNickname}
+                      onChange={handleChange}
                     />
-                  </div>
-                </Col>
+                  </Col>
+                </Form.Group>
 
-                <Col xs="auto" className="d-flex align-items-center">
-                  {profilePic && (
-                    <Image
-                      src={profilePic}
-                      roundedCircle
-                      width={90}
-                      height={90}
-                      alt="Profile Preview"
+                <Form.Group as={Row} className="mb-3">
+                  <Form.Label column sm={3}><strong>{t('editProfile.phoneNumber')}</strong></Form.Label>
+                  <Col sm={6}>
+                    <Form.Control
+                      name="authPhoneNum"
+                      value={formData.authPhoneNum}
+                      onChange={handleChange}
                     />
-                  )}
-                </Col>
-              </Form.Group>
-              <Button style={{ width: "160px", height: "50px" }} variant="secondary" className="me-2" onClick={() => navigate("/AdminPage")}>Exit</Button>
-              <Button style={{ width: "160px", height: "50px" }} type="submit">Save Changes</Button>
-            </div>
-          </Form>
-        )}
+                  </Col>
+                </Form.Group>
+
+                <Form.Group as={Row} className="mb-3">
+                  <Form.Label column sm={3}><strong>{t('editProfile.email')}</strong></Form.Label>
+                  <Col sm={6}>
+                    <Form.Control name="authEmail" value={formData.authEmail} readOnly plaintext />
+                  </Col>
+                </Form.Group>
+
+                <Form.Group as={Row} className="mb-3">
+                  <Form.Label column sm={3}><strong>{t('editProfile.role')}</strong></Form.Label>
+                  <Col sm={6} className="d-flex align-items-start">
+                    {authRole.length > 0 ? authRole.join(", ") : <span>{t('common.na')}</span>}
+                  </Col>
+                </Form.Group>
+
+                <Form.Group as={Row} className="mb-3 align-items-center">
+                  <Form.Label column sm={3}><strong>{t('editProfile.profilePicture')}</strong></Form.Label>
+                  <Col sm={6}>
+                    <div className="d-flex align-items-center">
+                      <Form.Control
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="flex-grow-1 me-3"
+                      />
+                    </div>
+                  </Col>
+
+                  <Col xs="auto" className="d-flex align-items-center">
+                    {profilePic && (
+                      <Image
+                        src={profilePic}
+                        roundedCircle
+                        width={90}
+                        height={90}
+                        alt="Profile Preview"
+                      />
+                    )}
+                  </Col>
+                </Form.Group>
+
+                <Button
+                  style={{ width: "160px", height: "50px" }}
+                  variant="secondary"
+                  className="me-2"
+                  onClick={() => navigate("/AdminPage")}
+                >Exit</Button>
+                <Button style={{ width: "160px", height: "50px" }} type="submit">Save Changes</Button>
+              </div>
+            </Form>
+          )}
         </div>
       </div>
     </Container>

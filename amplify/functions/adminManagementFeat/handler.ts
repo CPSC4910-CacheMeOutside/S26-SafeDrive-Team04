@@ -1,4 +1,13 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
+import crypto from 'crypto';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  GetCommand,
+  UpdateCommand,
+  ScanCommand,
+} from '@aws-sdk/lib-dynamodb';
 import {
   CognitoIdentityProviderClient,
   ListUsersCommand,
@@ -13,12 +22,18 @@ import {
 } from '@aws-sdk/client-cognito-identity-provider';
 
 const cognito = new CognitoIdentityProviderClient({});
+const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const driverViewTable = 'DriverViewSession-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
+
+const driverTable = 'Driver-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
+const driverSponsorTable = 'DriverSponsor-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
+const sponsorTable = 'Sponsor-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
 
 const APP_GROUPS = ['Admin', 'Driver', 'Sponsor'] as const;
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Origin': 'http://localhost:5173',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-driver-view-session',
   'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
 };
 
@@ -59,6 +74,20 @@ function getAttributesMap(attributes?: { Name?: string; Value?: string }[]) {
   );
 }
 
+function getClaimSub(event: any): string {
+  const claims = getClaims(event);
+  return claims.sub ?? '';
+}
+
+function getHeader(event: any, name: string): string | undefined {
+  const headers = event.headers ?? {};
+  return (
+    headers[name] ||
+    headers[name.toLowerCase()] ||
+    headers[name.toUpperCase()]
+  );
+}
+
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     if (event.httpMethod === 'OPTIONS') {
@@ -88,7 +117,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     const path = event.path || '';
-    const username = event.pathParameters?.username || event.pathParameters?.driverId;
+    const username =
+      event.pathParameters?.username || event.pathParameters?.driverId;
     const groupname = event.pathParameters?.groupname;
     if (event.httpMethod === 'POST' && path.endsWith('/admin/users')) {
       const body = JSON.parse(event.body || '{}');
@@ -202,29 +232,36 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     if (event.httpMethod === 'GET' && path.includes('/admin/users/group/') && groupname) {
-        const result = await cognito.send(new ListUsersInGroupCommand({UserPoolId: userPoolId, GroupName: groupname, Limit: 60,}));
-        const users = (result.Users ?? []).map((user) => {
-          const attrs = getAttributesMap(user.Attributes);
+      const result = await cognito.send(
+        new ListUsersInGroupCommand({
+          UserPoolId: userPoolId,
+          GroupName: groupname,
+          Limit: 60,
+        })
+      );
 
-          return {
-            username: user.Username ?? '',
-            email: attrs.email ?? '',
-            name: attrs.name ?? '',
-            preferred_username: attrs.preferred_username ?? '',
-            nickname: attrs.nickname ?? '',
-            phone_number: attrs.phone_number ?? '',
-            enabled: user.Enabled ?? false,
-            status: user.UserStatus ?? '',
-            groups: [groupname],
-          };
-        });
+      const users = (result.Users ?? []).map((user) => {
+        const attrs = getAttributesMap(user.Attributes);
 
-  return {
-    statusCode: 200,
-    headers: corsHeaders,
-    body: JSON.stringify(users),
-  };
-}
+        return {
+          username: user.Username ?? '',
+          email: attrs.email ?? '',
+          name: attrs.name ?? '',
+          preferred_username: attrs.preferred_username ?? '',
+          nickname: attrs.nickname ?? '',
+          phone_number: attrs.phone_number ?? '',
+          enabled: user.Enabled ?? false,
+          status: user.UserStatus ?? '',
+          groups: [groupname],
+        };
+      });
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify(users),
+      };
+    }
 
     if (event.httpMethod === 'PUT' && path.endsWith('/group')) {
       if (!username) {
@@ -282,6 +319,396 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         body: JSON.stringify({
           message: `${username} assigned to ${groupName}`,
         }),
+      };
+    }
+
+    console.log('ENV CHECK', {
+      DRIVER_TABLE_NAME: process.env.DRIVER_TABLE_NAME,
+      DRIVER_SPONSOR_TABLE_NAME: process.env.DRIVER_SPONSOR_TABLE_NAME,
+      SPONSOR_TABLE_NAME: process.env.SPONSOR_TABLE_NAME,
+    });
+
+    if (event.httpMethod === 'POST' && path.endsWith('/admin/driver-view/start')) {
+      const adminSub = getClaimSub(event);
+
+      if (!adminSub) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing admin identity' }),
+        };
+      }
+
+      const body = JSON.parse(event.body || '{}');
+      const driverUsername = body.driverUsername;
+
+      if (!driverUsername) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing driverUsername' }),
+        };
+      }
+
+      const driverResult = await cognito.send(
+        new AdminGetUserCommand({
+          UserPoolId: userPoolId,
+          Username: driverUsername,
+        })
+      );
+
+      const driverGroups = await cognito.send(
+        new AdminListGroupsForUserCommand({
+          UserPoolId: userPoolId,
+          Username: driverUsername,
+        })
+      );
+
+      const isDriverUser = (driverGroups.Groups ?? []).some(
+        (g) => g.GroupName === 'Driver'
+      );
+
+      if (!isDriverUser) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Selected user is not a driver' }),
+        };
+      }
+
+      const attrs = getAttributesMap(driverResult.UserAttributes);
+      const sessionId = crypto.randomUUID();
+      const expiresAt = Date.now() + 1000 * 60 * 30;
+
+      const driverName =
+        attrs.name ??
+        attrs.preferred_username ??
+        attrs.email ??
+        driverUsername;
+
+      await ddb.send(
+        new PutCommand({
+          TableName: driverViewTable,
+          Item: {
+            sessionId,
+            adminSub,
+            driverUsername,
+            driverSub: attrs.sub ?? '',
+            driverName,
+            expiresAt,
+            active: true,
+          },
+        })
+      );
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          sessionId,
+          driverUsername,
+          driverName,
+          expiresAt,
+        }),
+      };
+    }
+
+    if (event.httpMethod === 'GET' && path.endsWith('/admin/driver-view/current')) {
+      const adminSub = getClaimSub(event);
+
+      if (!adminSub) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing admin identity' }),
+        };
+      }
+
+      const sessionId = getHeader(event, 'x-driver-view-session');
+
+      if (!sessionId) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing x-driver-view-session header' }),
+        };
+      }
+
+      const sessionResult = await ddb.send(
+        new GetCommand({
+          TableName: driverViewTable,
+          Key: { sessionId },
+        })
+      );
+
+      const session = sessionResult.Item;
+
+      if (!session) {
+        return {
+          statusCode: 404,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Driver view session not found' }),
+        };
+      }
+
+      if (session.adminSub !== adminSub) {
+        return {
+          statusCode: 403,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Session does not belong to this admin' }),
+        };
+      }
+
+      if (!session.active || session.expiresAt < Date.now()) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Driver view session expired' }),
+        };
+      }
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify(session),
+      };
+    }
+
+    if (event.httpMethod === 'GET' && path.endsWith('/admin/driver-view/dashboard')) {
+      if (!driverTable || !driverSponsorTable || !sponsorTable) {
+        return {
+          statusCode: 500,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            message: 'Missing dashboard table env vars',
+            driverTable,
+            driverSponsorTable,
+            sponsorTable,
+          }),
+        };
+      }
+
+      const adminSub = getClaimSub(event);
+
+      if (!adminSub) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing admin identity' }),
+        };
+      }
+
+      const sessionId = getHeader(event, 'x-driver-view-session');
+
+      if (!sessionId) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing x-driver-view-session header' }),
+        };
+      }
+
+      const sessionResult = await ddb.send(
+        new GetCommand({
+          TableName: driverViewTable,
+          Key: { sessionId },
+        })
+      );
+
+      const session = sessionResult.Item as
+        | {
+            sessionId: string;
+            adminSub: string;
+            driverUsername: string;
+            driverSub?: string;
+            driverName?: string;
+            expiresAt: number;
+            active: boolean;
+          }
+        | undefined;
+
+      if (!session) {
+        return {
+          statusCode: 404,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Driver view session not found' }),
+        };
+      }
+
+      if (session.adminSub !== adminSub) {
+        return {
+          statusCode: 403,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Session does not belong to this admin' }),
+        };
+      }
+
+      if (!session.active || session.expiresAt < Date.now()) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Driver view session expired' }),
+        };
+      }
+
+      const driverResult = await cognito.send(
+        new AdminGetUserCommand({
+          UserPoolId: userPoolId,
+          Username: session.driverUsername,
+        })
+      );
+
+      const driverGroups = await cognito.send(
+        new AdminListGroupsForUserCommand({
+          UserPoolId: userPoolId,
+          Username: session.driverUsername,
+        })
+      );
+
+      const attrs = getAttributesMap(driverResult.UserAttributes);
+
+      const groups = (driverGroups.Groups ?? [])
+        .map((g) => g.GroupName)
+        .filter(Boolean) as string[];
+
+      const isDriverUser = groups.includes('Driver');
+
+      if (!isDriverUser) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Selected user is not a driver' }),
+        };
+      }
+
+      const fullName =
+        attrs.name ??
+        [attrs.given_name, attrs.family_name].filter(Boolean).join(' ') ??
+        '';
+
+      const driverId = session.driverUsername;
+
+      const driverRecordResult = await ddb.send(
+        new GetCommand({
+          TableName: driverTable,
+          Key: { driverId },
+        })
+      );
+      const driverRecord = driverRecordResult.Item ?? {};
+      const totalPoints = driverRecord.points ?? 0;
+
+      const driverSponsorResult = await ddb.send(
+        new ScanCommand({
+          TableName: driverSponsorTable,
+          FilterExpression: 'driverId = :driverId',
+          ExpressionAttributeValues: {
+            ':driverId': driverId,
+          },
+        })
+      );
+
+      const driverSponsorItems = Array.isArray(driverSponsorResult.Items)
+        ? driverSponsorResult.Items
+        : [];
+
+      const sponsors = await Promise.all(
+        driverSponsorItems.map(async (rel: any) => {
+          let sponsorName = rel.sponsorId;
+          try {
+            const sponsorResult = await ddb.send(
+              new GetCommand({
+                TableName: sponsorTable,
+                Key: { sponsorId: rel.sponsorId },
+              })
+            );
+            sponsorName =
+              sponsorResult.Item?.affiliation ||
+              sponsorResult.Item?.name ||
+              rel.sponsorId;
+          } catch (error) {
+            console.error('Failed to load sponsor', rel.sponsorId, error);
+          }
+          return {
+            id: rel.sponsorId,
+            name: sponsorName,
+            points: rel.points ?? 0,
+            status: 'active',
+          };
+        })
+      );
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          id: session.driverSub ?? attrs.sub ?? '',
+          subId: session.driverSub ?? attrs.sub ?? '',
+          username: session.driverUsername,
+          fullName: fullName || session.driverName || '',
+          name: fullName || session.driverName || '',
+          email: attrs.email ?? '',
+          phoneNumber: attrs.phone_number ?? '',
+          groups,
+          points: totalPoints,
+          sponsors,
+          applications: [],
+        }),
+      };
+    }
+
+    if (event.httpMethod === 'POST' && path.endsWith('/admin/driver-view/stop')) {
+      const adminSub = getClaimSub(event);
+      const body = JSON.parse(event.body || '{}');
+      const sessionId = body.sessionId;
+
+      if (!sessionId) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Missing sessionId' }),
+        };
+      }
+
+      const sessionResult = await ddb.send(
+        new GetCommand({
+          TableName: driverViewTable,
+          Key: { sessionId },
+        })
+      );
+
+      const session = sessionResult.Item;
+
+      if (!session) {
+        return {
+          statusCode: 404,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Session not found' }),
+        };
+      }
+
+      if (session.adminSub !== adminSub) {
+        return {
+          statusCode: 403,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Not authorized to stop this session' }),
+        };
+      }
+
+      await ddb.send(
+        new UpdateCommand({
+          TableName: driverViewTable,
+          Key: { sessionId },
+          UpdateExpression: 'SET active = :a',
+          ExpressionAttributeValues: {
+            ':a': false,
+          },
+        })
+      );
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Driver view stopped' }),
       };
     }
 
@@ -355,7 +782,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       headers: corsHeaders,
       body: JSON.stringify({
         message: 'Server error',
-        error: error?.message ?? 'Unknown error',
+        error: error?.message,
+        stack: error?.stack,
       }),
     };
 
