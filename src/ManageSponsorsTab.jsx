@@ -17,6 +17,8 @@ function ManageSponsorsTab({
   driverUsers = [],
   assignDriverToSponsor,
   removeDriverFromSponsor,
+  awardPointsToDriver,
+  deductPointsFromDriver,
 }) {
   const [sponsorUsers, setSponsorUsers] = useState([]);
   const [selectedSponsorUsername, setSelectedSponsorUsername] = useState("");
@@ -33,12 +35,20 @@ function ManageSponsorsTab({
   const [removeDriverSuccess, setRemoveDriverSuccess] = useState("");
   const [removingDriver, setRemovingDriver] = useState(false);
 
+  const [selectedAwardDriverUsername, setSelectedAwardDriverUsername] = useState("");
+  const [selectedDeductDriverUsername, setSelectedDeductDriverUsername] = useState("");
+  const [awardPointsAmount, setAwardPointsAmount] = useState("");
+  const [deductPointsAmount, setDeductPointsAmount] = useState("");
+  const [awardError, setAwardError] = useState("");
+  const [awardSuccess, setAwardSuccess] = useState("");
+  const [deductError, setDeductError] = useState("");
+  const [deductSuccess, setDeductSuccess] = useState("");
+  const [updatingPoints, setUpdatingPoints] = useState(false);
+
   const navigate = useNavigate();
 
   const selectedSponsorUser = useMemo(() => {
-    return (
-      sponsorUsers.find((u) => u.username === selectedSponsorUsername) ?? null
-    );
+    return sponsorUsers.find((u) => u.username === selectedSponsorUsername) ?? null;
   }, [sponsorUsers, selectedSponsorUsername]);
 
   const assignedDriverIds = useMemo(() => {
@@ -92,34 +102,51 @@ function ManageSponsorsTab({
   useEffect(() => {
     if (selectedSponsorUser?.username) {
       loadRelationships(selectedSponsorUser.username);
+
       setAssignDriverSuccess("");
       setAssignDriverError("");
       setRemoveDriverSuccess("");
       setRemoveDriverError("");
+      setAwardSuccess("");
+      setAwardError("");
+      setDeductSuccess("");
+      setDeductError("");
     }
   }, [selectedSponsorUser, loadRelationships]);
 
   useEffect(() => {
     if (
       selectedDriverUsername &&
-      !assignableDriverUsers.some(
-        (driver) => driver.username === selectedDriverUsername
-      )
+      !assignableDriverUsers.some((driver) => driver.username === selectedDriverUsername)
     ) {
       setSelectedDriverUsername("");
     }
   }, [assignableDriverUsers, selectedDriverUsername]);
 
   useEffect(() => {
-    if (
-      selectedAssignedDriverUsername &&
-      !(Array.isArray(relationships) ? relationships : []).some(
-        (rel) => rel?.driverId === selectedAssignedDriverUsername
-      )
-    ) {
+    const assignedIds = new Set(
+      (Array.isArray(relationships) ? relationships : [])
+        .map((rel) => rel?.driverId)
+        .filter(Boolean)
+    );
+
+    if (selectedAssignedDriverUsername && !assignedIds.has(selectedAssignedDriverUsername)) {
       setSelectedAssignedDriverUsername("");
     }
-  }, [relationships, selectedAssignedDriverUsername]);
+
+    if (selectedAwardDriverUsername && !assignedIds.has(selectedAwardDriverUsername)) {
+      setSelectedAwardDriverUsername("");
+    }
+
+    if (selectedDeductDriverUsername && !assignedIds.has(selectedDeductDriverUsername)) {
+      setSelectedDeductDriverUsername("");
+    }
+  }, [
+    relationships,
+    selectedAssignedDriverUsername,
+    selectedAwardDriverUsername,
+    selectedDeductDriverUsername,
+  ]);
 
   const handleViewSponsor = () => {
     if (!selectedSponsorUser?.username) return;
@@ -172,14 +199,10 @@ function ManageSponsorsTab({
       setAssignDriverError("");
       setAssignDriverSuccess("");
 
-      await assignDriverToSponsor(
-        selectedSponsorUser.username,
-        selectedDriverUsername
-      );
+      await assignDriverToSponsor(selectedSponsorUser.username, selectedDriverUsername);
 
       setAssignDriverSuccess("Driver assigned successfully.");
       setSelectedDriverUsername("");
-
       await loadRelationships(selectedSponsorUser.username);
     } catch (error) {
       console.error("Failed to assign driver:", error);
@@ -205,13 +228,90 @@ function ManageSponsorsTab({
 
       setRemoveDriverSuccess("Driver removed successfully.");
       setSelectedAssignedDriverUsername("");
-
       await loadRelationships(selectedSponsorUser.username);
     } catch (error) {
       console.error("Failed to remove driver:", error);
       setRemoveDriverError("Failed to remove driver.");
     } finally {
       setRemovingDriver(false);
+    }
+  };
+
+  const handleAwardPoints = async () => {
+    if (!awardPointsToDriver) return;
+    if (!selectedSponsorUser?.username || !selectedAwardDriverUsername) {
+      setAwardError("Please select a driver.");
+      setAwardSuccess("");
+      return;
+    }
+
+    const amount = Number(awardPointsAmount);
+    if (!amount || Number.isNaN(amount) || amount <= 0) {
+      setAwardError("Enter a valid positive number of points.");
+      setAwardSuccess("");
+      return;
+    }
+
+    try {
+      setUpdatingPoints(true);
+      setAwardError("");
+      setAwardSuccess("");
+
+      await awardPointsToDriver(
+        selectedSponsorUser.username,
+        selectedAwardDriverUsername,
+        amount
+      );
+
+      setAwardSuccess("Points awarded successfully.");
+      setAwardPointsAmount("");
+      setSelectedAwardDriverUsername("");
+      await loadRelationships(selectedSponsorUser.username);
+    } catch (error) {
+      console.error("Failed to award points:", error);
+      setAwardError("Failed to award points.");
+      setAwardSuccess("");
+    } finally {
+      setUpdatingPoints(false);
+    }
+  };
+
+  const handleDeductPoints = async () => {
+    if (!deductPointsFromDriver) return;
+    if (!selectedSponsorUser?.username || !selectedDeductDriverUsername) {
+      setDeductError("Please select a driver.");
+      setDeductSuccess("");
+      return;
+    }
+
+    const amount = Number(deductPointsAmount);
+    if (!amount || Number.isNaN(amount) || amount <= 0) {
+      setDeductError("Enter a valid positive number of points.");
+      setDeductSuccess("");
+      return;
+    }
+
+    try {
+      setUpdatingPoints(true);
+      setDeductError("");
+      setDeductSuccess("");
+
+      await deductPointsFromDriver(
+        selectedSponsorUser.username,
+        selectedDeductDriverUsername,
+        amount
+      );
+
+      setDeductSuccess("Points deducted successfully.");
+      setDeductPointsAmount("");
+      setSelectedDeductDriverUsername("");
+      await loadRelationships(selectedSponsorUser.username);
+    } catch (error) {
+      console.error("Failed to deduct points:", error);
+      setDeductError("Failed to deduct points.");
+      setDeductSuccess("");
+    } finally {
+      setUpdatingPoints(false);
     }
   };
 
@@ -497,7 +597,7 @@ function ManageSponsorsTab({
                             key={rel.driverSponsorId || `${rel.driverId}-${index}`}
                             value={rel.driverId}
                           >
-                            {getDriverLabel(rel.driverId)}
+                            {`${getDriverLabel(rel.driverId)} (${rel.points ?? 0} pts)`}
                           </option>
                         ))}
                       </Form.Select>
@@ -515,6 +615,128 @@ function ManageSponsorsTab({
                         {removingDriver ? "Removing..." : "Remove"}
                       </Button>
                     </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={6}>
+                <Card className="h-100">
+                  <Card.Body>
+                    <Card.Title>
+                      <strong>Award Points</strong>
+                    </Card.Title>
+
+                    {awardError && <div className="alert alert-danger py-2">{awardError}</div>}
+                    {awardSuccess && <div className="alert alert-success py-2">{awardSuccess}</div>}
+
+                    {!selectedSponsorUser ? (
+                      <div className="text-muted">Select a sponsor first.</div>
+                    ) : (
+                      <>
+                        <Form.Group className="mb-3">
+                          <Form.Label></Form.Label>
+                          <Form.Select
+                            value={selectedAwardDriverUsername}
+                            onChange={(e) => setSelectedAwardDriverUsername(e.target.value)}
+                            disabled={!selectedSponsorUser || !relationships.length}
+                          >
+                            <option value="">
+                              {relationships.length ? "Select a driver" : "No assigned drivers"}
+                            </option>
+                            {relationships.map((rel, index) => (
+                              <option
+                                key={rel.driverSponsorId || `${rel.driverId}-${index}`}
+                                value={rel.driverId}
+                              >
+                                {getDriverLabel(rel.driverId)}
+                              </option>
+                            ))}
+                          </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                          <Form.Control
+                            type="number"
+                            min="1"
+                            value={awardPointsAmount}
+                            onChange={(e) => setAwardPointsAmount(e.target.value)}
+                            placeholder="Enter points amount"
+                          />
+                        </Form.Group>
+
+                        <div className="d-flex justify-content-center">
+                          <Button
+                            style={{ width: "160px", height: "50px" }}
+                            variant="success"
+                            onClick={handleAwardPoints}
+                            disabled={!selectedSponsorUser || updatingPoints}
+                          >
+                            Award
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={6}>
+                <Card className="h-100">
+                  <Card.Body>
+                    <Card.Title>
+                      <strong>Deduct Points</strong>
+                    </Card.Title>
+
+                    {deductError && <div className="alert alert-danger py-2">{deductError}</div>}
+                    {deductSuccess && <div className="alert alert-success py-2">{deductSuccess}</div>}
+
+                    {!selectedSponsorUser ? (
+                      <div className="text-muted">Select a sponsor first.</div>
+                    ) : (
+                      <>
+                        <Form.Group className="mb-3">
+                          <Form.Label></Form.Label>
+                          <Form.Select
+                            value={selectedDeductDriverUsername}
+                            onChange={(e) => setSelectedDeductDriverUsername(e.target.value)}
+                            disabled={!selectedSponsorUser || !relationships.length}
+                          >
+                            <option value="">
+                              {relationships.length ? "Select a driver" : "No assigned drivers"}
+                            </option>
+                            {relationships.map((rel, index) => (
+                              <option
+                                key={rel.driverSponsorId || `${rel.driverId}-${index}`}
+                                value={rel.driverId}
+                              >
+                                {getDriverLabel(rel.driverId)}
+                              </option>
+                            ))}
+                          </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                          <Form.Control
+                            type="number"
+                            min="1"
+                            value={deductPointsAmount}
+                            onChange={(e) => setDeductPointsAmount(e.target.value)}
+                            placeholder="Enter points amount"
+                          />
+                        </Form.Group>
+
+                        <div className="d-flex justify-content-center">
+                          <Button
+                            style={{ width: "160px", height: "50px" }}
+                            variant="outline-danger"
+                            onClick={handleDeductPoints}
+                            disabled={!selectedSponsorUser || updatingPoints}
+                          >
+                            Deduct
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </Card.Body>
                 </Card>
               </Col>

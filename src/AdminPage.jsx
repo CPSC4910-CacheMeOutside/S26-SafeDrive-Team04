@@ -1179,6 +1179,56 @@ function AdminPage() {
                     });
                     await loadRelationships(sponsorId);
                   }}
+                  awardPointsToDriver={async (sponsorId, driverId, amount) => {
+                    const driverResult = await client.models.Driver.get({ driverId });
+                    const currentDriverPoints = driverResult?.data?.points ?? 0;
+
+                    await client.models.Driver.update({
+                      driverId,
+                      points: currentDriverPoints + amount,
+                    });
+
+                    const relResult = await client.models.DriverSponsor.get({
+                      driverId,
+                      sponsorId,
+                    });
+
+                    const currentSponsorPoints = relResult?.data?.points ?? 0;
+
+                    await client.models.DriverSponsor.update({
+                      driverId,
+                      sponsorId,
+                      points: currentSponsorPoints + amount,
+                    });
+
+                    await loadRelationships(sponsorId);
+                  }}
+                  deductPointsFromDriver={async (sponsorId, driverId, amount) => {
+                    const driverResult = await client.models.Driver.get({ driverId });
+                    const currentDriverPoints = driverResult?.data?.points ?? 0;
+                    const newDriverTotal = Math.max(0, currentDriverPoints - amount);
+
+                    await client.models.Driver.update({
+                      driverId,
+                      points: newDriverTotal,
+                    });
+
+                    const relResult = await client.models.DriverSponsor.get({
+                      driverId,
+                      sponsorId,
+                    });
+
+                    const currentSponsorPoints = relResult?.data?.points ?? 0;
+                    const newSponsorTotal = Math.max(0, currentSponsorPoints - amount);
+
+                    await client.models.DriverSponsor.update({
+                      driverId,
+                      sponsorId,
+                      points: newSponsorTotal,
+                    });
+
+                    await loadRelationships(sponsorId);
+                  }}
                 />
               </Tab.Pane>
 
