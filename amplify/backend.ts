@@ -64,7 +64,6 @@ adminUserLambda.addToRolePolicy(
 );
 
 const allowedOrigins = [
-  'http://localhost:5173',
   'https://dev.d2jawpaet8g6c9.amplifyapp.com',
 ];
 
