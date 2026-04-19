@@ -132,32 +132,46 @@ function AdminPage() {
 
   const handleSaveRatio = async () => {
     const num = parseFloat(sponsorRatioInput);
+
     if (isNaN(num) || num < 0.001 || num > 1.0) {
       setSponsorRatioError("Ratio must be between 0.001 and 1.0");
       return;
     }
+
+    const sponsorId = selectedSponsorUser?.username || selectedSponsorUser?.sponsorId;
+
     try {
       setSavingRatio(true);
       setSponsorRatioError("");
+      setSponsorRatioSuccess("");
 
-      if (!selectedSponsorId) {
+      if (!sponsorId) {
         setSponsorRatioError("Please select a sponsor.");
         return;
       }
 
-      const existing = await client.models.Sponsor.get({ sponsorId: selectedSponsorId });
+      const existing = await client.models.Sponsor.get({ sponsorId });
 
       if (existing?.data) {
         await client.models.Sponsor.update({
-          sponsorId: selectedSponsorId,
+          sponsorId,
           pointToDollarRatio: num,
         });
       } else {
         await client.models.Sponsor.create({
-          sponsorId: selectedSponsorId,
+          sponsorId,
           pointToDollarRatio: num,
         });
       }
+
+      setSponsors((prev) =>
+        prev.map((s) =>
+          (s.sponsorId || s.username) === sponsorId
+          ? { ...s, pointToDollarRatio: num }
+          : s
+        )
+      );
+
       setSponsorRatioSuccess("Ratio saved successfully!");
       setTimeout(() => setSponsorRatioSuccess(""), 3000);
     } catch (error) {
@@ -790,9 +804,20 @@ function AdminPage() {
   };
 
   const getSponsorRatio = (sponsorId) => {
-    const sponsor = sponsors.find((s) => s.sponsorId === sponsorId);
-    return sponsor?.pointToDollarRatio ?? DEFAULT_RATIO;
-  };
+  const selectedId =
+    selectedSponsorUser?.username || selectedSponsorUser?.sponsorId;
+
+  if (sponsorId === selectedId) {
+    const liveRatio = Number(sponsorRatioInput);
+    return Number.isFinite(liveRatio) ? liveRatio : DEFAULT_RATIO;
+  }
+
+  const sponsor = sponsors.find(
+    (s) => (s.sponsorId || s.username) === sponsorId
+  );
+
+  return sponsor?.pointToDollarRatio ?? DEFAULT_RATIO;
+};
 
   const getEstimatedDollarAmount = (points, sponsorId) => {
     const ratio = getSponsorRatio(sponsorId);
@@ -1315,6 +1340,7 @@ function AdminPage() {
                     relationships={sponsorRelationships}
                     loadRelationships={loadRelationships}
                     getUserLabel={getUserLabel}
+                    getEstimatedDollarAmount={getEstimatedDollarAmount}
                     driverUsers={driverUsers}
                     sponsorRatioInput={sponsorRatioInput}
                     setSponsorRatioInput={setSponsorRatioInput}

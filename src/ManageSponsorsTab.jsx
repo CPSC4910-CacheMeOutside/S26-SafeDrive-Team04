@@ -14,6 +14,7 @@ function ManageSponsorsTab({
   relationships = [],
   loadRelationships,
   getUserLabel,
+  getEstimatedDollarAmount,
   driverUsers = [],
   sponsorRatioInput,
   setSponsorRatioInput,
@@ -68,6 +69,11 @@ function ManageSponsorsTab({
     );
   }, [driverUsers, assignedDriverIds]);
 
+  useEffect(() => {
+    if (sponsorUsers.length > 0 && !selectedSponsorUsername) {
+      setSelectedSponsorUsername(sponsorUsers[0].username);
+    }
+  }, [sponsorUsers, selectedSponsorUsername]);
 
   useEffect(() => {
     if (onSelectSponsor) {
@@ -712,10 +718,10 @@ function ManageSponsorsTab({
               <Col md={12}>
                   <Card>
                     <Card.Body>
-                    <Card.Title>Point-to-Dollar Ratio</Card.Title>
+                    <Card.Title><strong>Point-to-Dollar Ratio</strong></Card.Title>
 
                     <Form.Group className="mb-3">
-                        <Form.Label>Point-to-Dollar Ratio</Form.Label>
+                        <Form.Label></Form.Label>
                         <Form.Control
                         type="number"
                         step="0.001"
@@ -750,10 +756,9 @@ function ManageSponsorsTab({
                 <Card>
                     <Card.Body>
                     <Card.Title>
-                        Current Relationships
-                        {selectedSponsorUser?.username
-                        ? ` (${getUserLabel(selectedSponsorUser.username)})`
-                        : ""}
+                      <strong>
+                        Current Driver Relationships
+                      </strong>
                     </Card.Title>
 
                     {!selectedSponsorUser ? (
@@ -771,10 +776,16 @@ function ManageSponsorsTab({
                             <ListGroupItem key={key}>
                                 <div className="fw-semibold">{getUserLabel(rel.driverId)}</div>
                                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                ID: {rel.driverId}
+                                  ID: {rel.driverId}
                                 </div>
                                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                Current Points: {rel.points ?? 0}
+                                  Current Points: {rel.points ?? 0}
+                                </div>
+                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
+                                  Estimated Dollar Value: $
+                                  {getEstimatedDollarAmount
+                                    ? getEstimatedDollarAmount(rel.points ?? 0, rel.sponsorId)
+                                    : "0.00"}
                                 </div>
                             </ListGroupItem>
                             );
