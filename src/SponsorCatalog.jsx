@@ -268,7 +268,7 @@ export default function SponsorCatalog() {
         const {data, errors} = await client.models.Order.create({
             driverId: userData.id,
             sponsorId: sId,
-            time: Date.now().toString(),
+            time: Date.now(),
             status: 0
         });
 
