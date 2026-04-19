@@ -401,7 +401,7 @@ export default function SponsorCatalog() {
         return (
             <Modal show={show} onHide={handleClose}>
                 <Modal.Header closeButton>
-                    <Modal.Title>{prodxuct.title}</Modal.Title>
+                    <Modal.Title>{product.title}</Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>

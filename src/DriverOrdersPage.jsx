@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 // Import the front-end star rating widget for catalog items
 import StarRating from "./StarRating";
 import { useLanguage } from './LanguageContext';
@@ -10,7 +10,7 @@ import useAmplifyAuth from "./UseAmplifyAuth";
 import { Container, Row, Col, Card, Tab, Tabs, Button, Modal, Alert, Carousel} from "react-bootstrap";
 import { Filter } from "aws-cdk-lib/aws-sns";
 
-export default function SponsorOrdersPage() {
+export default function DriverOrdersPage() {
 
     // Page State Trackers
     const [isLoading, setIsLoading] = useState(true);
@@ -19,8 +19,8 @@ export default function SponsorOrdersPage() {
     const auth = useAmplifyAuth();
     // User Centric Data
     const [userData, updateUserData] = useState(null);
-    const [drivers, updateDrivers] = useState([]);
-    const [orders, updateOrders] = useState([]);
+    const [sponsors, updateSponsors] = useState(null);
+    const [orders, updateOrders] = useState(null);
     const [ordersAwaitingApproval, updateOrdersAwaitingApproval] = useState(null);
 
     // Buisness Logic
@@ -41,72 +41,73 @@ export default function SponsorOrdersPage() {
         }
         
         async function getAmpUserData(id) {
-            const {data, errors} = await client.models.Sponsor.get({
-                sponsorId: id
+            const {data, errors} = await client.models.Driver.get({
+                driverId: id
             })
 
             if (errors) {
-                console.log(`Error: Could not obtain sponsor id:${id} from Sponsor table:`, errors);
+                console.log(`Error: Could not obtain driver id:${id} from Driver table:`, errors);
                 return;
             } else if (data === null) {
-                console.log(`Error: Could not obtain sponsor id:${id} from Sponsor table: No sponsor by that id was found`);
+                console.log(`Error: Could not obtain driver id:${id} from Driver table: No driver by that id was found`);
                 return;
             }
-            console.log("Retrieved from Amplify Data: ", data);
+            console.log("Retried from Amplify Data: ", data);
             return data;
         }
 
-        async function populateDrivers(id) {
-            let returnedDrivers = [];
+        async function populateSponsors(driverId) {
+            let returnedSponsors = [];
             const {data, errors} = await client.models.DriverSponsor.list({
                 filter: {
-                    sponsorId: {
-                        eq: id
+                    driverId: {
+                        eq: driverId
                     }
                 }
             });
 
             if (errors) {
-                console.log(`Error: Could not obtain drivers for sponsor id:${id} from Driver table:`, errors);
+                console.log(`Error: Could not obtain sponsors for driver id:${driverId} from DriverSponsor table:`, errors);
                 return;
             } else if (data === null) {
-                console.log(`Error: Could not obtain drivers for sponsor id:${id} from Driver table: No drivers were found for that sponsor id`);
+                console.log(`Error: Could not obtain sponsors for driver id:${driverId} from DriverSponsor table: No entries were found for that driver id`);
                 return;
             }
+            
+            for (const ds of data) {
+                const {data: sponsorData, errors: sponsorErrors} = await client.models.Sponsor.get({
+                    sponsorId: ds.sponsorId
+                });
 
-            for (const d of data) {
-                const { data: lDriver, errors: dErrors} = await d.driver();
-
-                if (dErrors) {
-                    console.log(`Error: Could not obtain driver id:${d.driverId} from Driver table:`, dErrors);
+                if (sponsorErrors) {
+                    console.log(`Error: Could not obtain sponsor id:${ds.sponsorId} from Sponsor table:`, sponsorErrors);
                     continue;
-                } else if (lDriver === null) {
-                    console.log(`Error: Could not obtain driver id:${d.driverId} from Driver table: No driver by that id was found`);
+                } else if (sponsorData === null) {
+                    console.log(`Error: Could not obtain sponsor id:${ds.sponsorId} from Sponsor table: No sponsor by that id was found`);
                     continue;
                 }
-
-                returnedDrivers.push(lDriver);
+                returnedSponsors.push(sponsorData);
             }
-            console.log("Drivers retrieved from Amplify Data: ", returnedDrivers);
-            return data; 
-    }
+            console.log(`Sponsors populated for driver id:${driverId}: `, returnedSponsors);
+            return returnedSponsors;
+        }
 
-    async function populateOrders(id) { 
+        async function populateOrders(id) { 
         let orders = [];
         // Get all orders for the sponsor
         const {data: ordersData, errors} = await client.models.Order.list({
             filter: {
-                sponsorId: {
+                driverId: {
                     eq: id
                 }
             }
         });
 
         if (errors) {
-            console.log(`Error: Could not obtain orders for sponsor id:${id} from Order table:`, errors);
+            console.log(`Error: Could not obtain orders for driver id:${id} from Order table:`, errors);
             return;
         } else if (ordersData === null) {
-            console.log(`Error: Could not obtain orders for sponsor id:${id} from Order table: No orders were found for that sponsor id`);
+            console.log(`Error: Could not obtain orders for driver id:${id} from Order table: No orders were found for that driver id`);
             return;
         }
 
@@ -147,41 +148,26 @@ export default function SponsorOrdersPage() {
         async function loadData() {
             const cogData = await getCogUserData();
             const dbData = await getAmpUserData(cogData.id);
-
-            const driversData = await populateDrivers(cogData.id);
+            const sponsorData = await populateSponsors(cogData.id);
             const ordersData = await populateOrders(cogData.id);
 
-            updateDrivers(driversData);
-            updateOrders(ordersData);
-
             updateUserData(cogData);
+            updateSponsors(sponsorData);
+            updateOrders(ordersData);
         }
 
         loadData();
+
     }, []);
 
-    // Check to ensure all user data is loaded
     useEffect(() => {
         if (userData === null) return;
-        if (drivers === null) return;
+        if (sponsors === null) return;
         if (orders === null) return;
+        if (ordersAwaitingApproval === null) return;
 
-        console.log("Page loading finished!");
         setIsLoading(false);
-    }, [userData])
-
-    // Prevent rendering until all data is loaded
-    if (isLoading) {
-        return (
-            <Container>
-                <Row>
-                    <Col>
-                        <h1>Loading...</h1>
-                    </Col>
-                </Row>
-            </Container>
-        );
-    } 
+    }, [userData, sponsors, orders, ordersAwaitingApproval]);
 
     // UI Components
     function OrderCard({order}) {
@@ -199,59 +185,29 @@ export default function SponsorOrdersPage() {
                             <li key={index}>{product.title}</li>
                         ))}
                     </ul>
-                    {orderStatus === 0 && (
-                        <>
-                            <Button variant="success" onClick={ async () => {
-                                const {data, errors} = await client.models.Order.update({
-                                    id: order.id,
-                                    status: 1
-                                });
-
-                                if (errors) {
-                                    console.log(`Error: Could not approve order id:${order.id}:`, errors);
-                                    return;
-                                } else if (data === null) {
-                                    console.log(`Error: Could not approve order id:${order.id}: No order with that id was found`);
-                                    return;
-                                }
-
-                                setOrderStatus(1);
-                                ordersAwaitingApproval(ordersAwaitingApproval - 1);
-                            }}>
-                                Approve
-                            </Button>
-                            <Button variant="danger" onClick={ async () => {
-                                const {data, errors} = await client.models.Order.update({
-                                    id: order.id,
-                                    status: -1 // Assuming -1 represents rejected status
-                                });
-
-                                if (errors) {
-                                    console.log(`Error: Could not reject order id:${order.id}:`, errors);
-                                    return;
-                                } else if (data === null) {
-                                    console.log(`Error: Could not reject order id:${order.id}: No order with that id was found`);
-                                    return;
-                                }
-
-                                setOrderStatus(-1);
-                                ordersAwaitingApproval(ordersAwaitingApproval - 1);
-                            }} className="ms-2">
-                                Reject
-                            </Button>
-                        </>
-                    )}
                 </Card.Body>
             </Card>
         );
     }
-    
+
+    if (isLoading) {
+        return (
+            <Container>
+                <Row>
+                    <Col>
+                        <h1>Loading...</h1>
+                    </Col>
+                </Row>
+            </Container>
+        );
+    }
+
     return (
         <Container fluid>
-            <Row>
+            <Row className="my-4">
                 <Col>
-                    <h1 className="mx-auto">{`Welcome, ${userData.name}!`}</h1>
-                    <h2>{`You have ${ordersAwaitingApproval} orders pending approval`}</h2>
+                    <h1 className="mx-auto">Welcome, {userData.name}!</h1>
+                    <h2>You have {ordersAwaitingApproval} orders awaiting approval.</h2>
                     <Card style={{ overflowY: 'auto', maxHeight: "500px" }} className="w-100 h-100">
                         {orders.map((order) => (
                             <OrderCard key={order.id} order={order} />

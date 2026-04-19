@@ -36,6 +36,7 @@ import SponsorListings from './Available-Sponsors';
 import AdminSponsorViewPage from "./AdminSponsorViewPage";
 import AdminSponsorAccountEdit from './AdminSponsorAccountEdit';
 import SponsorOrdersPage from './SponsorsOrdersPage';
+import DriverOrdersPage from './DriverOrdersPage';
  
 import UpdateAbout from './UpdateAbout';
 
@@ -167,6 +168,9 @@ function App() {
               )}
               {auth.isAuthenticated && groups.includes("Driver") && (
                 <Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>
+              )}
+              {auth.isAuthenticated && groups.includes("Driver") && (
+                <Nav.Link as={Link} to="/sponsor-catalog">Orders</Nav.Link>
               )}
               {auth.isAuthenticated && groups.includes("Driver") && (
                 <Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">
