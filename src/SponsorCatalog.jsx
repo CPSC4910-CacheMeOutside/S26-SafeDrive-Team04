@@ -236,8 +236,18 @@ export default function SponsorCatalog() {
         setIsLoading(false);
     }, [pointTotals, sponsors, catalogs, cart, wishlist]);
 
+    function submitOrder(product, sId) {
+
+        const activeTotal = pointTotals.get(sId);
+
+        
+    }
+
     // UI Components
     function RequestModal({ product }) {
+
+        const [ptToDollar, setPtToDollar] = useState(sponsors.find( s => s.sponsorId).pointtoDollarRatio ?? 1);
+
         if (!product) return null;
 
         return (
@@ -255,7 +265,7 @@ export default function SponsorCatalog() {
                         ))}
                     </Carousel>
 
-                    <h3>Price: {product.price}</h3>
+                    <h3>Price: {product.price * ptToDollar}</h3>
                     <p>{product.desc}</p>
                 </Modal.Body>
 
@@ -276,7 +286,7 @@ export default function SponsorCatalog() {
         console.log("Loading catalog under the provided id...", sId);
 
         const [activeCatalog, setActiveCatalog] = useState(catalogs.get(sId));
-        const [ptToDollar, setPtToDollar] = useState(sponsors.find( s => s.sponsorId).pointtoDollarRatio);
+        const [ptToDollar, setPtToDollar] = useState(sponsors.find( s => s.sponsorId).pointtoDollarRatio ?? 1);
 
         if (activeCatalog === null) {
             console.log("Error: No catalog under the provided id was found", sId);
@@ -298,7 +308,7 @@ export default function SponsorCatalog() {
                             <Card.Body style={{ height: "100px" }}>
                                 <Card.Title>{product.title}</Card.Title>
                                 <Card.Subtitle>
-                                    {Number(product.price)} PTs
+                                    {Number(product.price * ptToDollar)} PTs
                                 </Card.Subtitle>
                                 <Button onClick= { () => {
                                     setSelectedProduct(product);
