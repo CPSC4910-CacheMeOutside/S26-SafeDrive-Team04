@@ -99,6 +99,7 @@ function AdminPage() {
   const [selectedAdminUser, setSelectedAdminUser] = useState(null);
   const [selectedAwardSponsorId, setSelectedAwardSponsorId] = useState("");
   const [selectedDeductSponsorId, setSelectedDeductSponsorId] = useState("");
+  const [selectedSponsorToAssign, setSelectedSponsorToAssign] = useState("");
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -445,12 +446,13 @@ function AdminPage() {
     }
   }, []);
 
-  const availableSponsors = sponsors.filter(
-    (sponsor) => !driverRelationships.some((rel) => rel.sponsorId === sponsor.sponsorId)
-  );
+  const availableSponsors = sponsors.filter((sponsor) => {
+    const sponsorId = sponsor.sponsorId || sponsor.username;
+    return !driverRelationships.some((rel) => rel.sponsorId === sponsorId);
+  });
 
   const handleAssignDriverToSponsor = async () => {
-    if (!selectedDriverUser || !selectedSponsorId) {
+    if (!selectedDriverUser || !selectedSponsorToAssign) {
       setAssignError("Please select a driver and a sponsor.");
       setAssignMessage("");
       return;
@@ -461,7 +463,7 @@ function AdminPage() {
       setAssignMessage("");
 
       const driverId = selectedDriverUser.username;
-      const sponsorId = selectedSponsorId;
+      const sponsorId = selectedSponsorToAssign;
 
       const alreadyAssigned = driverRelationships.some(
         (rel) => rel.driverId === driverId && rel.sponsorId === sponsorId
@@ -481,7 +483,7 @@ function AdminPage() {
       setDriverRelationships((prev) => [...prev, { driverId, sponsorId, points: 0 }]);
 
       setAssignMessage("Sponsor assigned successfully.");
-      setSelectedSponsorId("");
+      setSelectedSponsorToAssign("");
     } catch (error) {
       console.error(error);
       setAssignError("Failed to assign sponsor.");
@@ -1150,20 +1152,24 @@ function AdminPage() {
                           ) : (
                             <>
                               <Form.Group className="mb-3">
-                                <Form.Label>{t('admin.assignGroup')}</Form.Label>
+                                <Form.Label></Form.Label>
                                 <Form.Select
-                                  value={selectedSponsorId || ""}
-                                  onChange={(e) => setSelectedSponsorId(e.target.value)}
+                                  value={selectedSponsorToAssign || ""}
+                                  onChange={(e) => setSelectedSponsorToAssign(e.target.value)}
                                   disabled={!selectedDriverUser}
                                 >
                                   <option value="" disabled>
                                     Select a sponsor
                                   </option>
-                                  {availableSponsors.map((sponsor) => (
-                                    <option key={sponsor.sponsorId} value={sponsor.sponsorId}>
-                                      {sponsor.affiliation || sponsor.sponsorId}
-                                    </option>
-                                  ))}
+                                  {availableSponsors.map((sponsor) => {
+                                    const sponsorId = sponsor.sponsorId || sponsor.username;
+
+                                    return (
+                                      <option key={sponsorId} value={sponsorId}>
+                                        {sponsor.affiliation || sponsor.name || sponsor.username || sponsorId}
+                                      </option>
+                                    );
+                                  })}
                                 </Form.Select>
                               </Form.Group>
 
@@ -1190,6 +1196,7 @@ function AdminPage() {
                           </Card.Title>
                           <StatusAlert error={removeError} message={removeMessage} />
                           <Form.Group className="mb-3">
+                            <Form.Label></Form.Label>
                             <Form.Select
                               value={selectedAssignedSponsorId || ""}
                               onChange={(e) => setSelectedAssignedSponsorId(e.target.value)}
@@ -1234,6 +1241,7 @@ function AdminPage() {
                           ) : (
                             <>
                               <Form.Group className="mb-3">
+                                <Form.Label></Form.Label>
                                 <Form.Select
                                   value={selectedAwardSponsorId}
                                   onChange={(e) => setSelectedAwardSponsorId(e.target.value)}
@@ -1288,6 +1296,7 @@ function AdminPage() {
                           ) : (
                             <>
                               <Form.Group className="mb-3">
+                                <Form.Label></Form.Label>
                                 <Form.Select
                                   value={selectedDeductSponsorId}
                                   onChange={(e) => setSelectedDeductSponsorId(e.target.value)}
