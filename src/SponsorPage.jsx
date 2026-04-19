@@ -100,11 +100,6 @@ function SponsorPage({
           throw new Error("Missing id token");
         }
 
-        console.log("idToken exists:", !!idToken);
-        console.log("groups:", auth.groups);
-        console.log("targetSponsorId:", targetSponsorId);
-        console.log("token issuer:", auth.profile?.iss);
-
         const restOperation = get({
           apiName: "SafeDriveAPI",
           path: `/admin/sponsors/${encodeURIComponent(targetSponsorId)}`,
@@ -309,6 +304,29 @@ function SponsorPage({
     }
   };
 
+  const handleViewDriverDashboard = () => {
+    if (!selectedRelation) return;
+
+    const sponsorDriverViewSession = {
+      driverId: selectedRelation.driverId,
+      driverSponsorId: selectedRelation.driverSponsorId,
+      driverName: selectedRelation.driverName || selectedRelation.driverNickname || "",
+      driverEmail: selectedRelation.driverEmail || "",
+      driverPhone: selectedRelation.driverPhone || "",
+      sponsorId: selectedRelation.sponsorId,
+      sponsorName: sponsor.fullName || sponsor.username || "",
+      createdAt: Date.now(),
+      viewerRole: "Sponsor",
+    };
+
+    localStorage.setItem(
+      "sponsorDriverViewSession",
+      JSON.stringify(sponsorDriverViewSession)
+    );
+
+    navigate("/DriverPage?sponsorView=1");
+  };
+
   if (loading) {
     return (
       <Container className="mt-4">
@@ -435,7 +453,7 @@ function SponsorPage({
                           />
                         </Form.Group>
 
-                        <div className="d-flex gap-2">
+                        <div className="d-flex justify-content-center gap-2">
                           <Button
                             variant="success"
                             onClick={() => pointAdjust(amount)}
@@ -469,16 +487,25 @@ function SponsorPage({
                           <strong>{getDriverLabel(selectedRelation)}</strong>
                         </p>
 
-                        {adminView ? (
+                        <div className="d-flex justify-content-center">
                           <Button
-                            variant="secondary"
-                            onClick={() =>
-                              navigate(`/admin/drivers/${selectedRelation.driverId}/edit`)
-                            }
+                            variant="primary"
+                            onClick={handleViewDriverDashboard}
                           >
-                            Manage Account
+                            View Driver Dashboard
                           </Button>
-                        ) : null}
+
+                          {adminView ? (
+                            <Button
+                              variant="secondary"
+                              onClick={() =>
+                                navigate(`/admin/drivers/${selectedRelation.driverId}/edit`)
+                              }
+                            >
+                              Manage Account
+                            </Button>
+                          ) : null}
+                        </div>
                       </>
                     )}
                   </Card.Body>
