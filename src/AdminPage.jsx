@@ -1163,6 +1163,15 @@ function AdminPage() {
                   relationships={sponsorRelationships}
                   loadRelationships={loadRelationships}
                   getDriverLabel={getDriverLabel}
+                  driverUsers={driverUsers}
+                  assignDriverToSponsor={async (sponsorId, driverId) => {
+                    await client.models.DriverSponsor.create({
+                      driverId,
+                      sponsorId,
+                      points: 0,
+                    });
+                    await loadRelationships(sponsorId);
+                  }}
                 />
               </Tab.Pane>
 

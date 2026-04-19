@@ -4,6 +4,7 @@ import ListGroup from "react-bootstrap/ListGroup";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
 import { ListGroupItem } from "react-bootstrap";
 import { fetchSponsorUsers } from "./adminUpdateDriverInfo-api";
 import { useNavigate } from "react-router-dom";
@@ -13,11 +14,18 @@ function ManageSponsorsTab({
   relationships,
   loadRelationships,
   getDriverLabel,
+  driverUsers = [],
+  assignDriverToSponsor,
 }) {
   const [sponsorUsers, setSponsorUsers] = useState([]);
   const [selectedSponsorUsername, setSelectedSponsorUsername] = useState("");
   const [loadingSponsorUsers, setLoadingSponsorUsers] = useState(false);
   const [sponsorUsersError, setSponsorUsersError] = useState("");
+
+  const [selectedDriverUsername, setSelectedDriverUsername] = useState("");
+  const [assignDriverError, setAssignDriverError] = useState("");
+  const [assignDriverSuccess, setAssignDriverSuccess] = useState("");
+  const [assigningDriver, setAssigningDriver] = useState(false);
 
   const navigate = useNavigate();
 
@@ -26,6 +34,20 @@ function ManageSponsorsTab({
       sponsorUsers.find((u) => u.username === selectedSponsorUsername) ?? null
     );
   }, [sponsorUsers, selectedSponsorUsername]);
+
+  const assignedDriverIds = useMemo(() => {
+    return new Set(
+      (Array.isArray(relationships) ? relationships : [])
+        .map((rel) => rel?.driverId)
+        .filter(Boolean)
+    );
+  }, [relationships]);
+
+  const assignableDriverUsers = useMemo(() => {
+    return (Array.isArray(driverUsers) ? driverUsers : []).filter(
+      (driver) => !assignedDriverIds.has(driver.username)
+    );
+  }, [driverUsers, assignedDriverIds]);
 
   const loadSponsorUsers = async () => {
     try {
@@ -64,8 +86,21 @@ function ManageSponsorsTab({
   useEffect(() => {
     if (selectedSponsorUser?.username) {
       loadRelationships(selectedSponsorUser.username);
+      setAssignDriverSuccess("");
+      setAssignDriverError("");
     }
   }, [selectedSponsorUser, loadRelationships]);
+
+  useEffect(() => {
+    if (
+      selectedDriverUsername &&
+      !assignableDriverUsers.some(
+        (driver) => driver.username === selectedDriverUsername
+      )
+    ) {
+      setSelectedDriverUsername("");
+    }
+  }, [assignableDriverUsers, selectedDriverUsername]);
 
   const handleViewSponsor = () => {
     if (!selectedSponsorUser?.username) return;
@@ -107,6 +142,32 @@ function ManageSponsorsTab({
   const handleEditSponsor = () => {
     if (!selectedSponsorUser?.username) return;
     navigate(`/admin/sponsors/${selectedSponsorUser.username}/edit`);
+  };
+
+  const handleAssignDriver = async () => {
+    if (!assignDriverToSponsor) return;
+    if (!selectedSponsorUser?.username || !selectedDriverUsername) return;
+
+    try {
+      setAssigningDriver(true);
+      setAssignDriverError("");
+      setAssignDriverSuccess("");
+
+      await assignDriverToSponsor(
+        selectedSponsorUser.username,
+        selectedDriverUsername
+      );
+
+      setAssignDriverSuccess("Driver assigned successfully.");
+      setSelectedDriverUsername("");
+
+      await loadRelationships(selectedSponsorUser.username);
+    } catch (error) {
+      console.error("Failed to assign driver:", error);
+      setAssignDriverError("Failed to assign driver.");
+    } finally {
+      setAssigningDriver(false);
+    }
   };
 
   const sponsorDisplayName =
@@ -232,11 +293,11 @@ function ManageSponsorsTab({
                       <strong>Drivers:</strong>{" "}
                       {relationships.length
                         ? relationships
-                          .map(
-                            (rel) =>
-                              `${getDriverLabel(rel.driverId)} (${rel.points ?? 0} pts)`
-                          )
-                          .join(", ")
+                            .map(
+                              (rel) =>
+                                `${getDriverLabel(rel.driverId)} (${rel.points ?? 0} pts)`
+                            )
+                            .join(", ")
                         : "No assigned drivers found."}
                     </div>
 
@@ -283,6 +344,68 @@ function ManageSponsorsTab({
                     >
                       Edit
                     </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={12}>
+                <Card className="shadow-sm">
+                  <Card.Body className="text-center">
+                    <Card.Title className="mb-4">
+                      <strong>Assign a Driver</strong>
+                    </Card.Title>
+
+                    {assignDriverError && (
+                      <div className="alert alert-danger py-2">
+                        {assignDriverError}
+                      </div>
+                    )}
+
+                    {assignDriverSuccess && (
+                      <div className="alert alert-success py-2">
+                        {assignDriverSuccess}
+                      </div>
+                    )}
+
+                    <div className="d-flex flex-column align-items-center">
+                      <Form.Select
+                        style={{ maxWidth: "460px" }}
+                        className="mb-3"
+                        value={selectedDriverUsername}
+                        onChange={(e) => setSelectedDriverUsername(e.target.value)}
+                        disabled={!selectedSponsorUser}
+                      >
+                        <option value="">
+                          {!selectedSponsorUser
+                            ? "Select a sponsor first"
+                            : !assignableDriverUsers.length
+                            ? "No unassigned drivers available"
+                            : "Select a driver"}
+                        </option>
+
+                        {assignableDriverUsers.map((driver) => (
+                          <option key={driver.username} value={driver.username}>
+                            {driver.name ||
+                              driver.preferred_username ||
+                              driver.email ||
+                              driver.username}
+                          </option>
+                        ))}
+                      </Form.Select>
+
+                      <Button
+                        style={{ width: "160px", height: "50px" }}
+                        variant="primary"
+                        onClick={handleAssignDriver}
+                        disabled={
+                          !selectedSponsorUser ||
+                          !selectedDriverUsername ||
+                          assigningDriver
+                        }
+                      >
+                        {assigningDriver ? "Assigning..." : "Assign"}
+                      </Button>
+                    </div>
                   </Card.Body>
                 </Card>
               </Col>
