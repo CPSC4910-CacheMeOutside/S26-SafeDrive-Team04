@@ -83,6 +83,7 @@ function AdminPage() {
   const [selectedSponsorUser, setSelectedSponsorUser] = useState(null);
   const [selectedAdminUser, setSelectedAdminUser] = useState(null);
   const [selectedAwardSponsorId, setSelectedAwardSponsorId] = useState("");
+  const [selectedDeductSponsorId, setSelectedDeductSponsorId] = useState("");
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -577,27 +578,56 @@ function AdminPage() {
       setDeductMessage("");
       return;
     }
+
+    if (!selectedDeductSponsorId) {
+      setDeductError("Please select a sponsor.");
+      setDeductMessage("");
+      return;
+    }
+
     const amount = Number(deductPointsAmount);
     if (!amount || Number.isNaN(amount) || amount <= 0) {
       setDeductError("Enter a valid positive number of points.");
       setDeductMessage("");
       return;
     }
+
     try {
       setUpdatingDriverPoints(true);
       setDeductError("");
       setDeductMessage("");
+
       const driverId = selectedDriverUser.username;
-      const existing = await client.models.Driver.get({ driverId });
-      const currentPoints = existing?.data?.points ?? 0;
-      const newTotal = Math.max(0, currentPoints - amount);
+      const sponsorId = selectedDeductSponsorId;
+      const driverResult = await client.models.Driver.get({ driverId });
+      const currentDriverPoints = driverResult?.data?.points ?? 0;
+      const newDriverTotal = Math.max(0, currentDriverPoints - amount);
+
       await client.models.Driver.update({
         driverId,
-        points: newTotal,
+        points: newDriverTotal,
       });
+
+      const relResult = await client.models.DriverSponsor.get({
+        driverId,
+        sponsorId,
+      });
+
+      const currentSponsorPoints = relResult?.data?.points ?? 0;
+      const newSponsorTotal = Math.max(0, currentSponsorPoints - amount);
+
+      await client.models.DriverSponsor.update({
+        driverId,
+        sponsorId,
+        points: newSponsorTotal,
+      });
+
       setDeductMessage("Points deducted successfully.");
       setDeductPointsAmount("");
+      setSelectedDeductSponsorId("");
+
       await loadSelectedDriverRecord(driverId);
+      await loadDriverRelationships(driverId);
     } catch (error) {
       console.error(error);
       setDeductError("Failed to deduct points.");
@@ -606,34 +636,6 @@ function AdminPage() {
       setUpdatingDriverPoints(false);
     }
   };
-
-  useEffect(() => {
-    if (awardMessage) {
-      const timer = setTimeout(() => setAwardMessage(""), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [awardMessage]);
-
-  useEffect(() => {
-    if (awardError) {
-      const timer = setTimeout(() => setAwardError(""), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [awardError]);
-
-  useEffect(() => {
-    if (deductMessage) {
-      const timer = setTimeout(() => setDeductMessage(""), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [deductMessage]);
-
-  useEffect(() => {
-    if (deductError) {
-      const timer = setTimeout(() => setDeductError(""), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [deductError]);
 
   const handleSaveRelationshipPoints = async (driverId, sponsorId) => {
     const key = `${driverId}-${sponsorId}`;
@@ -883,7 +885,7 @@ function AdminPage() {
                                   <strong>Sponsors:</strong>{" "}
                                     {driverRelationships.length
                                       ? driverRelationships
-                                        .map((rel) => `${getSponsorLabel(rel.sponsorId)} (${rel.points ?? 0})`)
+                                        .map((rel) => `${getSponsorLabel(rel.sponsorId)} (${rel.points ?? 0} pts)`)
                                         .join(", ")
                                       : "No assigned sponsors found."}
                                 </div>
@@ -1050,7 +1052,6 @@ function AdminPage() {
                                   </Form.Select>
                                 </Form.Group>
                                 <Form.Group className="mb-3">
-                                  <Form.Label></Form.Label>
                                   <Form.Control
                                     type="number"
                                     min="1"
@@ -1088,6 +1089,23 @@ function AdminPage() {
                               <>
                                 <Form.Group className="mb-3">
                                   <Form.Label></Form.Label>
+                                  <Form.Select
+                                    value={selectedDeductSponsorId}
+                                    onChange={(e) => setSelectedDeductSponsorId(e.target.value)}
+                                    disabled={!selectedDriverUser || !driverRelationships.length}
+                                  >
+                                    <option value="" disabled>
+                                      Select a sponsor
+                                    </option>
+                                    {driverRelationships.map((rel) => (
+                                      <option key={rel.sponsorId} value={rel.sponsorId}>
+                                        {getSponsorLabel(rel.sponsorId)}
+                                      </option>
+                                    ))}
+                                  </Form.Select>
+                                </Form.Group>
+
+                                <Form.Group className="mb-3">
                                   <Form.Control
                                     type="number"
                                     min="1"
