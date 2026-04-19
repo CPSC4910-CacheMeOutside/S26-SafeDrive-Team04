@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchAuthSession, getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
+import { fetchAuthSession } from "aws-amplify/auth";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -11,11 +11,24 @@ import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
 import { fetchCurrentDriverAssignments } from "./driverPage-api";
 import { fetchNotificationsForUser } from "./notification-api";
+import { getCurrentDriverView, stopDriverView } from "./adminDriverView-api";
 import { useNotifications } from "./NotificationContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import { generateClient } from "aws-amplify/data";
+
+const client = generateClient();
 
 function DriverPage() {
   const { addNotification, notifications, closeNotification } = useNotifications();
   const activeNotifications = notifications.filter((n) => !n.closed);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [adminView, setAdminView] = useState(false);
+  const [sponsorView, setSponsorView] = useState(false);
+  const [viewedDriver, setViewedDriver] = useState(null);
+
   const [driver, setDriver] = useState({
     username: "",
     fullName: "",
@@ -23,12 +36,186 @@ function DriverPage() {
     phoneNumber: "",
     groups: [],
     points: 0,
-    sponsors: [], 
+    sponsors: [],
     applications: [],
   });
 
   useEffect(() => {
-    async function loadUser() {
+    async function loadPage() {
+      const queryParams = new URLSearchParams(location.search);
+      const isSponsorView = queryParams.get("sponsorView") === "1";
+
+      const rawAdminSession = localStorage.getItem("driverViewSession");
+      const rawSponsorSession = localStorage.getItem("sponsorDriverViewSession");
+
+      // 1. Admin driver-view session takes priority
+      if (rawAdminSession) {
+        const stored = JSON.parse(rawAdminSession);
+
+        try {
+          const sessionData = await getCurrentDriverView(stored.sessionId);
+          const driverId = sessionData.driverUsername;
+
+          const driverResult = await client.models.Driver.get({ driverId });
+
+          const relationshipResult = await client.models.DriverSponsor.list({
+            filter: { driverId: { eq: driverId } },
+          });
+
+          const relationships = Array.isArray(relationshipResult?.data)
+            ? relationshipResult.data
+            : [];
+
+          const sponsors = await Promise.all(
+            relationships.map(async (rel) => {
+              let sponsorName = rel.sponsorId;
+
+              try {
+                const sponsorResult = await client.models.Sponsor.get({
+                  sponsorId: rel.sponsorId,
+                });
+
+                sponsorName =
+                  sponsorResult?.data?.affiliation ||
+                  sponsorResult?.data?.name ||
+                  rel.sponsorId;
+              } catch (error) {
+                console.error("Failed to load sponsor", rel.sponsorId, error);
+              }
+
+              return {
+                id: rel.sponsorId,
+                name: sponsorName,
+                points: rel.points ?? 0,
+                status: "active",
+              };
+            })
+          );
+
+          setAdminView(true);
+          setSponsorView(false);
+          setViewedDriver({
+            driverSub: sessionData.driverUsername,
+            driverName: stored.driverName || sessionData.driverName || "",
+            viewerRole: "Admin",
+          });
+
+          setDriver({
+            username: driverId || "",
+            fullName:
+              driverResult?.data?.fullName ||
+              stored.driverName ||
+              sessionData.driverName ||
+              "",
+            email: stored.driverEmail || driverResult?.data?.email || "",
+            phoneNumber:
+              stored.driverPhone || driverResult?.data?.phoneNumber || "",
+            groups: ["Driver"],
+            points: driverResult?.data?.points ?? 0,
+            sponsors,
+            applications: [],
+          });
+
+          return;
+        } catch (error) {
+          console.error("Admin driver view failed:", error);
+          setAdminView(true);
+          setSponsorView(false);
+          setViewedDriver({
+            driverSub: stored.driverUsername,
+            driverName: stored.driverName || "",
+            viewerRole: "Admin",
+          });
+          return;
+        }
+      }
+
+      // 2. Sponsor driver-view session
+      if (isSponsorView && rawSponsorSession) {
+        const stored = JSON.parse(rawSponsorSession);
+
+        try {
+          const driverId = stored.driverId;
+
+          const driverResult = await client.models.Driver.get({ driverId });
+
+          const relationshipResult = await client.models.DriverSponsor.list({
+            filter: { driverId: { eq: driverId } },
+          });
+
+          const relationships = Array.isArray(relationshipResult?.data)
+            ? relationshipResult.data
+            : [];
+
+          const sponsors = await Promise.all(
+            relationships.map(async (rel) => {
+              let sponsorName = rel.sponsorId;
+
+              try {
+                const sponsorResult = await client.models.Sponsor.get({
+                  sponsorId: rel.sponsorId,
+                });
+
+                sponsorName =
+                  sponsorResult?.data?.affiliation ||
+                  sponsorResult?.data?.name ||
+                  rel.sponsorId;
+              } catch (error) {
+                console.error("Failed to load sponsor", rel.sponsorId, error);
+              }
+
+              return {
+                id: rel.sponsorId,
+                name: sponsorName,
+                points: rel.points ?? 0,
+                status: "active",
+              };
+            })
+          );
+
+          const fullName =
+            driverResult?.data?.fullName ||
+            stored.driverName ||
+            stored.driverEmail ||
+            driverId;
+
+          setAdminView(false);
+          setSponsorView(true);
+          setViewedDriver({
+            driverSub: driverId,
+            driverName: fullName,
+            sponsorName: stored.sponsorName || "",
+            viewerRole: "Sponsor",
+          });
+
+          setDriver({
+            username: driverId || "",
+            fullName,
+            email: stored.driverEmail || driverResult?.data?.email || "",
+            phoneNumber:
+              stored.driverPhone || driverResult?.data?.phoneNumber || "",
+            groups: ["Driver"],
+            points: driverResult?.data?.points ?? 0,
+            sponsors,
+            applications: [],
+          });
+
+          return;
+        } catch (error) {
+          console.error("Sponsor driver view failed:", error);
+          setSponsorView(true);
+          setAdminView(false);
+          setViewedDriver({
+            driverSub: stored.driverId,
+            driverName: stored.driverName || "",
+            sponsorName: stored.sponsorName || "",
+            viewerRole: "Sponsor",
+          });
+          return;
+        }
+      }
+
+      // 3. Normal logged-in driver view
       try {
         const [session, assignmentData] = await Promise.all([
           fetchAuthSession(),
@@ -42,6 +229,7 @@ function DriverPage() {
           idPayload["cognito:groups"] ||
           accessPayload["cognito:groups"] ||
           [];
+
         const backendNotifications = await fetchNotificationsForUser(
           assignmentData.driverId
         );
@@ -54,24 +242,31 @@ function DriverPage() {
           });
         });
 
-        setDriver((prev) => ({
-          ...prev,
+        setAdminView(false);
+        setSponsorView(false);
+        setViewedDriver(null);
+
+        setDriver({
           username: assignmentData.driverId || "",
           fullName: assignmentData.fullName || "",
           email: assignmentData.email || "",
           phoneNumber: assignmentData.phoneNumber || "",
           groups: Array.isArray(groups) ? groups : [],
           points: assignmentData.totalPoints || 0,
-          sponsors: Array.isArray(assignmentData.sponsors) ? assignmentData.sponsors : [],
-        }));
+          sponsors: Array.isArray(assignmentData.sponsors)
+            ? assignmentData.sponsors
+            : [],
+          applications: Array.isArray(assignmentData.applications)
+            ? assignmentData.applications
+            : [],
+        });
       } catch (error) {
-        console.error("Failed to load Cognito user info:", error);
+        console.error("Failed to load driver page:", error);
       }
-      
     }
 
-    loadUser();
-  }, []);
+    loadPage();
+  }, [location.search, addNotification]);
 
   const applicationsByStatus = useMemo(() => {
     return {
@@ -79,7 +274,6 @@ function DriverPage() {
       approved: driver.applications.filter((app) => app.status === "approved"),
     };
   }, [driver.applications]);
-
 
   const getBadgeVariant = (status) => {
     switch (status) {
@@ -94,33 +288,56 @@ function DriverPage() {
         return "secondary";
     }
   };
-function parseNotification(content) {
-  if (!content) return "";
 
-  const parts = content.split(":");
+  function parseNotification(content) {
+    if (!content) return "";
 
-  if (parts[0] === "POINTS") {
-    const action = parts[1];
-    const amount = parts[2];
-    const total = parts[3];
-    const reason = parts.slice(4).join(":");
+    const parts = content.split(":");
 
-    return action === "ADD"
-      ? `+${amount} points added. New total: ${total}. Reason: ${reason}`
-      : `-${amount} points deducted. New total: ${total}. Reason: ${reason}`;
+    if (parts[0] === "POINTS") {
+      const action = parts[1];
+      const amount = parts[2];
+      const total = parts[3];
+      const reason = parts.slice(4).join(":");
+
+      return action === "ADD"
+        ? `+${amount} points added. New total: ${total}. Reason: ${reason}`
+        : `-${amount} points deducted. New total: ${total}. Reason: ${reason}`;
+    }
+
+    if (parts[0] === "MESSAGE") {
+      return parts.slice(1).join(":");
+    }
+
+    return content;
   }
 
-  if (parts[0] === "MESSAGE") {
-    return parts.slice(1).join(":");
-  }
+  const handleExitDriverView = async () => {
+    try {
+      const raw = localStorage.getItem("driverViewSession");
+      if (raw) {
+        const stored = JSON.parse(raw);
+        await stopDriverView(stored.sessionId);
+      }
+    } catch (error) {
+      console.error("Failed to stop driver view", error);
+    }
 
-  return content;
-}
+    localStorage.removeItem("driverViewSession");
+    navigate("/AdminPage");
+  };
+
+  const handleExitSponsorDriverView = () => {
+    localStorage.removeItem("sponsorDriverViewSession");
+    navigate("/SponsorPage");
+  };
 
   return (
     <Container className="mt-4">
-      <div style={{ minHeight: "100vh", padding: "40px" }}>
-        <h1><strong>Driver Dashboard</strong></h1>
+      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>
+          Driver Dashboard
+        </h1>
 
         <Row className="mb-4">
           <Col md={4}>
@@ -135,142 +352,179 @@ function parseNotification(content) {
             </Card>
           </Col>
 
-          <Col md={8}>
-            <Card>
-              <Card.Body>
-                <Card.Title>Overview</Card.Title>
-                <Row>
-                  <Col sm={4}>
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4>{driver.sponsors.length}</h4>
-                        <div className="text-muted">Sponsors</div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col sm={4}>
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4>{applicationsByStatus.pending.length}</h4>
-                        <div className="text-muted">Pending Apps</div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col sm={4}>
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4>{driver.applications.length}</h4>
-                        <div className="text-muted">Total Applications</div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+              <Col md={8}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title className="mb-4">
+                      <strong>Overview</strong>
+                    </Card.Title>
+                    <Row>
+                      <Col sm={4}>
+                        <Card className="text-center">
+                          <Card.Body>
+                            <h4>{driver.sponsors.length}</h4>
+                            <div className="text-muted">Sponsors</div>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                      <Col sm={4}>
+                        <Card className="text-center">
+                          <Card.Body>
+                            <h4>{applicationsByStatus.pending.length}</h4>
+                            <div className="text-muted">Pending Apps</div>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                      <Col sm={4}>
+                        <Card className="text-center">
+                          <Card.Body>
+                            <h4>{driver.applications.length}</h4>
+                            <div className="text-muted">Total Applications</div>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
 
-        <Tabs defaultActiveKey="sponsors" className="mb-4">
-          <Tab eventKey="sponsors" title="My Sponsors">
-            <Card className="mt-3">
-              <Card.Body>
-                <Card.Title>Associated Sponsors</Card.Title>
-                {!driver.sponsors.length ? (
-                  <div className="text-muted">No sponsors associated yet.</div>
-                ) : (
-                  <ListGroup>
-                    {driver.sponsors.map((sponsor) => (
-                      <ListGroup.Item key={sponsor.id}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                              <strong>{sponsor.name}</strong>
-                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                Sponsor ID: {sponsor.id}
+            <Tabs defaultActiveKey="sponsors" className="mb-4">
+              <Tab eventKey="sponsors" title="My Sponsors">
+                <Card className="mt-3">
+                  <Card.Body>
+                    <Card.Title>
+                      <strong>Associated Sponsors</strong>
+                    </Card.Title>
+                    {!driver.sponsors.length ? (
+                      <div className="text-muted">No sponsors associated yet.</div>
+                    ) : (
+                      <ListGroup>
+                        {driver.sponsors.map((sponsor) => (
+                          <ListGroup.Item key={sponsor.id}>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <div>
+                                <strong>{sponsor.name}</strong>
+                                <div
+                                  className="text-muted"
+                                  style={{ fontSize: "0.9rem" }}
+                                >
+                                  Sponsor ID: {sponsor.id}
+                                </div>
+                                <div
+                                  className="text-muted"
+                                  style={{ fontSize: "0.9rem" }}
+                                >
+                                  Points: {sponsor.points ?? 0}
+                                </div>
                               </div>
-                              <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                Points: {sponsor.points ?? 0}
+                              <Badge bg={getBadgeVariant(sponsor.status)}>
+                                {sponsor.status}
+                              </Badge>
+                            </div>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Tab>
+
+              <Tab eventKey="applications" title="Applications">
+                <Card className="mt-3">
+                  <Card.Body>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <Card.Title className="mb-0">
+                        <strong>My Applications</strong>
+                      </Card.Title>
+                      <Button variant="primary" size="sm">
+                        Browse Sponsors
+                      </Button>
+                    </div>
+
+                    {!driver.applications.length ? (
+                      <div className="text-muted">No applications submitted yet.</div>
+                    ) : (
+                      <ListGroup>
+                        {driver.applications.map((app) => (
+                          <ListGroup.Item key={app.id}>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <div>
+                                <strong>{app.sponsorName}</strong>
+                                <div
+                                  className="text-muted"
+                                  style={{ fontSize: "0.9rem" }}
+                                >
+                                  Submitted: {app.submittedAt}
+                                </div>
+                              </div>
+
+                              <div className="d-flex align-items-center gap-2">
+                                <Badge bg={getBadgeVariant(app.status)}>
+                                  {app.status}
+                                </Badge>
                               </div>
                             </div>
-                          <Badge bg={getBadgeVariant(sponsor.status)}>
-                            {sponsor.status}
-                          </Badge>
-                        </div>
-                      </ListGroup.Item>
-                    ))}
-                  </ListGroup>
-                )}
-              </Card.Body>
-            </Card>
-          </Tab>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Tab>
 
-          <Tab eventKey="applications" title="Applications">
-            <Card className="mt-3">
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <Card.Title className="mb-0">My Applications</Card.Title>
-                  <Button variant="primary" size="sm">
-                    Browse Sponsors
-                  </Button>
-                </div>
+              <Tab eventKey="notifications" title="Notifications">
+                <Card className="mt-3">
+                  <Card.Body>
+                    <Card.Title>Notifications</Card.Title>
 
-                {!driver.applications.length ? (
-                  <div className="text-muted">No applications submitted yet.</div>
-                ) : (
-                  <ListGroup>
-                    {driver.applications.map((app) => (
-                      <ListGroup.Item key={app.id}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <strong>{app.sponsorName}</strong>
-                            <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                              Submitted: {app.submittedAt}
+                    {activeNotifications.length === 0 ? (
+                      <div className="text-muted">No notifications</div>
+                    ) : (
+                      <ListGroup>
+                        {activeNotifications.map((n) => (
+                          <ListGroup.Item key={n.id}>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span>{parseNotification(n.description)}</span>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => closeNotification(n.id)}
+                              >
+                                ✕
+                              </Button>
                             </div>
-                          </div>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Tab>
+            </Tabs>
 
-                          <div className="d-flex align-items-center gap-2">
-                            <Badge bg={getBadgeVariant(app.status)}>
-                              {app.status}
-                            </Badge>
+            {adminView && (
+              <Button
+                style={{ width: "160px", height: "50px", marginTop: "20px" }}
+                variant="secondary"
+                className="me-2"
+                onClick={handleExitDriverView}
+              >
+                Exit
+              </Button>
+            )}
 
-                          </div>
-                        </div>
-                      </ListGroup.Item>
-                    ))}
-                  </ListGroup>
-                )}
-              </Card.Body>
-            </Card>
-          </Tab>
-          <Tab eventKey="notifications" title="Notifications">
-            <Card className="mt-3">
-              <Card.Body>
-                <Card.Title>Notifications</Card.Title>
-
-                {activeNotifications.length === 0 ? (
-                  <div className="text-muted">No notifications</div>
-                ) : (
-                  <ListGroup>
-                    {activeNotifications.map((n) => (
-                      <ListGroup.Item key={n.id}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span>{parseNotification(n.description)}</span>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => closeNotification(n.id)}
-                          >
-                            ✕
-                          </Button>
-                        </div>
-                      </ListGroup.Item>
-                    ))}
-                  </ListGroup>
-                )}
-              </Card.Body>
-            </Card>
-          </Tab>
-        </Tabs>
-      </div>
+            {sponsorView && (
+              <Button
+                style={{ width: "200px", height: "50px", marginTop: "20px" }}
+                variant="secondary"
+                className="me-2"
+                onClick={handleExitSponsorDriverView}
+              >
+                Exit
+              </Button>
+            )}
+          </div>
     </Container>
   );
 }

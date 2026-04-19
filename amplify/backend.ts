@@ -16,10 +16,12 @@ import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { adminUsersFunction } from './functions/adminManagementFeat/resource';
 import { updateStorefront } from './functions/updateStorefront/resource';
+import { storage } from './storage/resource';
 
 const backend = defineBackend({
   auth,
   data,
+  storage,
   adminUsersFunction,
   updateStorefront
 });
@@ -52,6 +54,19 @@ adminUserLambda.addToRolePolicy(
 
 const apiStack = backend.createStack('admin-api-stack');
 
+adminUserLambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: [
+      'dynamodb:PutItem',
+      'dynamodb:GetItem',
+      'dynamodb:UpdateItem',
+    ],
+    resources: [
+      `arn:aws:dynamodb:us-east-1:${Stack.of(apiStack).account}:table/DriverViewSession-opf5l7awlrcc7gwlw2c6ccmmca-NONE`,
+    ],
+  })
+);
+
 const adminApi = new RestApi(apiStack, 'AdminRestApi', {
   restApiName: 'SafeDriveAPI',
   deploy: true,
@@ -67,6 +82,7 @@ const adminApi = new RestApi(apiStack, 'AdminRestApi', {
       'Authorization',
       'X-Api-Key',
       'X-Amz-Security-Token',
+      'x-driver-view-session',
     ],
   },
 });
@@ -86,17 +102,19 @@ new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
   type: ResponseType.DEFAULT_5XX,
   responseHeaders: {
     'Access-Control-Allow-Origin': "'http://localhost:5173'",
-    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-    'Access-Control-Allow-Methods': "'GET,PUT,OPTIONS'",
+    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-driver-view-session'",
+    'Access-Control-Allow-Methods': "'GET,PUT,POST,OPTIONS'",
   },
 });
 
 const lambdaIntegration = new LambdaIntegration(adminUserLambda);
 
-const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, 'AdminCognitoAuth', {cognitoUserPools: [userPool]});
-
+const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, 'AdminCognitoAuth', {
+  cognitoUserPools: [userPool]
+});
 
 const adminPath = adminApi.root.addResource('admin');
+
 const usersPath = adminPath.addResource('users');
 const unassignedPath = usersPath.addResource('unassigned');
 
@@ -145,6 +163,32 @@ groupPath.addMethod('PUT', lambdaIntegration, {
   authorizer: cognitoAuth,
 });
 
+const driverViewPath = adminPath.addResource('driver-view');
+
+const driverViewStartPath = driverViewPath.addResource('start');
+driverViewStartPath.addMethod('POST', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const driverViewCurrentPath = driverViewPath.addResource('current');
+driverViewCurrentPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const driverViewDashboardPath = driverViewPath.addResource('dashboard');
+driverViewDashboardPath.addMethod('GET', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+const driverViewStopPath = driverViewPath.addResource('stop');
+driverViewStopPath.addMethod('POST', lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
 backend.addOutput({
   custom: {
     API: {
@@ -158,4 +202,3 @@ backend.addOutput({
 });
 
 export { backend };
-
