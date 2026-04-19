@@ -81,17 +81,20 @@ function ManageSponsorsTab({
       affiliation: selectedSponsorUser.affiliation ?? "",
     };
 
-    const safeRelationships = (Array.isArray(relationships) ? relationships : []).map(
-      (rel) => ({
-        driverSponsorId: rel?.driverSponsorId ?? "",
-        driverId: rel?.driverId ?? "",
-        sponsorId: rel?.sponsorId ?? "",
-        driverName: rel?.driverName ?? "",
-        driverNickname: rel?.driverNickname ?? "",
-        driverEmail: rel?.driverEmail ?? "",
-        points: rel?.points ?? 0,
-      })
-    );
+    const safeRelationships = (Array.isArray(relationships) ? relationships : []).map((rel) => ({
+      driverSponsorId: rel?.driverSponsorId ?? "",
+      driverId: rel?.driverId ?? "",
+      sponsorId: rel?.sponsorId ?? "",
+      driverName:
+        rel?.driverName ||
+        rel?.driverNickname ||
+        getDriverLabel(rel?.driverId) ||
+        rel?.driverEmail ||
+        "Unknown Driver",
+      driverNickname: rel?.driverNickname ?? "",
+      driverEmail: rel?.driverEmail ?? "",
+      points: rel?.points ?? 0,
+    }));
 
     navigate(`/admin/sponsors/${selectedSponsorUser.username}/view`, {
       state: {
