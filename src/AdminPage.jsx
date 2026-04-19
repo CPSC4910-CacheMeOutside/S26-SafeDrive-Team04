@@ -124,6 +124,9 @@ function AdminPage() {
     } catch (error) {
       console.error(error);
       setSponsorRatioInput(DEFAULT_RATIO.toString());
+      setDriverUsersError(t('admin.failedToLoadDrivers'));
+    } finally {
+      setLoadingDriverUsers(false);
     }
   };
 
@@ -191,7 +194,7 @@ function AdminPage() {
       setSelectedPendingUsername((prev) => pickSelected(users, prev, "username"));
     } catch (error) {
       console.error(error);
-      setRoleCardError("Failed to load unassigned users.");
+      setRoleCardError(t('admin.failedToLoadUnassignedUsers'));
     } finally {
       setLoadingPendingUsers(false);
     }
@@ -321,6 +324,9 @@ function AdminPage() {
         await ensureSponsorRecord(selectedPendingUser);
         await loadSponsors();
       }
+      setRoleCardMessage(
+        `${selectedPendingUser.name || selectedPendingUser.username} ${t('admin.assignedTo')} ${selectedRole}.`
+      );
 
       if (selectedRole === "Driver") {
         await ensureDriverRecord(selectedPendingUser);
@@ -335,7 +341,7 @@ function AdminPage() {
       setSelectedPendingUsername(updatedUsers[0]?.username ?? "");
     } catch (error) {
       console.error(error);
-      setRoleCardError("Failed to assign role.");
+      setRoleCardError(t('admin.failedToAssignRole'));
     } finally {
       setAssigningRole(false);
     }
@@ -348,7 +354,7 @@ function AdminPage() {
 
     setUnassignedUsers(updatedUsers);
     setSelectedPendingUsername(updatedUsers[0]?.username ?? "");
-    setRoleCardMessage(`${selectedPendingUser.name || selectedPendingUser.username} removed from the list.`);
+    setRoleCardMessage(`${selectedPendingUser.name || selectedPendingUser.username} ${t('admin.removedFromList')}`);
     setRoleCardError("");
   };
 
@@ -1122,6 +1128,7 @@ function AdminPage() {
                           ) : (
                             <>
                               <Form.Group className="mb-3">
+                                <Form.Label>{t('admin.assignGroup')}</Form.Label>
                                 <Form.Select
                                   value={selectedSponsorId || ""}
                                   onChange={(e) => setSelectedSponsorId(e.target.value)}

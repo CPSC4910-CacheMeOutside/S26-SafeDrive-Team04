@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import useAmplifyAuth from './UseAmplifyAuth';
+import { useLanguage } from './LanguageContext';
 
 function LogoutPage() {
   const auth = useAmplifyAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const run = async () => {
@@ -20,7 +22,7 @@ function LogoutPage() {
     run();
   }, [auth]);
 
-  return <div>Logging out...</div>;
+  return <div>{t('logout.loggingOut')}</div>;
 }
 
 export default LogoutPage;

@@ -3,6 +3,7 @@ import { generateClient } from 'aws-amplify/data';
 import { useState, useEffect } from 'react';
 import { useLanguage } from './LanguageContext';
 import useAmplifyAuth from "./UseAmplifyAuth";
+import { useLanguage } from "./LanguageContext";
 import "./App.css";
 
 export default function HomePage () {
@@ -53,9 +54,9 @@ export default function HomePage () {
   return (
     <div style={{ position: "relative", minHeight: "100vh", padding: "60px", overflowX: "hidden" }}>
       <div className="hero-content">
-        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>Welcome to Safe Drive!</h1>
-        <p className="fs-2">Safe Driving. Big Rewards.</p>
-        <Button style={{backgroundColor: "#10b981", border: "none", padding: "12px 24px", fontSize: "1.1rem"}} className="glow-button mt-5 px-5 py-3 fs-3 fw-bold" onClick={() => auth.signupRedirect()}>Get Started!</Button>
+      <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{t('home.welcome')}</h1>
+      <p className="fs-2">{t('home.tagline')}</p>
+      <Button style={{backgroundColor: "#10b981", border: "none", padding: "12px 24px", fontSize: "1.1rem"}} className="glow-button mt-5 px-5 py-3 fs-3 fw-bold" onClick={() => auth.signupRedirect()}>{t('home.getStarted')}</Button>
       </div>
 
       <div style={{ marginTop: "60px" }}>

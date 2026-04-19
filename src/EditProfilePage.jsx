@@ -310,29 +310,33 @@ function EditProfilePage({
       alert(t('editProfile.driverProfileUpdated'));
     } catch (error) {
       console.error("Save error:", error);
-      alert(error?.message || "Something went wrong while saving.");
+      console.error("Save error response:", error?.response);
+      console.error("Save error body:", error?.response?.body);
+      alert(error?.message || t('editProfile.somethingWentWrongSaving'));
     }
   };
 
   return (
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>
-          {adminView ? "Edit Driver Account" : "Edit Profile"}
-        </h1>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{adminView ? t('editProfile.editDriverAccountTitle') : t('editProfile.title')}</h1>
+        
+        {adminView && (
+          <Alert variant="warning">
+            {t('editProfile.adminViewAlert')} {targetDriverId}
+          </Alert>
+        )}
 
-        <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-          {adminView && (
-            <Alert style={{ backgroundColor: "#10b981", color: "white", border: "none" }}>
-              <strong>*** You're editing driver account:</strong> {targetDriverId}<strong>{" ***"}</strong>
-            </Alert>
-          )}
+        {adminView && (
+          <Alert style={{ backgroundColor: "#10b981", color: "white", border: "none" }}>
+            <strong>*** You're editing driver account:</strong> {targetDriverId}<strong>{" ***"}</strong>
+          </Alert>
+        )}
 
-          {loading ? (
-            <div>{t('editProfile.loadingProfile')}</div>
-          ) : (
-            <Form onSubmit={handleSubmit}>
-              <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
+        {loading ? (
+          <div>{t('editProfile.loadingProfile')}</div>
+        ) : (
+          <Form onSubmit={handleSubmit}>
                 <Form.Group as={Row} className="mb-3">
                   <Form.Label column sm={3}><strong>{t('editProfile.fullName')}</strong></Form.Label>
                   <Col sm={6}>
@@ -538,10 +542,8 @@ function EditProfilePage({
                   onClick={() => navigate("/AdminPage")}
                 >Exit</Button>
                 <Button style={{ width: "160px", height: "50px" }} type="submit">Save Changes</Button>
-              </div>
             </Form>
           )}
-        </div>
       </div>
     </Container>
   );

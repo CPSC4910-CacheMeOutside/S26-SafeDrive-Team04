@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAuthSession, getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
+import { useLanguage } from "./LanguageContext";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -29,6 +30,7 @@ function DriverPage() {
   const [sponsorView, setSponsorView] = useState(false);
   const [viewedDriver, setViewedDriver] = useState(null);
 
+  const { t } = useLanguage();
   const [driver, setDriver] = useState({
     id: "",
     username: "",
@@ -343,21 +345,19 @@ function DriverPage() {
 
   return (
     <Container className="mt-4">
-      <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>
-          Driver Dashboard
-        </h1>
+      <div style={{ minHeight: "100vh", padding: "40px" }}>
+        <h1><strong>{t('driver.dashboard')}</strong></h1>
 
         <Row className="mb-4">
           <Col md={4}>
             <Card>
               <Card.Body>
-                <Card.Title>My Profile</Card.Title>
-                <p className="mb-2"><strong>Name:</strong> {driver.fullName || "Unknown User"}</p>
-                <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
-                <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
-                <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
-                <p className="mb-0"><strong>Total Points:</strong> {driver.sponsors.reduce((sum, s) => sum + (s.points || 0), 0)}</p>
+                <Card.Title>{t('driver.myProfile')}</Card.Title>
+                <p className="mb-2"><strong>{t('driver.name')}</strong> {driver.fullName || t('driver.unknownUser')}</p>
+                <p className="mb-2"><strong>{t('driver.email')}</strong> {driver.email || t('driver.noEmail')}</p>
+                <p className="mb-2"><strong>{t('driver.phone')}</strong> {driver.phoneNumber || t('driver.noPhone')}</p>
+                <p className="mb-2"><strong>{t('driver.groups')}</strong> {driver.groups.join(", ") || t('driver.none')}</p>
+                <p className="mb-0"><strong>{t('driver.points')}</strong> {driver.points}</p>
               </Card.Body>
             </Card>
           </Col>

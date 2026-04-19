@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useLanguage } from "./LanguageContext";
 
 const STORAGE_KEY = "safedrive_catalog_ratings";
 
 export default function StarRating({ itemKey }) {
+    const { t } = useLanguage();
     const [ratingsData, setRatingsData] = useState(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
         return stored ? JSON.parse(stored) : {};
@@ -62,7 +64,7 @@ export default function StarRating({ itemKey }) {
             {/* Show average rating and total count once at least one rating exists */}
             {itemData.count > 0 && (
                 <span style={{ fontSize: "12px", color: "gray", marginLeft: "6px" }}>
-                    {avgRating.toFixed(1)} ({itemData.count} rating{itemData.count !== 1 ? "s" : ""})
+                    {avgRating.toFixed(1)} ({itemData.count} {t(itemData.count !== 1 ? 'starRating.ratings' : 'starRating.rating')})
                 </span>
             )}
         </div>

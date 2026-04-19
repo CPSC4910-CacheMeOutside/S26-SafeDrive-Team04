@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { usePoints } from '../PointsContext';
 import { useConversionRatio } from '../ConversionRatioContext';
+import { useLanguage } from './LanguageContext';
 
 export default function SpendPointsModal({ show, onHide }) {
   const { getAllDrivers, getDriverPoints, spendPoints } = usePoints();
   const { convertPointsToDollars } = useConversionRatio();
+  const { t } = useLanguage();
 
   const [selectedDriver, setSelectedDriver] = useState('');
   const [amount, setAmount] = useState('');
@@ -25,34 +27,34 @@ export default function SpendPointsModal({ show, onHide }) {
 
     // Validation
     if (!selectedDriver) {
-      setError('Please select a driver');
+      setError(t('spendPoints.errSelectDriver'));
       return;
     }
 
     const pointsToSpend = parseFloat(amount);
     if (!pointsToSpend || pointsToSpend <= 0) {
-      setError('Please enter a valid positive amount');
+      setError(t('spendPoints.errValidAmount'));
       return;
     }
 
     if (pointsToSpend > currentPoints) {
-      setError(`Cannot spend more than ${currentPoints} points (driver's current balance)`);
+      setError(`${t('spendPoints.errExceedsBalancePrefix')} ${currentPoints} ${t('spendPoints.errExceedsBalanceSuffix')}`);
       return;
     }
 
     if (!description || description.trim().length < 3) {
-      setError('Please enter a description (minimum 3 characters)');
+      setError(t('spendPoints.errDescription'));
       return;
     }
 
     if (!sponsorName || sponsorName.trim().length === 0) {
-      setError('Please enter sponsor name');
+      setError(t('spendPoints.errSponsorName'));
       return;
     }
 
     try {
       spendPoints(selectedDriver, pointsToSpend, description, sponsorName, dollarValue);
-      setSuccess(`Successfully spent ${pointsToSpend} points for ${selectedDriver}!`);
+      setSuccess(`${t('spendPoints.successSpentPrefix')} ${pointsToSpend} ${t('spendPoints.successSpentMiddle')} ${selectedDriver}!`);
 
       // Reset form
       setAmount('');
@@ -82,7 +84,7 @@ export default function SpendPointsModal({ show, onHide }) {
   return (
     <Modal show={show} onHide={handleClose} size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Spend Driver Points</Modal.Title>
+        <Modal.Title>{t('spendPoints.title')}</Modal.Title>
       </Modal.Header>
 
       <Form onSubmit={handleSubmit}>
@@ -92,13 +94,13 @@ export default function SpendPointsModal({ show, onHide }) {
 
           {/* Driver Selection */}
           <Form.Group className="mb-3">
-            <Form.Label>Select Driver</Form.Label>
+            <Form.Label>{t('spendPoints.selectDriver')}</Form.Label>
             <Form.Select
               value={selectedDriver}
               onChange={(e) => setSelectedDriver(e.target.value)}
               required
             >
-              <option value="">Choose a driver...</option>
+              <option value="">{t('spendPoints.choosePlaceholder')}</option>
               {drivers.map(driver => (
                 <option key={driver.alias} value={driver.alias}>
                   {driver.alias} ({driver.currentPoints} points)
@@ -116,7 +118,7 @@ export default function SpendPointsModal({ show, onHide }) {
               marginBottom: 20,
               backgroundColor: '#f8f9fa'
             }}>
-              <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>Current Points Balance</div>
+              <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>{t('spendPoints.currentBalance')}</div>
               <div style={{ fontSize: '2rem', fontWeight: 700 }}>{currentPoints}</div>
               <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>
                 ≈ ${convertPointsToDollars(currentPoints).toFixed(2)}
@@ -126,10 +128,10 @@ export default function SpendPointsModal({ show, onHide }) {
 
           {/* Points to Spend */}
           <Form.Group className="mb-3">
-            <Form.Label>Points to Spend</Form.Label>
+            <Form.Label>{t('spendPoints.pointsToSpend')}</Form.Label>
             <Form.Control
               type="number"
-              placeholder="Enter points amount"
+              placeholder={t('spendPoints.enterPointsPlaceholder')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               min="1"
@@ -146,33 +148,33 @@ export default function SpendPointsModal({ show, onHide }) {
 
           {/* Sponsor Name */}
           <Form.Group className="mb-3">
-            <Form.Label>Sponsor Name</Form.Label>
+            <Form.Label>{t('spendPoints.sponsorName')}</Form.Label>
             <Form.Control
               type="text"
-              placeholder="Enter sponsor organization name"
+              placeholder={t('spendPoints.enterSponsorPlaceholder')}
               value={sponsorName}
               onChange={(e) => setSponsorName(e.target.value)}
               required
             />
             <Form.Text className="text-muted">
-              The organization spending these points
+              {t('spendPoints.sponsorOrgHint')}
             </Form.Text>
           </Form.Group>
 
           {/* Description */}
           <Form.Group className="mb-3">
-            <Form.Label>Description/Reason</Form.Label>
+            <Form.Label>{t('spendPoints.descriptionReason')}</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
-              placeholder="Enter reason for spending points (e.g., Gas card redemption, Reward program)"
+              placeholder={t('spendPoints.enterReasonPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
               minLength={3}
             />
             <Form.Text className="text-muted">
-              Minimum 3 characters
+              {t('spendPoints.minChars')}
             </Form.Text>
           </Form.Group>
 
@@ -185,27 +187,27 @@ export default function SpendPointsModal({ show, onHide }) {
               backgroundColor: '#e7f3ff',
               marginTop: 20
             }}>
-              <h6>Transaction Summary</h6>
-              <div><strong>Driver:</strong> {selectedDriver}</div>
-              <div><strong>Points to Spend:</strong> {amount}</div>
-              <div><strong>Dollar Value:</strong> ${dollarValue.toFixed(2)}</div>
-              <div><strong>New Balance:</strong> {currentPoints - parseFloat(amount)} points</div>
-              <div><strong>Sponsor:</strong> {sponsorName}</div>
-              <div><strong>Reason:</strong> {description}</div>
+              <h6>{t('spendPoints.transactionSummary')}</h6>
+              <div><strong>{t('spendPoints.driverLabel')}</strong> {selectedDriver}</div>
+              <div><strong>{t('spendPoints.pointsToSpendLabel')}</strong> {amount}</div>
+              <div><strong>{t('spendPoints.dollarValue')}</strong> ${dollarValue.toFixed(2)}</div>
+              <div><strong>{t('spendPoints.newBalance')}</strong> {currentPoints - parseFloat(amount)} {t('driver.points').replace(':', '')}</div>
+              <div><strong>{t('spendPoints.sponsorLabel')}</strong> {sponsorName}</div>
+              <div><strong>{t('spendPoints.reasonLabel')}</strong> {description}</div>
             </div>
           )}
         </Modal.Body>
 
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>
-            Cancel
+            {t('spendPoints.cancel')}
           </Button>
           <Button
             variant="primary"
             type="submit"
             disabled={!selectedDriver || !amount || !description || !sponsorName}
           >
-            Confirm Spend
+            {t('spendPoints.confirmSpend')}
           </Button>
         </Modal.Footer>
       </Form>
