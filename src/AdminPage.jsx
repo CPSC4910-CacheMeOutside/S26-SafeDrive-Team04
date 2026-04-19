@@ -1567,7 +1567,7 @@ function AdminPage() {
                       <Col md={6}>
                         <Card className="mb-4">
                           <Card.Body>
-                            <Card.Title>Create User</Card.Title>
+                            <Card.Title className="mb-4"><strong>Create User</strong></Card.Title>
 
                             {userMgmtError && <div className="alert alert-danger">{userMgmtError}</div>}
                             {newMgmtMessage && <div className="alert alert-success">{newMgmtMessage}</div>}
@@ -1606,7 +1606,7 @@ function AdminPage() {
                       <Col md={6}>
                         <Card className="mb-4">
                           <Card.Body>
-                            <Card.Title>Delete User</Card.Title>
+                            <Card.Title className="mb-4"><strong>Delete User</strong></Card.Title>
 
                             <ListGroup className="mb-3">
                               {allManagedUsers.map((user) => (

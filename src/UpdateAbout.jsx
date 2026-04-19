@@ -54,7 +54,8 @@ export default function UpdateAbout() {
     return (
         <Container>
             <Row>
-                <h1>{t('about.title')}</h1>
+                <h1><strong>{t('about.title')}</strong></h1>
+                <p></p>
                 <p>{t('about.instructions')}</p>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group>
