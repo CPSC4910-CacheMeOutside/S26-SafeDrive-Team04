@@ -170,7 +170,7 @@ function App() {
                 <Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>
               )}
               {auth.isAuthenticated && groups.includes("Driver") && (
-                <Nav.Link as={Link} to="/sponsor-catalog">Orders</Nav.Link>
+                <Nav.Link as={Link} to="/driver-orders">Orders</Nav.Link>
               )}
               {auth.isAuthenticated && groups.includes("Driver") && (
                 <Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">
@@ -188,7 +188,8 @@ function App() {
                 <Nav.Link as={Link} to="/CatalogBuilder">Catalog</Nav.Link>
               )}
               {auth.isAuthenticated && groups.includes("Sponsor") && (
-                <Nav.Link as={Link} to="/sponsor-orders">Orders</Nav.Link>)}
+                <Nav.Link as={Link} to="/sponsor-orders">Orders</Nav.Link>
+              )}
               {auth.isAuthenticated && groups.includes("Sponsor") && (
                 <Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">
                   Sponsor Notif
@@ -285,6 +286,8 @@ function App() {
         <Route path="/sponsor-catalog" element={<SponsorCatalog sponsorId={1} />} />
         <Route path="/callback" element={<div>{t('common.loading')}</div>} />
         <Route path="/sponsor-list" element={<SponsorListings />} />
+        <Route path="/driver-orders" element={<DriverOrdersPage />} />
+        <Route path="/sponsor-orders" element={<SponsorOrdersPage />} />
         <Route path="/application/:appliedSponsor" element={<DriverApplication appliedSponsor />} />
         <Route path="/sponsor-application" element={<SponsorApplication />} />
         <Route path="/admin/sponsors/:sponsorId/edit" element={<AdminSponsorAccountEdit />} />
