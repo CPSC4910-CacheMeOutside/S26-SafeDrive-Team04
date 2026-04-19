@@ -16,10 +16,12 @@ import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { adminUsersFunction } from './functions/adminManagementFeat/resource';
 import { updateStorefront } from './functions/updateStorefront/resource';
+import { storage } from './storage/resource';
 
 const backend = defineBackend({
   auth,
   data,
+  storage,
   adminUsersFunction,
   updateStorefront
 });
