@@ -796,6 +796,29 @@ function AdminPage() {
                   )}
                 </div>
               )}
+
+              {activeTab === "pendingUsers" && (
+                <div className="ms-3 pb-2 text-nowrap">
+                  <span style={{ color: "black", fontWeight: "600" }} className="me-2">Selected Pending User:</span>
+                  {selectedPendingUser ? (
+                    <span
+                      style={{
+                        backgroundColor: "#10b981",
+                        color: "white",
+                        padding: "4px 10px",
+                        borderRadius: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {selectedPendingUser.name ||
+                      selectedPendingUser.preferred_username ||
+                      selectedPendingUser.username}
+                    </span>
+                  ) : (
+                    <span className="text-muted">None</span>
+                  )}
+                </div>
+              )}
             </div>
 
             <Tab.Content>
@@ -1148,89 +1171,137 @@ function AdminPage() {
               </Tab.Pane>
 
               <Tab.Pane eventKey="pendingUsers" title="Pending Users">
-                <Col md={5}>
-                  <Card className="mb-4">
-                    <Card.Body>
-                      <Card.Title>Assign Role</Card.Title>
-                      {roleCardError && <div className="alert alert-danger py-2">{roleCardError}</div>}
-                      {roleCardMessage && <div className="alert alert-success py-2">{roleCardMessage}</div>}
-                      {loadingPendingUsers ? (
-                        <div className="text-muted">Loading unassigned users...</div>
-                      ) : !unassignedUsers.length ? (
-                        <div className="text-muted">No unassigned users found.</div>
-                      ) : (
-                        <>
-                          <ListGroup className="mb-3">
-                            {unassignedUsers.map((user) => (
-                              <ListGroupItem
-                                key={user.username}
-                                action
-                                active={user.username === selectedPendingUsername}
-                                onClick={() => setSelectedPendingUsername(user.username)}
-                              >
-                                <div className="fw-semibold">
-                                  {user.name || user.preferred_username || user.username}
-                                </div>
-                                <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                                  {user.email || user.username}
-                                </div>
-                              </ListGroupItem>
-                            ))}
-                          </ListGroup>
-
-                          {selectedPendingUser && (
-                            <>
-                              <div className="mb-3">
-                                <strong>Selected User:</strong>
-                                <br />
-                                {selectedPendingUser.name || "No name"}
-                                <br />
-                                <span className="text-muted">
-                                  {selectedPendingUser.email || selectedPendingUser.username}
-                                </span>
-                              </div>
-
-                              <Form.Group className="mb-3">
-                                <Form.Label>Assign Group</Form.Label>
-                                <Form.Select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-                                  <option value="Admin">Admin</option>
-                                  <option value="Driver">Driver</option>
-                                  <option value="Sponsor">Sponsor</option>
-                                </Form.Select>
-                              </Form.Group>
-
-                              <div className="d-flex justify-content-center gap-4">
-                                <Button
-                                  style={{ width: "160px", height: "50px" }}
-                                  onClick={handleAssignRole}
-                                  disabled={assigningRole}
+                <Row className="g-4 align-items-start">
+                  <Col md={4}>
+                    <Card className="mb-4">
+                      <Card.Body>
+                        <Card.Title className="mb-4"><strong>Select a Pending User</strong></Card.Title>
+                        {roleCardError && <div className="alert alert-danger py-2">{roleCardError}</div>}
+                        {loadingPendingUsers ? (
+                          <div className="text-muted">Loading unassigned users...</div>
+                        ) : !unassignedUsers.length ? (
+                          <div className="text-muted">No unassigned users found.</div>
+                        ) : (
+                          <>
+                            <ListGroup className="mb-3">
+                              {unassignedUsers.map((user) => (
+                                <ListGroupItem
+                                  key={user.username}
+                                  action
+                                  active={user.username === selectedPendingUsername}
+                                  onClick={() => setSelectedPendingUsername(user.username)}
+                                  style={
+                                    user.username === selectedPendingUsername
+                                      ? { backgroundColor: "#10b981", border: "none", color: "white" }
+                                      : {}
+                                  }
                                 >
-                                  {assigningRole ? "Assigning..." : "Assign Role"}
-                                </Button>
-                                <Button
-                                  style={{ width: "160px", height: "50px" }}
-                                  variant="outline-secondary"
-                                  onClick={handleDismissUnassignedUser}
-                                >
-                                  Remove From List
-                                </Button>
+                                  <div className="fw-semibold"> {user.name || user.preferred_username || user.username}</div>
+                                  <div
+                                    className={user.username === selectedPendingUsername ? "" : "text-muted"}
+                                    style={{ fontSize: "0.9rem" }}
+                                  >
+                                    {user.email || user.username}
+                                  </div>
+                                </ListGroupItem>
+                              ))}
+                            </ListGroup>
+                            <Button
+                              className="mt-3"
+                              style={{ width: "160px", height: "50px" }}
+                              variant="outline-secondary"
+                              onClick={loadUnassignedUsers}
+                              disabled={loadingPendingUsers}
+                            >
+                              Refresh
+                            </Button>
+                          </>
+                        )}
+                      </Card.Body>
+                    </Card>
+                  </Col>
+
+                  <Col md={8}>
+                    <Row className="g-4">
+                      <Col md={12}>
+                        <Card>
+                          <Card.Body>
+                            <Card.Title><strong>Pending User Overview</strong></Card.Title>
+                            {!selectedPendingUser ? (
+                              <div className="text-muted">Select a pending user to view their overview.</div>
+                            ) : (
+                              <div className="text-start">
+                                <div className="mb-2">
+                                  <strong>Name:</strong>{" "}
+                                  {selectedPendingUser.name ||
+                                    selectedPendingUser.preferred_username ||
+                                    selectedPendingUser.username}
+                                </div>
+
+                                <div className="mb-2">
+                                  <strong>Email:</strong> {selectedPendingUser.email || "N/A"}
+                                </div>
+
+                                <div className="mb-2">
+                                  <strong>Phone:</strong>{" "}
+                                  {selectedPendingUser.phone_number || selectedPendingUser.phone || "N/A"}
+                                </div>
+
+                                <div className="mb-2">
+                                  <strong>Username:</strong> {selectedPendingUser.username}
+                                </div>
                               </div>
-                            </>
-                          )}
-                        </>
-                      )}
-                      <Button
-                        style={{ width: "160px", height: "50px" }}
-                        variant="outline-secondary"
-                        className="mt-3"
-                        onClick={loadUnassignedUsers}
-                        disabled={loadingPendingUsers}
-                      >
-                        Refresh
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
+                            )}
+                          </Card.Body>
+                        </Card>
+                      </Col>
+
+                      <Col md={12}>
+                        <Card>
+                          <Card.Body>
+                            <Card.Title><strong>Assign Role</strong></Card.Title>
+                            {roleCardError && <div className="alert alert-danger py-2">{roleCardError}</div>}
+                            {roleCardMessage && <div className="alert alert-success py-2">{roleCardMessage}</div>}
+                            {!selectedPendingUser ? (
+                              <div className="text-muted">Select a pending user first.</div>
+                            ) : (
+                              <>
+                                <Form.Group className="mb-3">
+                                  <Form.Label></Form.Label>
+                                    <Form.Select
+                                      value={selectedRole}
+                                      onChange={(e) => setSelectedRole(e.target.value)}
+                                    >
+                                      <option value="Admin">Admin</option>
+                                      <option value="Driver">Driver</option>
+                                      <option value="Sponsor">Sponsor</option>
+                                    </Form.Select>
+                                </Form.Group>
+
+                                <div className="d-flex justify-content-center gap-3">
+                                  <Button
+                                    style={{ width: "160px", height: "50px" }}
+                                    variant="outline-secondary"
+                                    onClick={handleDismissUnassignedUser}
+                                  >
+                                    Remove From List
+                                  </Button>
+                                  <Button
+                                    style={{ width: "160px", height: "50px" }}
+                                    onClick={handleAssignRole}
+                                    disabled={assigningRole}
+                                  >
+                                    {assigningRole ? "Assigning..." : "Assign Role"}
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    </Row>
+                  </Col>
+                </Row>
               </Tab.Pane>
 
               <Tab.Pane eventKey="updateAbout" title="Update About">
