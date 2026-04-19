@@ -1,7 +1,13 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import crypto from 'crypto';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  GetCommand,
+  UpdateCommand,
+  ScanCommand,
+} from '@aws-sdk/lib-dynamodb';
 import {
   CognitoIdentityProviderClient,
   ListUsersCommand,
@@ -109,7 +115,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     const path = event.path || '';
-    const username = event.pathParameters?.username || event.pathParameters?.driverId;
+    const username =
+      event.pathParameters?.username || event.pathParameters?.driverId;
     const groupname = event.pathParameters?.groupname;
 
     if (event.httpMethod === 'GET' && path.endsWith('/admin/users/unassigned')) {
@@ -167,29 +174,36 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     if (event.httpMethod === 'GET' && path.includes('/admin/users/group/') && groupname) {
-        const result = await cognito.send(new ListUsersInGroupCommand({UserPoolId: userPoolId, GroupName: groupname, Limit: 60,}));
-        const users = (result.Users ?? []).map((user) => {
-          const attrs = getAttributesMap(user.Attributes);
+      const result = await cognito.send(
+        new ListUsersInGroupCommand({
+          UserPoolId: userPoolId,
+          GroupName: groupname,
+          Limit: 60,
+        })
+      );
 
-          return {
-            username: user.Username ?? '',
-            email: attrs.email ?? '',
-            name: attrs.name ?? '',
-            preferred_username: attrs.preferred_username ?? '',
-            nickname: attrs.nickname ?? '',
-            phone_number: attrs.phone_number ?? '',
-            enabled: user.Enabled ?? false,
-            status: user.UserStatus ?? '',
-            groups: [groupname],
-          };
-        });
+      const users = (result.Users ?? []).map((user) => {
+        const attrs = getAttributesMap(user.Attributes);
 
-  return {
-    statusCode: 200,
-    headers: corsHeaders,
-    body: JSON.stringify(users),
-  };
-}
+        return {
+          username: user.Username ?? '',
+          email: attrs.email ?? '',
+          name: attrs.name ?? '',
+          preferred_username: attrs.preferred_username ?? '',
+          nickname: attrs.nickname ?? '',
+          phone_number: attrs.phone_number ?? '',
+          enabled: user.Enabled ?? false,
+          status: user.UserStatus ?? '',
+          groups: [groupname],
+        };
+      });
+
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify(users),
+      };
+    }
 
     if (event.httpMethod === 'PUT' && path.endsWith('/group')) {
       if (!username) {
@@ -403,18 +417,19 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     if (event.httpMethod === 'GET' && path.endsWith('/admin/driver-view/dashboard')) {
-        if (!driverTable || !driverSponsorTable || !sponsorTable) {
-  return {
-    statusCode: 500,
-    headers: corsHeaders,
-    body: JSON.stringify({
-      message: 'Missing dashboard table env vars',
-      driverTable,
-      driverSponsorTable,
-      sponsorTable,
-    }),
-  };
-}
+      if (!driverTable || !driverSponsorTable || !sponsorTable) {
+        return {
+          statusCode: 500,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            message: 'Missing dashboard table env vars',
+            driverTable,
+            driverSponsorTable,
+            sponsorTable,
+          }),
+        };
+      }
+
       const adminSub = getClaimSub(event);
 
       if (!adminSub) {
@@ -515,7 +530,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
       const driverId = session.driverUsername;
 
-      const driverRecordResult = await ddb.send(new GetCommand({TableName: driverTable, Key: { driverId },}));
+      const driverRecordResult = await ddb.send(
+        new GetCommand({
+          TableName: driverTable,
+          Key: { driverId },
+        })
+      );
       const driverRecord = driverRecordResult.Item ?? {};
       const totalPoints = driverRecord.points ?? 0;
 
@@ -709,6 +729,4 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }),
     };
   }
-  
 };
-

@@ -31,9 +31,9 @@ import DriverNotificationsPage from './DriverNotificationsPage';
 import DriverApplication from './DriverApplication';
 import SponsorApplication from './SponsorApplication';
 import SponsorListings from './Available-Sponsors';
+import AdminSponsorViewPage from "./AdminSponsorViewPage";
 import AdminSponsorAccountEdit from './AdminSponsorAccountEdit';
 import UpdateAbout from './UpdateAbout';
-
 
 function App() {
 
@@ -185,6 +185,7 @@ function App() {
           <Route path="/application/:appliedSponsor" element={<DriverApplication appliedSponsor />} />
           <Route path="/sponsor-application" element={<SponsorApplication />} />
           <Route path="/admin/sponsors/:sponsorId/edit" element={<AdminSponsorAccountEdit />} />
+          <Route path="/admin/sponsors/:sponsorId/view" element={<AdminSponsorViewPage />} />
         </Routes>
     </div>
   );

@@ -8,7 +8,12 @@ import { ListGroupItem } from "react-bootstrap";
 import { fetchSponsorUsers } from "./adminUpdateDriverInfo-api";
 import { useNavigate } from "react-router-dom";
 
-function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, getDriverLabel }) {
+function ManageSponsorsTab({
+  onSelectSponsor,
+  relationships,
+  loadRelationships,
+  getDriverLabel,
+}) {
   const [sponsorUsers, setSponsorUsers] = useState([]);
   const [selectedSponsorUsername, setSelectedSponsorUsername] = useState("");
   const [loadingSponsorUsers, setLoadingSponsorUsers] = useState(false);
@@ -16,11 +21,11 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
 
   const navigate = useNavigate();
 
-  const selectedSponsorUser = useMemo(
-    () =>
-      sponsorUsers.find((u) => u.username === selectedSponsorUsername) ?? null,
-    [sponsorUsers, selectedSponsorUsername]
-  );
+  const selectedSponsorUser = useMemo(() => {
+    return (
+      sponsorUsers.find((u) => u.username === selectedSponsorUsername) ?? null
+    );
+  }, [sponsorUsers, selectedSponsorUsername]);
 
   const loadSponsorUsers = async () => {
     try {
@@ -31,12 +36,15 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
       const safeUsers = Array.isArray(users) ? users : [];
 
       setSponsorUsers(safeUsers);
+
       setSelectedSponsorUsername((prev) => {
-        if (prev && safeUsers.some((u) => u.username === prev)) return prev;
+        if (prev && safeUsers.some((u) => u.username === prev)) {
+          return prev;
+        }
         return safeUsers[0]?.username || "";
       });
     } catch (error) {
-      console.error(error);
+      console.error("Failed to load sponsors:", error);
       setSponsorUsersError("Failed to load sponsors.");
     } finally {
       setLoadingSponsorUsers(false);
@@ -59,6 +67,52 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
     }
   }, [selectedSponsorUser, loadRelationships]);
 
+  const handleViewSponsor = () => {
+    if (!selectedSponsorUser?.username) return;
+
+    const safeSponsorUser = {
+      username: selectedSponsorUser.username ?? "",
+      email: selectedSponsorUser.email ?? "",
+      name: selectedSponsorUser.name ?? "",
+      preferred_username: selectedSponsorUser.preferred_username ?? "",
+      nickname: selectedSponsorUser.nickname ?? "",
+      phone_number: selectedSponsorUser.phone_number ?? "",
+      phone: selectedSponsorUser.phone ?? "",
+      affiliation: selectedSponsorUser.affiliation ?? "",
+    };
+
+    const safeRelationships = (Array.isArray(relationships) ? relationships : []).map(
+      (rel) => ({
+        driverSponsorId: rel?.driverSponsorId ?? "",
+        driverId: rel?.driverId ?? "",
+        sponsorId: rel?.sponsorId ?? "",
+        driverName: rel?.driverName ?? "",
+        driverNickname: rel?.driverNickname ?? "",
+        driverEmail: rel?.driverEmail ?? "",
+        points: rel?.points ?? 0,
+      })
+    );
+
+    navigate(`/admin/sponsors/${selectedSponsorUser.username}/view`, {
+      state: {
+        sponsorUser: safeSponsorUser,
+        relationships: safeRelationships,
+      },
+    });
+  };
+
+  const handleEditSponsor = () => {
+    if (!selectedSponsorUser?.username) return;
+    navigate(`/admin/sponsors/${selectedSponsorUser.username}/edit`);
+  };
+
+  const sponsorDisplayName =
+    selectedSponsorUser?.affiliation ||
+    selectedSponsorUser?.name ||
+    selectedSponsorUser?.preferred_username ||
+    selectedSponsorUser?.username ||
+    "N/A";
+
   return (
     <Row className="g-4 align-items-start">
       <Col md={4}>
@@ -79,36 +133,41 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
             ) : (
               <>
                 <ListGroup className="mb-3">
-                  {sponsorUsers.map((user) => (
-                    <ListGroupItem
-                      key={user.username}
-                      action
-                      active={user.username === selectedSponsorUsername}
-                      onClick={() => setSelectedSponsorUsername(user.username)}
-                      style={
-                        user.username === selectedSponsorUsername
-                          ? {
-                              backgroundColor: "#10b981",
-                              border: "none",
-                              color: "white",
-                            }
-                          : {}
-                      }
-                    >
-                      <div className="fw-semibold">
-                        {user.affiliation ||
-                          user.name ||
-                          user.preferred_username ||
-                          user.username}
-                      </div>
-                      <div
-                        className="text-muted"
-                        style={{ fontSize: "0.9rem" }}
+                  {sponsorUsers.map((user) => {
+                    const isSelected = user.username === selectedSponsorUsername;
+
+                    return (
+                      <ListGroupItem
+                        key={user.username}
+                        action
+                        active={isSelected}
+                        onClick={() => setSelectedSponsorUsername(user.username)}
+                        style={
+                          isSelected
+                            ? {
+                                backgroundColor: "#10b981",
+                                border: "none",
+                                color: "white",
+                              }
+                            : {}
+                        }
                       >
-                        {user.email || user.username}
-                      </div>
-                    </ListGroupItem>
-                  ))}
+                        <div className="fw-semibold">
+                          {user.affiliation ||
+                            user.name ||
+                            user.preferred_username ||
+                            user.username}
+                        </div>
+
+                        <div
+                          className={isSelected ? "" : "text-muted"}
+                          style={{ fontSize: "0.9rem" }}
+                        >
+                          {user.email || user.username}
+                        </div>
+                      </ListGroupItem>
+                    );
+                  })}
                 </ListGroup>
 
                 <Button
@@ -142,11 +201,7 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
                 ) : (
                   <div className="text-start">
                     <div className="mb-2">
-                      <strong>Name:</strong>{" "}
-                      {selectedSponsorUser.affiliation ||
-                        selectedSponsorUser.name ||
-                        selectedSponsorUser.preferred_username ||
-                        selectedSponsorUser.username}
+                      <strong>Name:</strong> {sponsorDisplayName}
                     </div>
 
                     <div className="mb-2">
@@ -162,17 +217,16 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
                     </div>
 
                     <div className="mb-2">
-                      <strong>Sub ID:</strong>{" "}
-                      {selectedSponsorUser.username}
+                      <strong>Sub ID:</strong> {selectedSponsorUser.username}
                     </div>
 
                     <div className="mb-2">
                       <strong>Drivers:</strong>{" "}
-                        {relationships.length
-                            ? relationships
-                              .map((rel) => getDriverLabel(rel.driverId))
-                              .join(", ")
-                        : "No assigned sponsors found."}
+                      {relationships.length
+                        ? relationships
+                            .map((rel) => getDriverLabel(rel.driverId))
+                            .join(", ")
+                        : "No assigned drivers found."}
                     </div>
                   </div>
                 )}
@@ -180,43 +234,44 @@ function ManageSponsorsTab({ onSelectSponsor, relationships, loadRelationships, 
             </Card>
 
             <Row className="g-4 mt-1">
-  <Col md={6}>
-    <Card className="shadow-sm h-100">
-      <Card.Body className="text-center d-flex flex-column justify-content-center align-items-center">
-        <Card.Title><strong>View Account</strong></Card.Title>
-        <Button
-          className="mt-3"
-          style={{ width: "160px", height: "50px" }}
-          variant="primary"
-          disabled={!selectedSponsorUser}
-        >
-          View
-        </Button>
-      </Card.Body>
-    </Card>
-  </Col>
+              <Col md={6}>
+                <Card className="shadow-sm h-100">
+                  <Card.Body className="text-center d-flex flex-column justify-content-center align-items-center">
+                    <Card.Title>
+                      <strong>View Account</strong>
+                    </Card.Title>
+                    <Button
+                      className="mt-3"
+                      style={{ width: "160px", height: "50px" }}
+                      variant="primary"
+                      disabled={!selectedSponsorUser}
+                      onClick={handleViewSponsor}
+                    >
+                      View
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
 
-  <Col md={6}>
-    <Card className="h-100">
-      <Card.Body className="text-center d-flex flex-column justify-content-center align-items-center">
-        <Card.Title><strong>Edit Account</strong></Card.Title>
-        <Button
-          className="mt-3"
-          style={{ width: "160px", height: "50px" }}
-          variant="primary"
-          disabled={!selectedSponsorUser}
-          onClick={() => {
-            if (selectedSponsorUser?.username) {
-              navigate(`/admin/sponsors/${selectedSponsorUser.username}/edit`);
-            }
-          }}
-        >
-          Edit
-        </Button>
-      </Card.Body>
-    </Card>
-  </Col>
-</Row>
+              <Col md={6}>
+                <Card className="h-100">
+                  <Card.Body className="text-center d-flex flex-column justify-content-center align-items-center">
+                    <Card.Title>
+                      <strong>Edit Account</strong>
+                    </Card.Title>
+                    <Button
+                      className="mt-3"
+                      style={{ width: "160px", height: "50px" }}
+                      variant="primary"
+                      disabled={!selectedSponsorUser}
+                      onClick={handleEditSponsor}
+                    >
+                      Edit
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
           </Col>
         </Row>
       </Col>

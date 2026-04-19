@@ -105,10 +105,12 @@ new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
 
 const lambdaIntegration = new LambdaIntegration(adminUserLambda);
 
-const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, 'AdminCognitoAuth', {cognitoUserPools: [userPool]});
-
+const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, 'AdminCognitoAuth', {
+  cognitoUserPools: [userPool]
+});
 
 const adminPath = adminApi.root.addResource('admin');
+
 const usersPath = adminPath.addResource('users');
 const unassignedPath = usersPath.addResource('unassigned');
 
@@ -185,4 +187,3 @@ backend.addOutput({
 });
 
 export { backend };
-
