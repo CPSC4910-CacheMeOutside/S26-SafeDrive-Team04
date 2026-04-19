@@ -544,6 +544,48 @@ function AdminPage() {
     }
   }, [removeError]);
 
+  useEffect(() => {
+    if (awardMessage) {
+      const timer = setTimeout(() => setAwardMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [awardMessage]);
+
+  useEffect(() => {
+    if (awardError) {
+        const timer = setTimeout(() => setAwardError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [awardError]);
+
+  useEffect(() => {
+    if (deductMessage) {
+        const timer = setTimeout(() => setDeductMessage(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductMessage]);
+
+  useEffect(() => {
+    if (deductError) {
+        const timer = setTimeout(() => setDeductError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductError]);
+
+  useEffect(() => {
+    if (relationshipMessage) {
+        const timer = setTimeout(() => setRelationshipMessage(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [relationshipMessage]);
+
+  useEffect(() => {
+    if (relationshipError) {
+        const timer = setTimeout(() => setRelationshipError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [relationshipError]);
+
   const handleAwardPoints = async () => {
     if (!selectedDriverUser) {
       setAwardError("Please select a driver.");

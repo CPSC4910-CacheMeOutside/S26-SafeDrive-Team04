@@ -130,6 +130,62 @@ function ManageSponsorsTab({
     selectedDeductDriverUsername,
   ]);
 
+  useEffect(() => {
+  if (assignDriverSuccess) {
+    const timer = setTimeout(() => setAssignDriverSuccess(""), 3000);
+    return () => clearTimeout(timer);
+  }
+}, [assignDriverSuccess]);
+
+useEffect(() => {
+  if (assignDriverError) {
+    const timer = setTimeout(() => setAssignDriverError(""), 3000);
+    return () => clearTimeout(timer);
+  }
+}, [assignDriverError]);
+
+useEffect(() => {
+  if (removeDriverSuccess) {
+    const timer = setTimeout(() => setRemoveDriverSuccess(""), 3000);
+    return () => clearTimeout(timer);
+  }
+}, [removeDriverSuccess]);
+
+  useEffect(() => {
+    if (removeDriverError) {
+        const timer = setTimeout(() => setRemoveDriverError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [removeDriverError]);
+
+  useEffect(() => {
+    if (awardSuccess) {
+        const timer = setTimeout(() => setAwardSuccess(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [awardSuccess]);
+
+  useEffect(() => {
+    if (awardError) {
+        const timer = setTimeout(() => setAwardError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [awardError]);
+
+  useEffect(() => {
+    if (deductSuccess) {
+        const timer = setTimeout(() => setDeductSuccess(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductSuccess]);
+
+  useEffect(() => {
+    if (deductError) {
+        const timer = setTimeout(() => setDeductError(""), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [deductError]);
+
   const handleViewSponsor = () => {
     if (!selectedSponsorUser?.username) return;
 
