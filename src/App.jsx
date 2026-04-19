@@ -35,6 +35,8 @@ import SponsorApplication from './SponsorApplication';
 import SponsorListings from './Available-Sponsors';
 import AdminSponsorViewPage from "./AdminSponsorViewPage";
 import AdminSponsorAccountEdit from './AdminSponsorAccountEdit';
+import SponsorOrdersPage from './SponsorsOrdersPage';
+ 
 import UpdateAbout from './UpdateAbout';
 
 function App() {
@@ -181,6 +183,8 @@ function App() {
               {auth.isAuthenticated && groups.includes("Sponsor") && (
                 <Nav.Link as={Link} to="/CatalogBuilder">Catalog</Nav.Link>
               )}
+              {auth.isAuthenticated && groups.includes("Sponsor") && (
+                <Nav.Link as={Link} to="/sponsor-orders">Orders</Nav.Link>)}
               {auth.isAuthenticated && groups.includes("Sponsor") && (
                 <Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">
                   Sponsor Notif
