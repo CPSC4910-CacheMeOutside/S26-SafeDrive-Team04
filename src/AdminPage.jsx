@@ -82,6 +82,7 @@ function AdminPage() {
   const [selectedDriverRecord, setSelectedDriverRecord] = useState(null);
   const [selectedSponsorUser, setSelectedSponsorUser] = useState(null);
   const [selectedAdminUser, setSelectedAdminUser] = useState(null);
+  const [selectedAwardSponsorId, setSelectedAwardSponsorId] = useState("");
 
   const selectedDriverUser = useMemo(
     () => driverUsers.find((u) => u.username === selectedDriverUsername) ?? null,
@@ -513,27 +514,54 @@ function AdminPage() {
       setAwardMessage("");
       return;
     }
+
+    if (!selectedAwardSponsorId) {
+      setAwardError("Please select a sponsor.");
+      setAwardMessage("");
+      return;
+    }
+
     const amount = Number(awardPointsAmount);
     if (!amount || Number.isNaN(amount) || amount <= 0) {
       setAwardError("Enter a valid positive number of points.");
       setAwardMessage("");
       return;
     }
+
     try {
       setUpdatingDriverPoints(true);
       setAwardError("");
       setAwardMessage("");
+
       const driverId = selectedDriverUser.username;
-      const existing = await client.models.Driver.get({ driverId });
-      const currentPoints = existing?.data?.points ?? 0;
-      const newTotal = currentPoints + amount;
+      const sponsorId = selectedAwardSponsorId;
+
+      const driverResult = await client.models.Driver.get({ driverId });
+      const currentDriverPoints = driverResult?.data?.points ?? 0;
+
       await client.models.Driver.update({
         driverId,
-        points: newTotal,
+        points: currentDriverPoints + amount,
       });
+
+      const relResult = await client.models.DriverSponsor.get({
+        driverId,
+        sponsorId,
+      });
+
+      const currentSponsorPoints = relResult?.data?.points ?? 0;
+
+      await client.models.DriverSponsor.update({
+        driverId,
+        sponsorId,
+        points: currentSponsorPoints + amount,
+      });
+
       setAwardMessage("Points awarded successfully.");
       setAwardPointsAmount("");
+      setSelectedAwardSponsorId("");
       await loadSelectedDriverRecord(driverId);
+      await loadDriverRelationships(driverId);
     } catch (error) {
       console.error(error);
       setAwardError("Failed to award points.");
@@ -853,9 +881,11 @@ function AdminPage() {
 
                                 <div className="mb-2">
                                   <strong>Sponsors:</strong>{" "}
-                                  {driverRelationships.length
-                                    ? driverRelationships.map((rel) => getSponsorLabel(rel.sponsorId)).join(", ")
-                                    : "No assigned sponsors found."}
+                                    {driverRelationships.length
+                                      ? driverRelationships
+                                        .map((rel) => `${getSponsorLabel(rel.sponsorId)} (${rel.points ?? 0})`)
+                                        .join(", ")
+                                      : "No assigned sponsors found."}
                                 </div>
 
                                 <div className="mb-2">
@@ -1002,6 +1032,23 @@ function AdminPage() {
                               <div className="text-muted">Select a driver first.</div>
                             ) : (
                               <>
+                                <Form.Group className="mb-3">
+                                  <Form.Label></Form.Label>
+                                  <Form.Select
+                                    value={selectedAwardSponsorId}
+                                    onChange={(e) => setSelectedAwardSponsorId(e.target.value)}
+                                    disabled={!selectedDriverUser || !driverRelationships.length}
+                                  >
+                                    <option value="" disabled>
+                                      Select a sponsor
+                                    </option>
+                                    {driverRelationships.map((rel) => (
+                                      <option key={rel.sponsorId} value={rel.sponsorId}>
+                                        {getSponsorLabel(rel.sponsorId)}
+                                      </option>
+                                    ))}
+                                  </Form.Select>
+                                </Form.Group>
                                 <Form.Group className="mb-3">
                                   <Form.Label></Form.Label>
                                   <Form.Control
