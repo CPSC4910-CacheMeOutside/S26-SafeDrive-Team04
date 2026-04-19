@@ -88,27 +88,27 @@ function App() {
     <div className="App">
         <Navbar expand="lg" className="custom-navbar" variant="dark">
           <Container fluid>
-              {!auth.isAuthenticated && (<Navbar.Brand href="#home">Safe Drive</Navbar.Brand>)}
-              {auth.isAuthenticated && groups.includes("Admin") && (<Navbar.Brand href="#home">Safe Drive (Admin)</Navbar.Brand>)}
-              {auth.isAuthenticated && groups.includes("Driver") && (<Navbar.Brand href="#home">Safe Drive (Driver)</Navbar.Brand>)}
-              {auth.isAuthenticated && groups.includes("Sponsor") && (<Navbar.Brand href="#home">Safe Drive (Sponsor)</Navbar.Brand>)}
+              {!auth.isAuthenticated && (<Navbar.Brand href="#home">{t('navbar.brandDefault')}</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Admin") && (<Navbar.Brand href="#home">{t('navbar.brandAdmin')}</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Driver") && (<Navbar.Brand href="#home">{t('navbar.brandDriver')}</Navbar.Brand>)}
+              {auth.isAuthenticated && groups.includes("Sponsor") && (<Navbar.Brand href="#home">{t('navbar.brandSponsor')}</Navbar.Brand>)}
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
               <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="me-auto">
-                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">Home</Nav.Link>}
-                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">About</Nav.Link>}
-               
-                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">My Dashboard</Nav.Link>)}
+                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.home} as={Link} to="/">{t('navbar.home')}</Nav.Link>}
+                {!auth.isAuthenticated && <Nav.Link hidden={hideNavs.about} as={Link} to="/about">{t('navbar.about')}</Nav.Link>}
 
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-list" aria-label="Apply">Apply</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Admin") && (<Nav.Link as={Link} to="/AdminPage">{t('navbar.myDashboard')}</Nav.Link>)}
 
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-application">Sponsor Application</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/CatalogBuilder">Catalog</Nav.Link>)}
-                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">Sponsor Notif</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">{t('navbar.myDashboard')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-list" aria-label="Apply">{t('navbar.apply')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-catalog">{t('navbar.catalog')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">{t('navbar.driverNotifShort')}</Nav.Link>)}
+
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">{t('navbar.myDashboard')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-application">{t('navbar.sponsorApplication')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/CatalogBuilder">{t('navbar.catalog')}</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/sponsor-notifications" aria-label="Sponsor Notifications">{t('navbar.sponsorNotifShort')}</Nav.Link>)}
                 <NavDropdown
                   title={LANGUAGE_NAMES[language]}
                   id="language-dropdown"
@@ -128,8 +128,8 @@ function App() {
                 {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>{t('navbar.login')}</Nav.Link>}
               </Nav>
               <Nav className="ms-auto align-items-center">
-                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>Sign Up</Nav.Link>}
-                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>Login</Nav.Link>}
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signupRedirect()}>{t('navbar.signUp')}</Nav.Link>}
+                {!auth.isAuthenticated && <Nav.Link onClick={() => auth.signinRedirect()}>{t('navbar.login')}</Nav.Link>}
                 {auth.isAuthenticated &&
                   <div className="d-flex align-items-center gap-2">
                     <span className="me-2" style={{ fontSize: "18px", color: "#d1d5db" }}>{auth.profile?.email}</span>

@@ -49,7 +49,7 @@ function AdminPage(){
       });
     } catch (error) {
       console.error(error);
-      setDriverUsersError("Failed to load drivers.");
+      setDriverUsersError(t('admin.failedToLoadDrivers'));
     } finally {
       setLoadingDriverUsers(false);
     }
@@ -73,7 +73,7 @@ function AdminPage(){
       });
     } catch (error) {
       console.error(error);
-      setRoleCardError("Failed to load unassigned users.");
+      setRoleCardError(t('admin.failedToLoadUnassignedUsers'));
     } finally {
       setLoadingPendingUsers(false);
     }
@@ -92,7 +92,7 @@ function AdminPage(){
       await assignUserGroup(selectedPendingUser.username, selectedRole);
 
       setRoleCardMessage(
-        `${selectedPendingUser.name || selectedPendingUser.username} assigned to ${selectedRole}.`
+        `${selectedPendingUser.name || selectedPendingUser.username} ${t('admin.assignedTo')} ${selectedRole}.`
       );
 
       const updatedUsers = unassignedUsers.filter(
@@ -102,7 +102,7 @@ function AdminPage(){
       setSelectedPendingUsername(updatedUsers[0]?.username ?? "");
     } catch (error) {
       console.error(error);
-      setRoleCardError("Failed to assign role.");
+      setRoleCardError(t('admin.failedToAssignRole'));
     } finally {
       setAssigningRole(false);
     }
@@ -115,7 +115,7 @@ function AdminPage(){
 
     setUnassignedUsers(updatedUsers);
     setSelectedPendingUsername(updatedUsers[0]?.username ?? "");
-    setRoleCardMessage(`${selectedPendingUser.name || selectedPendingUser.username} removed from the list.`);
+    setRoleCardMessage(`${selectedPendingUser.name || selectedPendingUser.username} ${t('admin.removedFromList')}`);
     setRoleCardError("");
   };
 
@@ -270,8 +270,8 @@ function AdminPage(){
               <Col md={4}>
                 <Card>
                   <Card.Body>
-                    <Card.Title>Drivers</Card.Title>
-                      {loadingDriverUsers ? (<div className="text-muted">Loading drivers...</div>) : !driverUsers.length ? (<div className="text-muted">No drivers found.</div>) : (<>
+                    <Card.Title>{t('admin.driversTitle')}</Card.Title>
+                      {loadingDriverUsers ? (<div className="text-muted">{t('admin.loadingDrivers')}</div>) : !driverUsers.length ? (<div className="text-muted">{t('admin.noDriversFound')}</div>) : (<>
                       <ListGroup className="mb-3">
                         {driverUsers.map((user) => (
                           <ListGroupItem key={user.username} action active={user.username === selectedDriverUsername} onClick={() => setSelectedDriverUsername(user.username)}>
@@ -280,7 +280,7 @@ function AdminPage(){
                           </ListGroupItem>
                         ))}
                       </ListGroup>
-                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>Refresh</Button>
+                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={loadDriverUsers} disabled={loadingDriverUsers}>{t('admin.refresh')}</Button>
                       </>
                       )}
                   </Card.Body>
@@ -340,12 +340,12 @@ function AdminPage(){
           
                 <Card className="mt-4">
                   <Card.Body>
-                    <Card.Title>Edit Driver Account</Card.Title>
+                    <Card.Title>{t('admin.editDriverAccount')}</Card.Title>
                       {!selectedDriverUser ? (
-                        <div className="text-muted">Select a driver to manage their account.</div>
+                        <div className="text-muted">{t('admin.selectDriverToManageAccount')}</div>
                         ) : (<>
-                          <p className="mb-3">Manage account information for{" "}<strong>{selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</strong>.</p>
-                          <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>Edit Account</Button>
+                          <p className="mb-3">{t('admin.manageAccountInfoFor')}{" "}<strong>{selectedDriverUser.name || selectedDriverUser.preferred_username || selectedDriverUser.username}</strong>.</p>
+                          <Button style={{ width: "160px", height: "50px" }} variant="secondary" onClick={() => navigate(`/admin/drivers/${selectedDriverUser.username}/edit`)}>{t('admin.editAccount')}</Button>
                         </>
                       )}
                   </Card.Body>
@@ -354,15 +354,15 @@ function AdminPage(){
             </Row>
           </Tab>
 
-          <Tab eventKey="pendingUsers" title="Pending Users">
+          <Tab eventKey="pendingUsers" title={t('admin.pendingUsers')}>
             <Col md={5}>
                 <Card className="mb-4">
                   <Card.Body>
-                    <Card.Title>Assign Role</Card.Title>
+                    <Card.Title>{t('admin.assignRole')}</Card.Title>
                       {roleCardError && (<div className="alert alert-danger py-2">{roleCardError}</div>)}
                       {roleCardMessage && (<div className="alert alert-success py-2">{roleCardMessage}</div>)}
-                      {loadingPendingUsers ? (<div className="text-muted">Loading unassigned users...</div>) : 
-                        !unassignedUsers.length ? (<div className="text-muted">No unassigned users found.</div>) : 
+                      {loadingPendingUsers ? (<div className="text-muted">{t('admin.loadingUnassignedUsers')}</div>) :
+                        !unassignedUsers.length ? (<div className="text-muted">{t('admin.noUnassignedUsersFound')}</div>) : 
                       (
                         <>
                           <ListGroup className="mb-3">
@@ -386,15 +386,15 @@ function AdminPage(){
                           {selectedPendingUser && (
                             <>
                               <div className="mb-3">
-                                <strong>Selected User:</strong><br />
-                                {selectedPendingUser.name || "No name"}<br />
+                                <strong>{t('admin.selectedUser')}</strong><br />
+                                {selectedPendingUser.name || t('admin.noName')}<br />
                                 <span className="text-muted">
                                   {selectedPendingUser.email || selectedPendingUser.username}
                                 </span>
                               </div>
 
                               <Form.Group className="mb-3">
-                                <Form.Label>Assign Group</Form.Label>
+                                <Form.Label>{t('admin.assignGroup')}</Form.Label>
                                 <Form.Select
                                   value={selectedRole}
                                   onChange={(e) => setSelectedRole(e.target.value)}
@@ -406,14 +406,14 @@ function AdminPage(){
                               </Form.Group>
 
                               <div className="d-flex justify-content-center gap-4">
-                                <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? "Assigning..." : "Assign Role"}</Button>
-                                <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>Remove From List</Button>
+                                <Button style={{ width: "160px", height: "50px" }} onClick={handleAssignRole} disabled={assigningRole}>{assigningRole ? t('admin.assigning') : t('admin.assignRole')}</Button>
+                                <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" onClick={handleDismissUnassignedUser}>{t('admin.removeFromList')}</Button>
                               </div>
                             </>
                           )}
                         </>
                       )}
-                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>Refresh</Button>
+                      <Button style={{ width: "160px", height: "50px" }} variant="outline-secondary" className="mt-3" onClick={loadUnassignedUsers} disabled={loadingPendingUsers}>{t('admin.refresh')}</Button>
                   </Card.Body>
                 </Card>
               </Col>

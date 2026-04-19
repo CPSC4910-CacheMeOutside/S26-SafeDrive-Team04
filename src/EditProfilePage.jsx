@@ -174,14 +174,14 @@ function EditProfilePage({
       console.error("Save error:", error);
       console.error("Save error response:", error?.response);
       console.error("Save error body:", error?.response?.body);
-      alert(error?.message || "Something went wrong while saving.");
+      alert(error?.message || t('editProfile.somethingWentWrongSaving'));
     }
   };
 
   return (
     <Container className="mt-4">
       <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
-        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{adminView ? "Edit Driver Account" : "Edit Profile"}</h1>
+        <h1 style={{ fontSize: "60px", fontWeight: "bold" }}>{adminView ? t('editProfile.editDriverAccountTitle') : t('editProfile.title')}</h1>
         <div style={{ position: "relative", minHeight: "100vh", padding: "40px" }}>
         {adminView && (
           <Alert variant="warning">
@@ -272,8 +272,8 @@ function EditProfilePage({
                   )}
                 </Col>
               </Form.Group>
-              <Button style={{ width: "160px", height: "50px" }} variant="secondary" className="me-2" onClick={() => navigate("/AdminPage")}>Exit</Button>
-              <Button style={{ width: "160px", height: "50px" }} type="submit">Save Changes</Button>
+              <Button style={{ width: "160px", height: "50px" }} variant="secondary" className="me-2" onClick={() => navigate("/AdminPage")}>{t('editProfile.exit')}</Button>
+              <Button style={{ width: "160px", height: "50px" }} type="submit">{t('editProfile.saveChanges')}</Button>
             </div>
           </Form>
         )}
