@@ -3,7 +3,6 @@ import { generateClient } from 'aws-amplify/data';
 import { useState, useEffect } from 'react';
 import { useLanguage } from './LanguageContext';
 import useAmplifyAuth from "./UseAmplifyAuth";
-import { useLanguage } from "./LanguageContext";
 import "./App.css";
 
 export default function HomePage () {
