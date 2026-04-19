@@ -74,8 +74,7 @@ const adminApi = new RestApi(apiStack, 'AdminRestApi', {
     stageName: 'dev',
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: ['http://localhost:5173',
-      'https://dev.d2jawpaet8g6c9.amplifyapp.com',
+    allowOrigins: ['https://dev.d2jawpaet8g6c9.amplifyapp.com',
     ],
     allowMethods: Cors.ALL_METHODS,
     allowHeaders: [
