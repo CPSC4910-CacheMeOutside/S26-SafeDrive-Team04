@@ -32,6 +32,7 @@ import DriverApplication from './DriverApplication';
 import SponsorApplication from './SponsorApplication';
 import SponsorListings from './Available-Sponsors';
 import SponsorOrdersPage from './SponsorsOrdersPage';
+import DriverOrdersPage from './DriverOrdersPage';
  
 import UpdateAbout from './UpdateAbout';
 
@@ -103,6 +104,7 @@ function App() {
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/DriverPage">My Dashboard</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-list" aria-label="Apply">Apply</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/sponsor-catalog">Catalog</Nav.Link>)}
+                {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/driver-orders" aria-label="Driver Orders">Orders</Nav.Link>)}
                 {auth.isAuthenticated && groups.includes("Driver") && (<Nav.Link as={Link} to="/driver-notifications" aria-label="Driver Notifications">Driver Notif</Nav.Link>)}
 
                 {auth.isAuthenticated && groups.includes("Sponsor") && (<Nav.Link as={Link} to="/SponsorPage">My Dashboard</Nav.Link>)}
@@ -173,6 +175,7 @@ function App() {
           <Route path="/CatalogBuilder" element={<CatalogBuilder />}/>
           <Route path="/sponsor-notifications" element={<SponsorNotificationsPage />}/>
           <Route path="/sponsor-orders" element={<SponsorOrdersPage />}/>
+          <Route path="/driver-orders" element={<DriverOrdersPage />}/>
           <Route path="/driver-notifications" element={<DriverNotificationsPage />}/>
           <Route path="/ConversionRatioContext" element={<ConversionRatioProvider />}/>
           <Route path="/NotificationContext" element={<NotificationProvider />}/>
