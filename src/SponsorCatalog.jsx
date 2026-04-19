@@ -258,6 +258,12 @@ export default function SponsorCatalog() {
             return -1;
         }
 
+        console.log("Creating order with: ", {
+            driverId: userData.id,
+            sponsorId: sId,
+            time: Date.now().toString(),
+            status: 0
+        });
         // Place the order
         const {data, errors} = await client.models.Order.create({
             driverId: userData.id,
@@ -273,19 +279,25 @@ export default function SponsorCatalog() {
             console.log(`Error: Could not create order for driver id:${userData.id} and sponsor id:${sId}: No order was created`);
             return;
         }
+        console.log("Order created: ", data);
 
+        console.log("Creating order product with: ", {
+            orderId: data.id,
+            pId: product.pId
+        });
         const {data: orderProduct, errors: opErrors} = await client.models.OrderProduct.create({
-            oId: data.oId,
-            productId: product.id
+            id: data.id,
+            pId: product.pId
         });
 
         if (opErrors) {
-            console.log(`Error: Could not create order product for driver id:${userData.id}, sponsor id:${sId}, and product id:${product.id}:`, opErrors);
+            console.log(`Error: Could not create order product for driver id:${userData.id}, sponsor id:${sId}, and product id:${product.pId}:`, opErrors);
             return;
         } else if (orderProduct === null) {
-            console.log(`Error: Could not create order product for driver id:${userData.id}, sponsor id:${sId}, and product id:${product.id}: No order product was created`);
+            console.log(`Error: Could not create order product for driver id:${userData.id}, sponsor id:${sId}, and product id:${product.pId}: No order product was created`);
             return;
         }
+        console.log("Order assignment created: ", orderProduct);
 
         // Update the driver's point total for the sponsor
         const newTotal = activeTotal - convertedPrice;
@@ -307,7 +319,11 @@ export default function SponsorCatalog() {
         // Update the local state to reflect the new point total
         const updatedTotals = new Map(pointTotals);
         updatedTotals.set(sId, newTotal);
-        updatePointTotals(updatedTotals);
+        updatePointTotals(prev => {
+            const updated = new Map(prev);
+            updated.set(sId, newTotal);
+            return updated;
+        });
 
         return 1;
     }
@@ -385,7 +401,7 @@ export default function SponsorCatalog() {
         return (
             <Modal show={show} onHide={handleClose}>
                 <Modal.Header closeButton>
-                    <Modal.Title>{product.title}</Modal.Title>
+                    <Modal.Title>{prodxuct.title}</Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>
@@ -404,8 +420,8 @@ export default function SponsorCatalog() {
                 <Modal.Footer>
                     <Row>
                         <Col>
-                            <AlertSuccess pId={product.id} />
-                            <AlertFailure pId={product.id} reason={failureReason} />
+                            <AlertSuccess pId={product.pId} />
+                            <AlertFailure pId={product.pId} reason={failureReason} />
                             <SubmittingAlert />
                         </Col>
                     </Row>
@@ -418,6 +434,7 @@ export default function SponsorCatalog() {
                             <Button variant="primary" onClick={ async () => {
                                 handleSubmittingShow();
                                 const orderStatus = await submitOrder(product, sponsorId);
+                                handleSubmittingClose();
 
                                 if (orderStatus === -1 || orderStatus === null) {
                                     setFailureReason(orderStatus);
@@ -425,7 +442,6 @@ export default function SponsorCatalog() {
                                 } else {
                                     handleSuccessShow(product);
                                 }
-                                handleSubmittingClose();
                             }}>
                                 Complete Request
                             </Button>
