@@ -7,7 +7,7 @@ import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 import { AmplifyError } from "@aws-amplify/core/internals/utils";
 import useAmplifyAuth from "./UseAmplifyAuth";
 
-import { Container, Row, Col, Card, Tab, Tabs, Button, Modal, Carousel} from "react-bootstrap";
+import { Container, Row, Col, Card, Tab, Tabs, Button, Modal, Alert, Carousel} from "react-bootstrap";
 
 export default function SponsorCatalog() {
 
@@ -248,19 +248,138 @@ export default function SponsorCatalog() {
         setIsLoading(false);
     }, [pointTotals, sponsors, catalogs, cart, wishlist, ptToDollarRatios]);
 
-    function submitOrder(product, sId) {
+    async function submitOrder(product, sId) {
         
-        const [ptToDollar, setPtToDollar] = useState(ptToDollarRatios.get(sId));
-
+        const convertedPrice = ptToDollarRatios.get(sId) * product.price;
         const activeTotal = pointTotals.get(sId);
 
-        
+        // Prevent the driver from purchasing an item they cannot afford
+        if (convertedPrice > activeTotal) {
+            return -1;
+        }
+
+        // Place the order
+        const {data, errors} = await client.models.Order.create({
+            driverId: userData.id,
+            sponsorId: sId,
+            time: Date.now().toString(),
+            status: 0
+        });
+
+        if (errors) {
+            console.log(`Error: Could not create order for driver id:${userData.id} and sponsor id:${sId}:`, errors);
+            return;
+        } else if (data === null) {
+            console.log(`Error: Could not create order for driver id:${userData.id} and sponsor id:${sId}: No order was created`);
+            return;
+        }
+
+        const {data: orderProduct, errors: opErrors} = await client.models.OrderProduct.create({
+            driverId: userData.id,
+            sponsorId: sId,
+            productId: product.id
+        });
+
+        if (opErrors) {
+            console.log(`Error: Could not create order product for driver id:${userData.id}, sponsor id:${sId}, and product id:${product.id}:`, opErrors);
+            return;
+        } else if (orderProduct === null) {
+            console.log(`Error: Could not create order product for driver id:${userData.id}, sponsor id:${sId}, and product id:${product.id}: No order product was created`);
+            return;
+        }
+
+        // Update the driver's point total for the sponsor
+        const newTotal = activeTotal - convertedPrice;
+
+        const {data: ptData, errors: ptErrors} = await client.models.DriverSponsor.update({
+            driverId: userData.id,
+            sponsorId: sId,
+            points: newTotal
+        });
+
+        if (ptErrors) {
+            console.log(`Error: Could not update point total for driver id:${userData.id} and sponsor id:${sId}:`, ptErrors);
+            return;
+        } else if (ptData === null) {
+            console.log(`Error: Could not update point total for driver id:${userData.id} and sponsor id:${sId}: No point total was updated`);
+            return;
+        }
+
+        // Update the local state to reflect the new point total
+        const updatedTotals = new Map(pointTotals);
+        updatedTotals.set(sId, newTotal);
+        updatePointTotals(updatedTotals);
+
+        return 1;
     }
 
     // UI Components
     function RequestModal({ product, sponsorId }) {
 
+        // Local data
         const [ptToDollar, setPtToDollar] = useState(ptToDollarRatios.get(sponsorId));
+        // Local State Trackers
+        const [showSuccess, setShowSuccess] = useState(false);
+        const [showFailure, setShowFailure] = useState(false);
+        const [showSubmitting, setShowSubmitting] = useState(false);
+        const [failureReason, setFailureReason] = useState(null);
+
+        const handleSuccessClose = () => {
+            setShowSuccess(false);
+        };
+
+        const handleSuccessShow = (product) => {
+            setShowSuccess(true);
+        };
+
+        const handleFailureShow = (product) => {
+            setShowFailure(true);
+        };
+
+        const handleFailureClose = () => {
+            setShowFailure(false);
+        }
+
+        const handleSubmittingShow = () => {
+            setShowSubmitting(true);
+        }
+
+        const handleSubmittingClose = () => {
+            setShowSubmitting(false);
+        }
+
+        function SubmittingAlert() {
+            return (
+                <Alert show={showSubmitting} variant="info" onClose={handleSubmittingClose} dismissible>
+                    <Alert.Heading>Submitting Order...</Alert.Heading>
+                </Alert>
+            );
+        }
+
+        function AlertSuccess({pId}) {
+            return (
+                <Alert show={showSuccess} variant="success" onClose={handleSuccessClose} dismissible>
+                    <Alert.Heading>Order Placed!</Alert.Heading>
+                    <p>
+                        Your order for product id:{pId} has been placed and is being processed!
+                    </p>
+                </Alert>
+            );
+        }
+
+        function AlertFailure({pId, reason}) {
+            return (
+                <Alert show={showFailure} variant="danger" onClose={handleFailureClose} dismissible>
+                    <Alert.Heading>Order Failed!</Alert.Heading>
+                    {reason === -1 && (
+                        <p>Insufficient points to complete this order.</p>
+                    )}
+                    {reason !== -1 && (
+                        <p>Your order for product id:{pId} could not be processed at this time. Please try again later.</p>
+                    )}
+                </Alert>
+            );
+        }
 
         if (!product) return null;
 
@@ -284,12 +403,36 @@ export default function SponsorCatalog() {
                 </Modal.Body>
 
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>
-                        Cancel
-                    </Button>
-                    <Button variant="primary" onClick={handleClose}>
-                        Complete Request
-                    </Button>
+                    <Row>
+                        <Col>
+                            <AlertSuccess pId={product.id} />
+                            <AlertFailure pId={product.id} reason={failureReason} />
+                            <SubmittingAlert />
+                        </Col>
+                    </Row>
+
+                    <Row>
+                        <Col className="d-flex justify-content-between gap-3">
+                            <Button variant="secondary" onClick={handleClose}>
+                                Close
+                            </Button>
+                            <Button variant="primary" onClick={ async () => {
+                                handleSubmittingShow();
+                                const orderStatus = await submitOrder(product, sponsorId);
+
+                                if (orderStatus === -1 || orderStatus === null) {
+                                    setFailureReason(orderStatus);
+                                    handleFailureShow(product);
+                                } else {
+                                    handleSuccessShow(product);
+                                }
+                                handleSubmittingClose();
+                            }}>
+                                Complete Request
+                            </Button>
+                        </Col>
+                    </Row>
+                    
                 </Modal.Footer>
             </Modal>
         );
