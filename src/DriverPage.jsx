@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchAuthSession } from "aws-amplify/auth";
+import { fetchAuthSession, getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
+import { generateClient } from "aws-amplify/data";
+import { useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -18,6 +20,8 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient();
 
+const client = generateClient();
+
 function DriverPage() {
   const { addNotification, notifications, closeNotification } = useNotifications();
   const activeNotifications = notifications.filter((n) => !n.closed);
@@ -30,6 +34,7 @@ function DriverPage() {
   const [viewedDriver, setViewedDriver] = useState(null);
 
   const [driver, setDriver] = useState({
+    id: "",
     username: "",
     fullName: "",
     email: "",
@@ -39,6 +44,8 @@ function DriverPage() {
     sponsors: [],
     applications: [],
   });
+  const [sponsorsLoading, setSponsorsLoading] = useState(true);
+  const [appsLoading, setAppsLoading] = useState(true);
 
   useEffect(() => {
     async function loadPage() {
@@ -225,6 +232,11 @@ function DriverPage() {
         const idPayload = session.tokens?.idToken?.payload ?? {};
         const accessPayload = session.tokens?.accessToken?.payload ?? {};
 
+        const fullName =
+          attributes.name ||
+          [attributes.given_name, attributes.family_name].filter(Boolean).join(" ") ||
+          "";
+
         const groups =
           idPayload["cognito:groups"] ||
           accessPayload["cognito:groups"] ||
@@ -270,18 +282,19 @@ function DriverPage() {
 
   const applicationsByStatus = useMemo(() => {
     return {
-      pending: driver.applications.filter((app) => app.status === "pending"),
-      approved: driver.applications.filter((app) => app.status === "approved"),
+      pending:  driver.applications.filter((app) => app.status === "pending"),
+      accepted: driver.applications.filter((app) => app.status === "accepted"),
     };
   }, [driver.applications]);
 
   const getBadgeVariant = (status) => {
     switch (status) {
       case "active":
-      case "approved":
+      case "accepted":
         return "success";
       case "pending":
         return "warning";
+      case "denied":
       case "rejected":
         return "danger";
       default:
@@ -348,6 +361,7 @@ function DriverPage() {
                 <p className="mb-2"><strong>Email:</strong> {driver.email || "No email found"}</p>
                 <p className="mb-2"><strong>Phone:</strong> {driver.phoneNumber || "No phone found"}</p>
                 <p className="mb-2"><strong>Groups:</strong> {driver.groups.join(", ") || "None"}</p>
+                <p className="mb-0"><strong>Total Points:</strong> {driver.sponsors.reduce((sum, s) => sum + (s.points || 0), 0)}</p>
               </Card.Body>
             </Card>
           </Col>

@@ -4,8 +4,19 @@ import { Form, Button, Container, Row, Col, Image, Alert } from 'react-bootstrap
 import { get, put } from 'aws-amplify/api';
 import { updateUserAttributes, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
+import { generateClient } from 'aws-amplify/data';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
+
+const client = generateClient();
+
+const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'
+];
 
 function EditProfilePage({
   profilePic,
@@ -24,6 +35,16 @@ function EditProfilePage({
     authEmail: ""
   });
 
+  const [licenseData, setLicenseData] = useState({
+    licenseNo: "",
+    expDate: "",
+    state: ""
+  });
+
+  const [isDriver, setIsDriver] = useState(false);
+  const [isSponsor, setIsSponsor] = useState(false);
+  const [sponsorAffiliation, setSponsorAffiliation] = useState("");
+  const [sponsorDescription, setSponsorDescription] = useState("");
   const [authRole, setAuthRole] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -43,7 +64,8 @@ function EditProfilePage({
           authEmail: attrs.email || "",
         });
 
-        setAuthRole(auth.groups || []);
+        const groups = auth.groups || [];
+        setAuthRole(groups);
 
         if (attrs.picture && setProfilePic) {
           try {
@@ -51,6 +73,39 @@ function EditProfilePage({
             setProfilePic(url.toString());
           } catch {
             setProfilePic(null);
+          }
+        }
+
+        if (groups.includes('Driver')) {
+          setIsDriver(true);
+          try {
+            const currentUser = await getCurrentUser();
+            const driverId = currentUser.username;
+            const { data: driverRecord } = await client.models.Driver.get({ driverId });
+            if (driverRecord) {
+              setLicenseData({
+                licenseNo: driverRecord.licenseNo || "",
+                expDate: driverRecord.expDate || "",
+                state: driverRecord.state || ""
+              });
+            }
+          } catch (err) {
+            console.error("Failed to load driver license info:", err);
+          }
+        }
+
+        if (groups.includes('Sponsor')) {
+          setIsSponsor(true);
+          try {
+            const currentUser = await getCurrentUser();
+            const sponsorId = currentUser.username;
+            const { data: sponsorRecord } = await client.models.Sponsor.get({ sponsorId });
+            if (sponsorRecord) {
+              setSponsorAffiliation(sponsorRecord.affiliation || "");
+              setSponsorDescription(sponsorRecord.description || "");
+            }
+          } catch (err) {
+            console.error("Failed to load sponsor affiliation:", err);
           }
         }
 
@@ -116,6 +171,13 @@ function EditProfilePage({
     });
   };
 
+  const handleLicenseChange = (e) => {
+    setLicenseData({
+      ...licenseData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file || !setProfilePic) return;
@@ -169,6 +231,50 @@ function EditProfilePage({
         await updateUserAttributes({
           userAttributes: attrsToSave
         });
+
+        if (isDriver) {
+          const currentUser = await getCurrentUser();
+          const driverId = currentUser.username;
+
+          const { data: existing } = await client.models.Driver.get({ driverId });
+
+          if (existing) {
+            await client.models.Driver.update({
+              driverId,
+              licenseNo: licenseData.licenseNo || null,
+              expDate: licenseData.expDate || null,
+              state: licenseData.state || null
+            });
+          } else {
+            await client.models.Driver.create({
+              driverId,
+              licenseNo: licenseData.licenseNo || null,
+              expDate: licenseData.expDate || null,
+              state: licenseData.state || null
+            });
+          }
+        }
+
+        if (isSponsor) {
+          const currentUser = await getCurrentUser();
+          const sponsorId = currentUser.username;
+
+          const { data: existingSponsor } = await client.models.Sponsor.get({ sponsorId });
+
+          if (existingSponsor) {
+            await client.models.Sponsor.update({
+              sponsorId,
+              affiliation: sponsorAffiliation || null,
+              description: sponsorDescription || null,
+            });
+          } else {
+            await client.models.Sponsor.create({
+              sponsorId,
+              affiliation: sponsorAffiliation || null,
+              description: sponsorDescription || null,
+            });
+          }
+        }
 
         const latest = await fetchUserAttributes();
 
@@ -234,9 +340,138 @@ function EditProfilePage({
                   </Col>
                 </Form.Group>
 
-                <Form.Group as={Row} className="mb-3">
-                  <Form.Label column sm={3}><strong>{t('editProfile.preferredName')}</strong></Form.Label>
-                  <Col sm={6}>
+              <Form.Group as={Row} className="mb-3">
+                <Form.Label column sm={3}>{t('editProfile.preferredName')}</Form.Label>
+                <Col sm={6}>
+                  <Form.Control
+                    name="authNickname"
+                    value={formData.authNickname}
+                    onChange={handleChange}
+                  />
+                </Col>
+              </Form.Group>
+
+              <Form.Group as={Row} className="mb-3">
+                <Form.Label column sm={3}>{t('editProfile.phoneNumber')}</Form.Label>
+                <Col sm={6}>
+                  <Form.Control
+                    name="authPhoneNum"
+                    value={formData.authPhoneNum}
+                    onChange={handleChange}
+                  />
+                </Col>
+              </Form.Group>
+
+              <Form.Group as={Row} className="mb-3">
+                <Form.Label column sm={3}>{t('editProfile.email')}</Form.Label>
+                <Col sm={6}>
+                  <Form.Control
+                    name="authEmail"
+                    value={formData.authEmail}
+                    readOnly
+                    plaintext
+                  />
+                </Col>
+              </Form.Group>
+
+              <Form.Group as={Row} className="mb-3">
+                <Form.Label column sm={3}>{t('editProfile.role')}</Form.Label>
+                <Col sm={6} className="d-flex align-items-start">
+                  {authRole.length > 0 ? authRole.join(", ") : <span>{t('common.na')}</span>}
+                </Col>
+              </Form.Group>
+
+              {isDriver && !adminView && (
+                <>
+                  <hr />
+                  <h5 className="mb-3">Driver License Information</h5>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>License Number</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        name="licenseNo"
+                        value={licenseData.licenseNo}
+                        onChange={handleLicenseChange}
+                        placeholder="Enter license number"
+                      />
+                    </Col>
+                  </Form.Group>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>License Expiration Date</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        type="date"
+                        name="expDate"
+                        value={licenseData.expDate}
+                        onChange={handleLicenseChange}
+                      />
+                    </Col>
+                  </Form.Group>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>State</Form.Label>
+                    <Col sm={6}>
+                      <Form.Select
+                        name="state"
+                        value={licenseData.state}
+                        onChange={handleLicenseChange}
+                      >
+                        <option value="">Select state...</option>
+                        {US_STATES.map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </Form.Select>
+                    </Col>
+                  </Form.Group>
+                  <hr />
+                </>
+              )}
+
+              {isSponsor && !adminView && (
+                <>
+                  <hr />
+                  <h5 className="mb-3">Sponsor Information</h5>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>Affiliation / Company Name</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        name="sponsorAffiliation"
+                        value={sponsorAffiliation}
+                        onChange={(e) => setSponsorAffiliation(e.target.value)}
+                        placeholder="Enter your company or organization name"
+                      />
+                      <Form.Text className="text-muted">
+                        This name will appear on your public sponsor profile and to drivers.
+                      </Form.Text>
+                    </Col>
+                  </Form.Group>
+
+                  <Form.Group as={Row} className="mb-3">
+                    <Form.Label column sm={3}>Company Description</Form.Label>
+                    <Col sm={6}>
+                      <Form.Control
+                        as="textarea"
+                        rows={4}
+                        name="sponsorDescription"
+                        value={sponsorDescription}
+                        onChange={(e) => setSponsorDescription(e.target.value)}
+                        placeholder="Describe your company, what drivers can expect, and why they should apply..."
+                      />
+                      <Form.Text className="text-muted">
+                        Shown to drivers on the sponsor listings page and application page.
+                      </Form.Text>
+                    </Col>
+                  </Form.Group>
+                  <hr />
+                </>
+              )}
+
+              <Form.Group as={Row} className="mb-3 align-items-center">
+                <Form.Label column sm={3}>{t('editProfile.profilePicture')}</Form.Label>
+                <Col sm={6}>
                     <Form.Control
                       name="authNickname"
                       value={formData.authNickname}
