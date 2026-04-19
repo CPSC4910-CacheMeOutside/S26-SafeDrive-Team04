@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAuthSession, getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
-import { useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -16,9 +15,6 @@ import { fetchNotificationsForUser } from "./notification-api";
 import { getCurrentDriverView, stopDriverView } from "./adminDriverView-api";
 import { useNotifications } from "./NotificationContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { generateClient } from "aws-amplify/data";
-
-const client = generateClient();
 
 const client = generateClient();
 
