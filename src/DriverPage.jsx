@@ -222,9 +222,10 @@ function DriverPage() {
 
       // 3. Normal logged-in driver view
       try {
-        const [session, assignmentData] = await Promise.all([
+        const [session, assignmentData, attributes] = await Promise.all([
           fetchAuthSession(),
           fetchCurrentDriverAssignments(),
+          fetchUserAttributes(),
         ]);
 
         const idPayload = session.tokens?.idToken?.payload ?? {};
@@ -256,20 +257,57 @@ function DriverPage() {
         setSponsorView(false);
         setViewedDriver(null);
 
+        const driverId = assignmentData.driverId;
+
         setDriver({
-          username: assignmentData.driverId || "",
-          fullName: assignmentData.fullName || "",
-          email: assignmentData.email || "",
-          phoneNumber: assignmentData.phoneNumber || "",
+          username: driverId || "",
+          fullName: assignmentData.fullName || fullName || "",
+          email: assignmentData.email || attributes.email || "",
+          phoneNumber: assignmentData.phoneNumber || attributes.phone_number || "",
           groups: Array.isArray(groups) ? groups : [],
           points: assignmentData.totalPoints || 0,
           sponsors: Array.isArray(assignmentData.sponsors)
             ? assignmentData.sponsors
             : [],
-          applications: Array.isArray(assignmentData.applications)
-            ? assignmentData.applications
-            : [],
+          applications: [],
         });
+
+        setAppsLoading(true);
+        try {
+          const appsResult = await client.models.Application.list({
+            filter: { driverId: { eq: driverId } }
+          });
+          const appRows = appsResult.data ?? [];
+
+          const STATUS_MAP = { 0: "pending", 1: "accepted", 2: "denied" };
+
+          const appList = await Promise.all(
+            appRows.map(async (app) => {
+              let sponsorName = app.sponsorId;
+              try {
+                const sponsorResult = await client.models.Sponsor.get({ sponsorId: app.sponsorId });
+                sponsorName =
+                  sponsorResult?.data?.affiliation ||
+                  sponsorResult?.data?.name ||
+                  app.sponsorId;
+              } catch (_) {}
+              return {
+                id: app.appId,
+                sponsorId: app.sponsorId,
+                sponsorName,
+                status: STATUS_MAP[app.status] ?? "pending",
+                submittedAt: app.createdAt?.slice(0, 10) ?? ""
+              };
+            })
+          );
+
+          setDriver((prev) => ({ ...prev, applications: appList }));
+        } catch (err) {
+          console.error("Failed to load applications:", err);
+        } finally {
+          setAppsLoading(false);
+        }
+
       } catch (error) {
         console.error("Failed to load driver page:", error);
       }
@@ -447,7 +485,7 @@ function DriverPage() {
                       <Card.Title className="mb-0">
                         <strong>My Applications</strong>
                       </Card.Title>
-                      <Button variant="primary" size="sm">
+                      <Button variant="primary" size="sm" onClick={() => navigate("/sponsor-list")}>
                         Browse Sponsors
                       </Button>
                     </div>
