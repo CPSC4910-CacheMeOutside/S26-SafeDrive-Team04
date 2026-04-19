@@ -66,7 +66,6 @@ const SafeDriveSchema = a.schema({
     state: a.string(),
     expDate: a.string(),
     notes: a.string(),
-
     logs: a.hasMany('ApplicationLog', 'appId'),
   }).identifier(['appId'])
   .authorization(allow => [allow.publicApiKey()]),

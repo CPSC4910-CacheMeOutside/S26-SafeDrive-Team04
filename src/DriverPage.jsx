@@ -77,7 +77,7 @@ function DriverPage() {
               try {
                 const sponsorResult = await client.models.Sponsor.get({ sponsorId: ds.sponsorId });
                 affiliation = sponsorResult?.data?.affiliation || ds.sponsorId;
-              } catch (_) { /* use fallback */ }
+              } catch (_) {}
               return {
                 id: ds.sponsorId,
                 name: affiliation,
@@ -110,7 +110,7 @@ function DriverPage() {
               try {
                 const sponsorResult = await client.models.Sponsor.get({ sponsorId: app.sponsorId });
                 sponsorName = sponsorResult?.data?.affiliation || app.sponsorId;
-              } catch (_) { /* use fallback */ }
+              } catch (_) {}
               return {
                 id: app.appId,
                 sponsorId: app.sponsorId,
@@ -223,11 +223,11 @@ function DriverPage() {
         </Row>
 
         <Tabs defaultActiveKey="sponsors" className="mb-4">
-          <Tab eventKey="sponsors" title={`Associated Sponsors${driver.sponsors.length ? ` (${driver.sponsors.length})` : ""}`}>
+          <Tab eventKey="sponsors" title={`My Sponsors${driver.sponsors.length ? ` (${driver.sponsors.length})` : ""}`}>
             <Card className="mt-3">
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <Card.Title className="mb-0">Associated Sponsors</Card.Title>
+                  <Card.Title className="mb-0">My Sponsors</Card.Title>
                   <Button
                     variant="outline-secondary"
                     size="sm"
