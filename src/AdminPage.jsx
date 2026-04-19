@@ -856,9 +856,6 @@ function AdminPage() {
                   <Nav.Link eventKey="pendingUsers">Manage Pending Users</Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
-                  <Nav.Link eventKey="audit">{t("admin.logsReports")}</Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
                   <Nav.Link eventKey="manageUsers">Create/Delete Users</Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
@@ -1677,10 +1674,6 @@ function AdminPage() {
               </Tab.Pane>
               <Tab.Pane eventKey="updateAbout" title="Update About">
                 <UpdateAbout />
-              </Tab.Pane>
-
-              <Tab.Pane eventKey="audit" title={t("admin.logsReports")}>
-                <div className="text-muted p-3">Audit log coming soon.</div>
               </Tab.Pane>
             </Tab.Content>
           </Tab.Container>

@@ -4,10 +4,10 @@ import {
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
   Cors,
-  LambdaIntegration,
-  RestApi,
   GatewayResponse,
+  LambdaIntegration,
   ResponseType,
+  RestApi,
 } from 'aws-cdk-lib/aws-apigateway';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
@@ -23,10 +23,10 @@ const backend = defineBackend({
   data,
   storage,
   adminUsersFunction,
-  updateStorefront
+  updateStorefront,
 });
 
-Object.values(backend.data.resources.tables).forEach(table => {
+Object.values(backend.data.resources.tables).forEach((table) => {
   table.grantReadWriteData(backend.updateStorefront.resources.lambda);
 });
 
@@ -56,16 +56,17 @@ const apiStack = backend.createStack('admin-api-stack');
 
 adminUserLambda.addToRolePolicy(
   new PolicyStatement({
-    actions: [
-      'dynamodb:PutItem',
-      'dynamodb:GetItem',
-      'dynamodb:UpdateItem',
-    ],
+    actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:UpdateItem'],
     resources: [
       `arn:aws:dynamodb:us-east-1:${Stack.of(apiStack).account}:table/DriverViewSession-opf5l7awlrcc7gwlw2c6ccmmca-NONE`,
     ],
   })
 );
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://dev.d2jawpaet8g6c9.amplifyapp.com',
+];
 
 const adminApi = new RestApi(apiStack, 'AdminRestApi', {
   restApiName: 'SafeDriveAPI',
@@ -74,8 +75,7 @@ const adminApi = new RestApi(apiStack, 'AdminRestApi', {
     stageName: 'dev',
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: ['https://dev.d2jawpaet8g6c9.amplifyapp.com',
-    ],
+    allowOrigins: allowedOrigins,
     allowMethods: Cors.ALL_METHODS,
     allowHeaders: [
       'Content-Type',
@@ -92,8 +92,9 @@ new GatewayResponse(apiStack, 'Default4xxGatewayResponse', {
   restApi: adminApi,
   type: ResponseType.DEFAULT_4XX,
   responseHeaders: {
-    'Access-Control-Allow-Origin': "'https://dev.d2jawpaet8g6c9.amplifyapp.com'",
-    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    'Access-Control-Allow-Origin': "'*'",
+    'Access-Control-Allow-Headers':
+      "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-driver-view-session'",
     'Access-Control-Allow-Methods': "'GET,PUT,POST,DELETE,OPTIONS'",
   },
 });
@@ -102,8 +103,9 @@ new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
   restApi: adminApi,
   type: ResponseType.DEFAULT_5XX,
   responseHeaders: {
-    'Access-Control-Allow-Origin': "'https://dev.d2jawpaet8g6c9.amplifyapp.com'",
-    'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    'Access-Control-Allow-Origin': "'*'",
+    'Access-Control-Allow-Headers':
+      "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-driver-view-session'",
     'Access-Control-Allow-Methods': "'GET,PUT,POST,DELETE,OPTIONS'",
   },
 });
@@ -111,7 +113,7 @@ new GatewayResponse(apiStack, 'Default5xxGatewayResponse', {
 const lambdaIntegration = new LambdaIntegration(adminUserLambda);
 
 const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, 'AdminCognitoAuth', {
-  cognitoUserPools: [userPool]
+  cognitoUserPools: [userPool],
 });
 
 const adminPath = adminApi.root.addResource('admin');
@@ -157,7 +159,6 @@ usernamePath.addMethod('DELETE', lambdaIntegration, {
   authorizationType: AuthorizationType.COGNITO,
   authorizer: cognitoAuth,
 });
-
 
 groupPath.addMethod('PUT', lambdaIntegration, {
   authorizationType: AuthorizationType.COGNITO,

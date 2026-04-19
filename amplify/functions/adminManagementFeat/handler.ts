@@ -32,7 +32,7 @@ const sponsorTable = 'Sponsor-opf5l7awlrcc7gwlw2c6ccmmca-NONE';
 const APP_GROUPS = ['Admin', 'Driver', 'Sponsor'] as const;
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://dev.d2jawpaet8g6c9.amplifyapp.com',
+  'Access-Control-Allow-Origin': 'http://localhost:5173',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-driver-view-session',
   'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
 };
